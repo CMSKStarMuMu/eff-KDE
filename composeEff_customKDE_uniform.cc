@@ -16,7 +16,7 @@ TCanvas* cz1 [2*nBins];
 
 void composeEff_customKDE_uniformBin(int q2Bin, bool tagFlag, int xbins, int ybins, int zbins, int kernel, bool plot);
 
-void fillHists(TH3F* denHist, TH3F* numHist, RooDataSet* data, RooDataSet* numData, int nev);
+void fillHists(TH3D* denHist, TH3D* numHist, RooDataSet* data, RooDataSet* numData, int nev);
 
 void composeEff_customKDE_uniform(int q2Bin, int tagFlag, int kernel = 1000, int xbins=25, int ybins = 0, int zbins = 0, bool plot = true)
 {
@@ -89,8 +89,8 @@ void composeEff_customKDE_uniformBin(int q2Bin, bool tagFlag, int xbins, int ybi
   // 						   *ctK,     Binning(xbins,-1,1) ,
   // 						   YVar(*ctL,Binning(ybins,-1,1)),
   // 						   ZVar(*phi,Binning(zbins,-TMath::Pi(),TMath::Pi())) );
-  TH3F* denHist = new TH3F("denHist","denHist",xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
-  TH3F* numHist = new TH3F("numHist","numHist",xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
+  TH3D* denHist = new TH3D("denHist","denHist",xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
+  TH3D* numHist = new TH3D("numHist","numHist",xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
   fillHists(denHist,numHist,data,numData,kernel);
   denHist->Sumw2();
   numHist->Sumw2();
@@ -218,7 +218,7 @@ void composeEff_customKDE_uniformBin(int q2Bin, bool tagFlag, int xbins, int ybi
   
 }
 
-void fillHists(TH3F* denHist, TH3F* numHist, RooDataSet* data, RooDataSet* numData, int nev)
+void fillHists(TH3D* denHist, TH3D* numHist, RooDataSet* data, RooDataSet* numData, int nev)
 {
   int nBins = denHist->GetNbinsX() * denHist->GetNbinsY() * denHist->GetNbinsZ();
   double AvgRadSq = TMath::Power( 6.0*nev/TMath::Pi()/TMath::Pi()/data->sumEntries() , 2.0/3 );

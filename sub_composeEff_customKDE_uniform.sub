@@ -1,0 +1,17 @@
+Executable  = run_composeEff_customKDE_uniform.sh
+bin         = 3
+tag         = 0
+kern        = 5000
+xbin        = 50
+ybin        = 50
+zbin        = 50
+ndiv        = $(ProcId)
+divx        = 5
+divy        = 10
+divz        = 10
+Arguments   = $INT(bin) $INT(tag) $INT(kern) $INT(xbin) $INT(ybin) $INT(zbin) $INT(ndiv) $INT(divx) $INT(divy) $INT(divz)
+Log         = logs/sub_$(ClusterId).log
+Output      = logs/log_sub_composeEff_customKDE_uniform_$INT(bin)_$INT(tag)_$INT(kern)_$INT(xbin)_$INT(ybin)_$INT(zbin)_$INT(ndiv)_$INT(divx)_$INT(divy)_$INT(divz).log
+Error       = logs/log_sub_composeEff_customKDE_uniform_$INT(bin)_$INT(tag)_$INT(kern)_$INT(xbin)_$INT(ybin)_$INT(zbin)_$INT(ndiv)_$INT(divx)_$INT(divy)_$INT(divz).log
++JobFlavour = "microcentury"
+Queue 500
