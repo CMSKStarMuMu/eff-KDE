@@ -1,0 +1,15 @@
+Executable  = run_composeEff_rooKeys.sh
+bin         = 3
+tag         = 0
+xbin        = 50
+ybin        = 50
+zbin        = 50
+wid	    = 1.0
+ndiv        = $(ProcId)
+totdiv      = 1000
+Arguments   = $INT(bin) $INT(tag) $INT(xbin) $INT(ybin) $INT(zbin) $(wid) $INT(ndiv) $INT(totdiv)
+Log         = logs/sub_$(ClusterId).log
+Output      = logs/log_sub_composeEff_rooKeys_$INT(bin)_$INT(tag)_$INT(xbin)_$INT(ybin)_$INT(zbin)_$(wid)_$INT(ndiv)_$INT(totdiv).log
+Error       = logs/log_sub_composeEff_rooKeys_$INT(bin)_$INT(tag)_$INT(xbin)_$INT(ybin)_$INT(zbin)_$(wid)_$INT(ndiv)_$INT(totdiv).log
++JobFlavour = "longlunch"
+Queue 1000
