@@ -121,8 +121,8 @@ void fillHists(TH3D* denHist, TH3D* numHist, RooDataSet* data, RooDataSet* numDa
   int iBin;
 
   for (iBin=0; iBin<nBins; ++iBin) {
-    distNum.push_back( new TH1F(Form("distNum%i",iBin),Form("distNum%i",iBin),100,0,AvgRadSq*10) );
-    distDen.push_back( new TH1F(Form("distDen%i",iBin),Form("distDen%i",iBin),100,0,AvgRadSq*10) );
+    distNum.push_back( new TH1F(Form("distNum%i",iBin),Form("distNum%i",iBin),200,0,AvgRadSq*20) );
+    distDen.push_back( new TH1F(Form("distDen%i",iBin),Form("distDen%i",iBin),200,0,AvgRadSq*20) );
   }
 
   double* xBinCenter = new double[denHist->GetNbinsX()];
@@ -205,6 +205,8 @@ void fillHists(TH3D* denHist, TH3D* numHist, RooDataSet* data, RooDataSet* numDa
 
   }
 
+  double numInt, denInt;
+
   for (iBinX=xbin_min; iBinX<=xbin_max; ++iBinX)
     for (iBinY=ybin_min; iBinY<=ybin_max; ++iBinY)
       for (iBinZ=zbin_min; iBinZ<=zbin_max; ++iBinZ) {
@@ -213,19 +215,22 @@ void fillHists(TH3D* denHist, TH3D* numHist, RooDataSet* data, RooDataSet* numDa
 	int binCount = (iBinX-xbin_min) + (xbin_max-xbin_min+1) * ( (iBinY-ybin_min) + (ybin_max-ybin_min+1) * (iBinZ-zbin_min) );
 
 	int maxBin = 1;
-	while ( maxBin < 100 && distDen[binCount]->Integral(1,maxBin) < nev ) ++maxBin;
+	while ( maxBin < distDen[binCount]->GetNbinsX() && (distDen[binCount]->Integral(1,maxBin) < nev || distNum[binCount]->Integral(1,maxBin) < 10) ) ++maxBin;
 
 	// cout<<"("<<iBinX<<" "<<iBinY<<" "<<iBinZ<<") range: 1->"<<maxBin<<
 	//   " num="<<distNum[binCount]->Integral(1,maxBin)<<" den="<<distDen[binCount]->Integral(1,maxBin)<<endl;
 
-	if ( distDen[binCount]->Integral(1,maxBin) >= distNum[binCount]->Integral(1,maxBin) ) {
-	  numHist->SetBinContent(iBin, distNum[binCount]->Integral(1,maxBin));
-	  denHist->SetBinContent(iBin, distDen[binCount]->Integral(1,maxBin));
+	numInt = distNum[binCount]->Integral(1,maxBin);
+	denInt = distDen[binCount]->Integral(1,maxBin);
+
+	if ( denInt >= numInt ) {
+	  numHist->SetBinContent(iBin, numInt);
+	  denHist->SetBinContent(iBin, denInt);
 	} else {
 	  cout<<"ERROR, numerator count exceeding denominator count: "<<
-	    distNum[binCount]->Integral(1,maxBin)<<" vs. "<<distDen[binCount]->Integral(1,maxBin)<<" ("<<iBinX<<" "<<iBinY<<" "<<iBinZ<<")"<<endl;
-	  numHist->SetBinContent(iBin, distDen[binCount]->Integral(1,maxBin));
-	  denHist->SetBinContent(iBin, distDen[binCount]->Integral(1,maxBin));
+	    numInt<<" vs. "<<denInt<<" ("<<iBinX<<" "<<iBinY<<" "<<iBinZ<<")"<<endl;
+	  numHist->SetBinContent(iBin, denInt);
+	  denHist->SetBinContent(iBin, denInt);
 	}
 
 	numHist->SetBinError(iBin, sqrt(numHist->GetBinContent(iBin)));

@@ -97,9 +97,9 @@ void mergeParSub_customKDE_uniformBin(int q2Bin, bool tagFlag, int xbins, int yb
     vector <TEfficiency*> effHistsX; 
     vector <TEfficiency*> effHistsY;
     vector <TEfficiency*> effHistsZ;
-    cx1[confIndex] = new TCanvas(("cx1"+shortString).c_str(),("Projected efficiency - "+longString+" - cos(theta_k) slices").c_str(),1500,1500) ;
-    cy1[confIndex] = new TCanvas(("cy1"+shortString).c_str(),("Projected efficiency - "+longString+" - cos(theta_l) slices").c_str(),1500,1500) ;
-    cz1[confIndex] = new TCanvas(("cz1"+shortString).c_str(),("Projected efficiency - "+longString+" - phi slices"         ).c_str(),1500,1500) ;
+    cx1[confIndex] = new TCanvas(("cx1"+shortString).c_str(),("KDE efficiency - "+longString+" - cos(theta_k) slices").c_str(),1500,1500) ;
+    cy1[confIndex] = new TCanvas(("cy1"+shortString).c_str(),("KDE efficiency - "+longString+" - cos(theta_l) slices").c_str(),1500,1500) ;
+    cz1[confIndex] = new TCanvas(("cz1"+shortString).c_str(),("KDE efficiency - "+longString+" - phi slices"         ).c_str(),1500,1500) ;
     cx1[confIndex]->Divide(5,5);
     cy1[confIndex]->Divide(5,5);
     cz1[confIndex]->Divide(5,5);

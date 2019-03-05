@@ -107,9 +107,9 @@ void composeEff_customKDE_uniformBin(int q2Bin, bool tagFlag, int xbins, int ybi
     vector <TEfficiency*> effHistsX; 
     vector <TEfficiency*> effHistsY;
     vector <TEfficiency*> effHistsZ;
-    cx1[confIndex] = new TCanvas(("cx1"+shortString).c_str(),("Projected efficiency - "+longString+" - cos(theta_k) slices").c_str(),1500,1500) ;
-    cy1[confIndex] = new TCanvas(("cy1"+shortString).c_str(),("Projected efficiency - "+longString+" - cos(theta_l) slices").c_str(),1500,1500) ;
-    cz1[confIndex] = new TCanvas(("cz1"+shortString).c_str(),("Projected efficiency - "+longString+" - phi slices"         ).c_str(),1500,1500) ;
+    cx1[confIndex] = new TCanvas(("cx1"+shortString).c_str(),("KDE efficiency - "+longString+" - cos(theta_k) slices").c_str(),1500,1500) ;
+    cy1[confIndex] = new TCanvas(("cy1"+shortString).c_str(),("KDE efficiency - "+longString+" - cos(theta_l) slices").c_str(),1500,1500) ;
+    cz1[confIndex] = new TCanvas(("cz1"+shortString).c_str(),("KDE efficiency - "+longString+" - phi slices"         ).c_str(),1500,1500) ;
     cx1[confIndex]->Divide(5,5);
     cy1[confIndex]->Divide(5,5);
     cz1[confIndex]->Divide(5,5);
@@ -229,8 +229,8 @@ void fillHists(TH3D* denHist, TH3D* numHist, RooDataSet* data, RooDataSet* numDa
   int iBin;
 
   for (iBin=0; iBin<nBins; ++iBin) {
-    distNum.push_back( new TH1F(Form("distNum%i",iBin),Form("distNum%i",iBin),100,0,AvgRadSq*10) );
-    distDen.push_back( new TH1F(Form("distDen%i",iBin),Form("distDen%i",iBin),100,0,AvgRadSq*10) );
+    distNum.push_back( new TH1F(Form("distNum%i",iBin),Form("distNum%i",iBin),200,0,AvgRadSq*20) );
+    distDen.push_back( new TH1F(Form("distDen%i",iBin),Form("distDen%i",iBin),200,0,AvgRadSq*20) );
   }
 
   double* xBinCenter = new double[denHist->GetNbinsX()];
@@ -313,6 +313,8 @@ void fillHists(TH3D* denHist, TH3D* numHist, RooDataSet* data, RooDataSet* numDa
 
   }
 
+  double numInt, denInt;
+
   for (iBinX=1; iBinX<=denHist->GetNbinsX(); ++iBinX)
     for (iBinY=1; iBinY<=denHist->GetNbinsY(); ++iBinY)
       for (iBinZ=1; iBinZ<=denHist->GetNbinsZ(); ++iBinZ) {
@@ -321,19 +323,22 @@ void fillHists(TH3D* denHist, TH3D* numHist, RooDataSet* data, RooDataSet* numDa
 	int binCount = (iBinX-1) + denHist->GetNbinsX() * ( (iBinY-1) + denHist->GetNbinsY() * (iBinZ-1) );
 
 	int maxBin = 1;
-	while ( maxBin < 100 && distDen[binCount]->Integral(1,maxBin) < nev ) ++maxBin;
+	while ( maxBin < distDen[binCount]->GetNbinsX() && (distDen[binCount]->Integral(1,maxBin) < nev || distNum[binCount]->Integral(1,maxBin) < 10) ) ++maxBin;
 
 	// cout<<"("<<iBinX<<" "<<iBinY<<" "<<iBinZ<<") range: 1->"<<maxBin<<
 	//   " num="<<distNum[binCount]->Integral(1,maxBin)<<" den="<<distDen[binCount]->Integral(1,maxBin)<<endl;
 
-	if ( distDen[binCount]->Integral(1,maxBin) >= distNum[binCount]->Integral(1,maxBin) ) {
-	  numHist->SetBinContent(iBin, distNum[binCount]->Integral(1,maxBin));
-	  denHist->SetBinContent(iBin, distDen[binCount]->Integral(1,maxBin));
+	numInt = distNum[binCount]->Integral(1,maxBin);
+	denInt = distDen[binCount]->Integral(1,maxBin);
+
+	if ( denInt >= numInt ) {
+	  numHist->SetBinContent(iBin, numInt);
+	  denHist->SetBinContent(iBin, denInt);
 	} else {
 	  cout<<"ERROR, numerator count exceeding denominator count: "<<
-	    distNum[binCount]->Integral(1,maxBin)<<" vs. "<<distDen[binCount]->Integral(1,maxBin)<<" ("<<iBinX<<" "<<iBinY<<" "<<iBinZ<<")"<<endl;
-	  numHist->SetBinContent(iBin, distDen[binCount]->Integral(1,maxBin));
-	  denHist->SetBinContent(iBin, distDen[binCount]->Integral(1,maxBin));
+	    numInt<<" vs. "<<denInt<<" ("<<iBinX<<" "<<iBinY<<" "<<iBinZ<<")"<<endl;
+	  numHist->SetBinContent(iBin, denInt);
+	  denHist->SetBinContent(iBin, denInt);
 	}
 
 	numHist->SetBinError(iBin, sqrt(numHist->GetBinContent(iBin)));
