@@ -14,26 +14,32 @@ TCanvas* cx1 [2*nBins];
 TCanvas* cy1 [2*nBins];
 TCanvas* cz1 [2*nBins];
 
-void mergeParSub_customKDE_uniformBin(int q2Bin, bool tagFlag, int xbins, int ybins, int zbins, int kernel, int divx, int divy, int divz, bool plot);
+void mergeParSub_customKDE_uniformBin(int q2Bin, bool tagFlag, int xbins, int ybins, int zbins, int kernel, int divx, int divy, int divz, bool doMirror, bool plot);
 
-void mergeParSub_customKDE_uniform(int q2Bin, int tagFlag, int kernel = 1000, int xbins=25, int ybins = 0, int zbins = 0, int divx = 1, int divy = 0, int divz = 0, bool plot = true)
+void mergeParSub_customKDE_uniform(int q2Bin, int tagFlag, int kernel = 1000, int doMirror = 1, int xbins=25, int ybins = 0, int zbins = 0, int divx = 1, int divy = 0, int divz = 0, bool plot = true)
 {
   // q2-bin format: [0-8] for one bin, [-1] for each bin recursively
   // tag format:    [1] correctly-tagged. [0] mistagged, [2] each tag, recursively
 
+  if ( xbins<1 ) return;
   if ( ybins<1 ) ybins = xbins;
   if ( zbins<1 ) zbins = xbins;
-  if ( xbins<1 ) return;
+
+  if ( divx<1 ) return;
+  if ( divy<1 ) divy = divx;
+  if ( divz<1 ) divz = divx;
+
+  if ( doMirror<0 || doMirror>1 ) return;
 
   if ( q2Bin > -1 && q2Bin < nBins ) {
     if (tagFlag < 2 && tagFlag > -1) {
       cout<<"Computing efficiency for q2 bin "<<q2Bin<<(tagFlag==1?" correctly":" wrongly")<<" tagged events"<<endl;
-      mergeParSub_customKDE_uniformBin(q2Bin, (tagFlag==1), xbins, ybins, zbins, kernel, divx, divy, divz, plot);
+      mergeParSub_customKDE_uniformBin(q2Bin, (tagFlag==1), xbins, ybins, zbins, kernel, divx, divy, divz, (doMirror==1), plot);
     }
     if (tagFlag == 2) {
       cout<<"Computing efficiency for q2 bin "<<q2Bin<<" correctly and wrongly tagged events"<<endl;
-      mergeParSub_customKDE_uniformBin(q2Bin, true,  xbins, ybins, zbins, kernel, divx, divy, divz, plot);
-      mergeParSub_customKDE_uniformBin(q2Bin, false, xbins, ybins, zbins, kernel, divx, divy, divz, plot);
+      mergeParSub_customKDE_uniformBin(q2Bin, true,  xbins, ybins, zbins, kernel, divx, divy, divz, (doMirror==1), plot);
+      mergeParSub_customKDE_uniformBin(q2Bin, false, xbins, ybins, zbins, kernel, divx, divy, divz, (doMirror==1), plot);
     }
   }
   if (q2Bin == -1) {
@@ -41,23 +47,24 @@ void mergeParSub_customKDE_uniform(int q2Bin, int tagFlag, int kernel = 1000, in
     for (q2Bin=0; q2Bin<nBins; ++q2Bin) {
       if (tagFlag < 2 && tagFlag > -1) {
 	cout<<endl<<"q2 bin "<<q2Bin<<(tagFlag==1?" correctly":" wrongly")<<" tagged events"<<endl;
-	mergeParSub_customKDE_uniformBin(q2Bin, (tagFlag==1), xbins, ybins, zbins, kernel, divx, divy, divz, plot);
+	mergeParSub_customKDE_uniformBin(q2Bin, (tagFlag==1), xbins, ybins, zbins, kernel, divx, divy, divz, (doMirror==1), plot);
       }
       if (tagFlag == 2) {
 	cout<<endl<<"q2 bin "<<q2Bin<<" correctly and wrongly tagged events"<<endl;
-	mergeParSub_customKDE_uniformBin(q2Bin, true,  xbins, ybins, zbins, kernel, divx, divy, divz, plot);
-	mergeParSub_customKDE_uniformBin(q2Bin, false, xbins, ybins, zbins, kernel, divx, divy, divz, plot);
+	mergeParSub_customKDE_uniformBin(q2Bin, true,  xbins, ybins, zbins, kernel, divx, divy, divz, (doMirror==1), plot);
+	mergeParSub_customKDE_uniformBin(q2Bin, false, xbins, ybins, zbins, kernel, divx, divy, divz, (doMirror==1), plot);
       }
     }
   }
   
 }
 
-void mergeParSub_customKDE_uniformBin(int q2Bin, bool tagFlag, int xbins, int ybins, int zbins, int kernel, int divx, int divy, int divz, bool plot)
+void mergeParSub_customKDE_uniformBin(int q2Bin, bool tagFlag, int xbins, int ybins, int zbins, int kernel, int divx, int divy, int divz, bool doMirror, bool plot)
 {
 
   string shortString = Form(tagFlag?"b%ict":"b%iwt",q2Bin);
   string longString  = Form(tagFlag?"q2 bin %i correct-tag":"q2 bin %i wrong-tag",q2Bin);
+  string confString  = "effKDEun_"+shortString+Form((doMirror?"_kn%i_%i_%i_%i":"_NoMirr_kn%i_%i_%i_%i"),kernel,xbins,ybins,zbins);
   int confIndex = (tagFlag?q2Bin:q2Bin+nBins);
 
   TH3D* denHist = new TH3D("denHist","denHist",xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
@@ -67,17 +74,17 @@ void mergeParSub_customKDE_uniformBin(int q2Bin, bool tagFlag, int xbins, int yb
 
   // import partial histogram
   RooArgSet vars;
+  string filename;
   for (int ndiv=0; ndiv<divx*divy*divz; ++ndiv) {
-    TFile* fin = TFile::Open( ( "effKDE_"+shortString+Form("_k%i_%i_%i_%i_%i-frac-%i-%i-%i.root",kernel,xbins,ybins,zbins,ndiv,divx,divy,divz)).c_str() );
-    // for wrongly ordered file names
-    // TFile* fin = TFile::Open( ( "effKDE_"+shortString+Form("_k%i_%i_%i_%i_%i-frac-%i-%i-%i.root",kernel,xbins,ybins,zbins,divx,divy,divz,ndiv)).c_str() );
+    filename = confString+Form("_%i-frac-%i-%i-%i.root",ndiv,divx,divy,divz);
+    TFile* fin = TFile::Open( filename.c_str() );
     if ( !fin || !fin->IsOpen() ) {
-      cout<<"File not found: effKDE_"<<shortString<<Form("_k%i_%i_%i_%i_%i-frac-%i-%i-%i.root",kernel,xbins,ybins,zbins,ndiv,divx,divy,divz)<<endl;
+      cout<<"File not found: "<<filename<<endl;
       return;
     }
     RooWorkspace* wsp = (RooWorkspace*)fin->Get("ws");
     if ( !wsp || wsp->IsZombie() ) {
-      cout<<"Workspace not found in file: effKDE_"<<shortString<<Form("_k%i_%i_%i_%i_%i-frac-%i-%i-%i.root",kernel,xbins,ybins,zbins,ndiv,divx,divy,divz)<<endl;
+      cout<<"Workspace not found in file: "<<filename<<endl;
       return;
     }
     denHist->Add((TH3D*)wsp->obj(Form("denHist_%i" ,ndiv)));
@@ -85,12 +92,20 @@ void mergeParSub_customKDE_uniformBin(int q2Bin, bool tagFlag, int xbins, int yb
     if (vars.getSize()<3) vars = RooArgSet(*wsp->var("ctK"),*wsp->var("ctL"),*wsp->var("phi"));
   }
 
+  // check histograms
+  double minDen = denHist->GetMinimum();
+  double minNum = numHist->GetMinimum();
+  if (minDen<=0 || minNum<=0) {
+    cout<<"Histogram not entirely filled, abort!"<<endl;
+    return;
+  }
+
   // save histograms to file
   RooWorkspace *wsp_out = new RooWorkspace("ws","Workspace with efficiency parameterisation");
   wsp_out->import( *denHist );
   wsp_out->import( *numHist );
   if (vars.getSize()>0) wsp_out->import( vars, Silence() );
-  wsp_out->writeToFile( ( "effKDE_"+shortString+Form("_k%i_%i_%i_%i.root",kernel,xbins,ybins,zbins)).c_str() );
+  wsp_out->writeToFile( (confString+".root").c_str() );
 
   if (plot) {
     // Plot 1D slices of the efficiency function and binned efficiency
@@ -201,9 +216,12 @@ void mergeParSub_customKDE_uniformBin(int q2Bin, bool tagFlag, int xbins, int yb
 	cz1[confIndex]->cd(5*j+i+1)->Update();
       }	
 
-    cx1[confIndex]->SaveAs( ("effKDE_"+shortString+Form("_k%i_%i_%i_%i_CTKslices_dp%i.pdf",kernel,xbins,ybins,zbins,(int)(border*200))).c_str() );
-    cy1[confIndex]->SaveAs( ("effKDE_"+shortString+Form("_k%i_%i_%i_%i_CTLslices_dp%i.pdf",kernel,xbins,ybins,zbins,(int)(border*200))).c_str() );
-    cz1[confIndex]->SaveAs( ("effKDE_"+shortString+Form("_k%i_%i_%i_%i_PHIslices_dp%i.pdf",kernel,xbins,ybins,zbins,(int)(border*200))).c_str() );
+    cx1[confIndex]->SaveAs( (confString+Form("_CTKslices_dp%i.pdf",(int)(border*200))).c_str() );
+    cy1[confIndex]->SaveAs( (confString+Form("_CTLslices_dp%i.pdf",(int)(border*200))).c_str() );
+    cz1[confIndex]->SaveAs( (confString+Form("_PHIslices_dp%i.pdf",(int)(border*200))).c_str() );
   }
+
+  // Remind user to delete partial files
+  cout<<"Please, remove partial files running:\nrm "<<confString<<Form("_*-frac-%i-%i-%i.root",divx,divy,divz)<<endl<<endl;
   
 }

@@ -18,7 +18,7 @@ void composeEff_customKDE_uniformBin(int q2Bin, bool tagFlag, int xbins, int ybi
 
 void fillHists(TH3D* denHist, TH3D* numHist, RooDataSet* data, RooDataSet* numData, int nev);
 
-void composeEff_customKDE_uniform(int q2Bin, int tagFlag, int kernel = 1000, int xbins=25, int ybins = 0, int zbins = 0, bool plot = true)
+void composeEff_customKDE_uniform(int q2Bin, int tagFlag, int kernel = 100, int xbins=50, int ybins = 0, int zbins = 0, bool plot = true)
 {
   // q2-bin format: [0-8] for one bin, [-1] for each bin recursively
   // tag format:    [1] correctly-tagged. [0] mistagged, [2] each tag, recursively

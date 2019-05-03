@@ -62,6 +62,7 @@ void mergeParSub_rooKeysBin(int q2Bin, bool tagFlag, int xbins, int ybins, int z
 
   string shortString = Form(tagFlag?"b%ict":"b%iwt",q2Bin);
   string longString  = Form(tagFlag?"q2 bin %i correct-tag":"q2 bin %i wrong-tag",q2Bin);
+  string confString  = "effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i",width,xbins,ybins,zbins);
   int confIndex = (tagFlag?q2Bin:q2Bin+nBins);
 
   TH3D* denHist = new TH3D("denHist","denHist",xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
@@ -71,33 +72,38 @@ void mergeParSub_rooKeysBin(int q2Bin, bool tagFlag, int xbins, int ybins, int z
 
   // import partial histogram
   RooArgSet vars;
-  // for (int ndiv=0; ndiv<totdiv; ++ndiv) { DEBUG: testing partial file
-  for (int ndiv=0; ndiv<164; ++ndiv) {
-    TFile* fin = TFile::Open( ( "effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i_%i-frac-%i.root",width,xbins,ybins,zbins,ndiv,totdiv)).c_str() );
+  string filename;
+  for (int ndiv=0; ndiv<totdiv; ++ndiv) {
+    filename = confString+Form("_%i-frac-%i.root",ndiv,totdiv);
+    TFile* fin = TFile::Open( filename.c_str() );
     if ( !fin || !fin->IsOpen() ) {
-      cout<<"File not found: effKDE_"<<shortString<<Form("_rooKeys_mw%.2f_%i_%i_%i_%i-frac-%i.root",width,xbins,ybins,zbins,ndiv,totdiv)<<endl;
+      cout<<"File not found: "<<filename<<endl;
       return;
     }
     RooWorkspace* wsp = (RooWorkspace*)fin->Get("ws");
     if ( !wsp || wsp->IsZombie() ) {
-      cout<<"Workspace not found in file: effKDE_"<<shortString<<Form("_rooKeys_mw%.2f_%i_%i_%i_%i-frac-%i.root",width,xbins,ybins,zbins,ndiv,totdiv)<<endl;
+      cout<<"Workspace not found in file: "<<filename<<endl;
       return;
     }
-    denHist->Add((TH3D*)wsp->obj("denHistb3wt__ctK_ctL_phi"));
-    numHist->Add((TH3D*)wsp->obj("numHistb3wt__ctK_ctL_phi"));
-    // denHist->Add((TH3D*)wsp->obj(Form("denHist_%i" ,ndiv)));
-    // numHist->Add((TH3D*)wsp->obj(Form("numHist_%i" ,ndiv)));
+    denHist->Add((TH3D*)wsp->obj(("denHist"+shortString+"__ctK_ctL_phi").c_str()));
+    numHist->Add((TH3D*)wsp->obj(("numHist"+shortString+"__ctK_ctL_phi").c_str()));
     if (vars.getSize()<3) vars = RooArgSet(*wsp->var("ctK"),*wsp->var("ctL"),*wsp->var("phi"));
   }
-  denHist->Scale(13068639.0/denHist->Integral()); // DEBUG manual insertion of global efficiency
-  numHist->Scale(   41359.0/numHist->Integral());
+
+  // check histograms
+  double minDen = denHist->GetMinimum();
+  double minNum = numHist->GetMinimum();
+  if (minDen<=0 || minNum<=0) {
+    cout<<"Histogram not entirely filled, abort!"<<endl;
+    return;
+  }
 
   // save histograms to file
   RooWorkspace *wsp_out = new RooWorkspace("ws","Workspace with efficiency parameterisation");
   wsp_out->import( *denHist );
   wsp_out->import( *numHist );
   if (vars.getSize()>0) wsp_out->import( vars, Silence() );
-  wsp_out->writeToFile( ( "effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i.root",width,xbins,ybins,zbins)).c_str() );
+  wsp_out->writeToFile( (confString+".root").c_str() );
 
   if (plot) {
     // Plot 1D slices of the efficiency function and binned efficiency
@@ -208,9 +214,12 @@ void mergeParSub_rooKeysBin(int q2Bin, bool tagFlag, int xbins, int ybins, int z
 	cz1[confIndex]->cd(5*j+i+1)->Update();
       }	
 
-    cx1[confIndex]->SaveAs( ("effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i_CTKslices_dp%i.pdf",width,xbins,ybins,zbins,(int)(border*200))).c_str() );
-    cy1[confIndex]->SaveAs( ("effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i_CTLslices_dp%i.pdf",width,xbins,ybins,zbins,(int)(border*200))).c_str() );
-    cz1[confIndex]->SaveAs( ("effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i_PHIslices_dp%i.pdf",width,xbins,ybins,zbins,(int)(border*200))).c_str() );
+    cx1[confIndex]->SaveAs( (confString+Form("_CTKslices_dp%i.pdf",(int)(border*200))).c_str() );
+    cy1[confIndex]->SaveAs( (confString+Form("_CTLslices_dp%i.pdf",(int)(border*200))).c_str() );
+    cz1[confIndex]->SaveAs( (confString+Form("_PHIslices_dp%i.pdf",(int)(border*200))).c_str() );
   }
+  
+  // Remind user to delete partial files
+  cout<<"Please, remove partial files running:\nrm "<<confString<<Form("_*-frac-%i.root",totdiv)<<endl<<endl;
   
 }

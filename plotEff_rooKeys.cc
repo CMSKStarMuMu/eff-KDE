@@ -61,6 +61,7 @@ void plotEff_rooKeysBin(int q2Bin, bool tagFlag, int xbins, int ybins, int zbins
 
   string shortString = Form(tagFlag?"b%ict":"b%iwt",q2Bin);
   string longString  = Form(tagFlag?"q2 bin %i correct-tag":"q2 bin %i wrong-tag",q2Bin);
+  string confString  = "effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i",width,xbins,ybins,zbins);
   int confIndex = (tagFlag?q2Bin:q2Bin+nBins);
 
   // Load datasets
@@ -82,20 +83,21 @@ void plotEff_rooKeysBin(int q2Bin, bool tagFlag, int xbins, int ybins, int zbins
   RooArgList vars (* ctK,* ctL,* phi);
 
   // open file with efficiency and import efficiency function
-  TFile* fin = new TFile( ( "effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i.root",width,xbins,ybins,zbins)).c_str(), "READ" );
+  string filename = confString+".root";
+  TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
-    cout<<"File not found: effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i.root",width,xbins,ybins,zbins)<<endl;
+    cout<<"File not found: "<<filename<<endl;
     return;
   }
   RooWorkspace* ws = (RooWorkspace*)fin->Get("ws");
   if ( !ws || ws->IsZombie() ) {
-    cout<<"Workspace not found in file: effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i.root",width,xbins,ybins,zbins)<<endl;
+    cout<<"Workspace not found in file: "<<filename<<endl;
     return;
   } 
   TH3D* denHist = (TH3D*)ws->obj("denHist");
   TH3D* numHist = (TH3D*)ws->obj("numHist");
   if ( !denHist || !numHist || denHist->IsZombie() || numHist->IsZombie() ) {
-    cout<<"Efficiency histograms not found in file: effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i.root",width,xbins,ybins,zbins)<<endl;
+    cout<<"Efficiency histograms not found in file: "<<filename<<endl;
     return;
   } 
   TH3D* effHist = new TH3D(*numHist);
@@ -131,7 +133,7 @@ void plotEff_rooKeysBin(int q2Bin, bool tagFlag, int xbins, int ybins, int zbins
   h3_y->Draw();
   c1[confIndex]->cd(3);
   h3_z->Draw();
-  c1[confIndex]->SaveAs( ("effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i_1DProj.pdf",width,xbins,ybins,zbins)).c_str() );
+  c1[confIndex]->SaveAs( (confString+"_1DProj.pdf").c_str() );
 
   // 2D projections
   c3[confIndex] = new TCanvas(Form("c3-%i",confIndex),("Efficiency 2D projections - "+longString).c_str(),1800,800);
@@ -154,7 +156,7 @@ void plotEff_rooKeysBin(int q2Bin, bool tagFlag, int xbins, int ybins, int zbins
   h3_xz->Draw("SURF3");
   c3[confIndex]->cd(3);
   h3_yz->Draw("SURF3");
-  c3[confIndex]->SaveAs( ("effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i_2DProj.pdf",width,xbins,ybins,zbins)).c_str() );
+  c3[confIndex]->SaveAs( (confString+"_2DProj.pdf").c_str() );
 
   // create the weighted dataset for GEN events
   RooAbsReal* effVal = (RooAbsReal*)data->addColumn(*eff);
@@ -196,7 +198,7 @@ void plotEff_rooKeysBin(int q2Bin, bool tagFlag, int xbins, int ybins, int zbins
   zframe->Draw();
   leg->Draw("same");
 
-  c[confIndex]->SaveAs( ("closure_effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i.pdf",width,xbins,ybins,zbins)).c_str() );
+  c[confIndex]->SaveAs( ("closure_"+confString+".pdf").c_str() );
 
 }
 

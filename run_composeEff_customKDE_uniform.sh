@@ -10,13 +10,14 @@ pwd
 bin=${1}
 tag=${2}
 kern=${3}
-xbin=${4}
-ybin=${5}
-zbin=${6}
-ndiv=${7}
-divx=${8}
-divy=${9}
-divz=${10}
+doMi=${4}
+xbin=${5}
+ybin=${6}
+zbin=${7}
+ndiv=${8}
+divx=${9}
+divy=${10}
+divz=${11}
 
-root -q -b 'composeEff_customKDE_uniform_parSub.cc('${bin}','${tag}','${kern}','${xbin}','${ybin}','${zbin}','${ndiv}','${divx}','${divy}','${divz}')' \
-    &>logs/log_run_composeEff_customKDE_uniform_${bin}_${tag}_${kern}_${xbin}_${ybin}_${zbin}_${ndiv}_${divx}_${divy}_${divz}.out
+root -q -b 'composeEff_customKDE_uniform_parSub.cc('${bin}','${tag}','${kern}','${doMi}','${xbin}','${ybin}','${zbin}','${ndiv}','${divx}','${divy}','${divz}')' \
+    &>logs/log_run_composeEff_customKDE_uniform_${bin}_${tag}_${kern}_${doMi}_${xbin}_${ybin}_${zbin}_${ndiv}_${divx}_${divy}_${divz}.out

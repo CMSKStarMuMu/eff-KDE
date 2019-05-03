@@ -11,13 +11,13 @@ using namespace std;
 static const int nBins = 9;
 float binBorders [nBins+1] = { 1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16, 19};
 
-void plotEff_customKDE_uniformBin(int q2Bin, bool tagFlag, int kernel, int xbins, int ybins, int zbins);
+void plotEff_customKDE_uniformBin(int q2Bin, bool tagFlag, int kernel, int xbins, int ybins, int zbins, bool doMirror);
 
 TCanvas* c  [2*nBins];
 TCanvas* c1 [2*nBins];
 TCanvas* c3 [2*nBins];
 
-void plotEff_customKDE_uniform(int q2Bin, int tagFlag, int kernel, int xbins=25, int ybins = 0, int zbins = 0)
+void plotEff_customKDE_uniform(int q2Bin, int tagFlag, int kernel = 1000, int doMirror = 1, int xbins=25, int ybins = 0, int zbins = 0)
 {
   // q2-bin format: [0-8] for one bin, [-1] for each bin recursively
   // tag format:    [1] correctly-tagged. [0] mistagged, [2] each tag, recursively
@@ -26,15 +26,17 @@ void plotEff_customKDE_uniform(int q2Bin, int tagFlag, int kernel, int xbins=25,
   if ( zbins<1 ) zbins = xbins;
   if ( xbins<1 ) return;
 
+  if ( doMirror<0 || doMirror>1 ) return;
+
   if ( q2Bin > -1 && q2Bin < nBins ) {
     if (tagFlag < 2 && tagFlag > -1) {
       cout<<"Plotting efficiency for q2 bin "<<q2Bin<<(tagFlag==1?" correctly":" wrongly")<<" tagged events"<<endl;
-      plotEff_customKDE_uniformBin(q2Bin, (tagFlag==1), kernel, xbins, ybins, zbins);
+      plotEff_customKDE_uniformBin(q2Bin, (tagFlag==1), kernel, xbins, ybins, zbins, (doMirror==1));
     }
     if (tagFlag == 2) {
       cout<<"Plotting efficiency for q2 bin "<<q2Bin<<" correctly and wrongly tagged events"<<endl;
-      plotEff_customKDE_uniformBin(q2Bin, true,  kernel, xbins, ybins, zbins);
-      plotEff_customKDE_uniformBin(q2Bin, false, kernel, xbins, ybins, zbins);
+      plotEff_customKDE_uniformBin(q2Bin, true,  kernel, xbins, ybins, zbins, (doMirror==1));
+      plotEff_customKDE_uniformBin(q2Bin, false, kernel, xbins, ybins, zbins, (doMirror==1));
     }
   }
   if (q2Bin == -1) {
@@ -42,23 +44,24 @@ void plotEff_customKDE_uniform(int q2Bin, int tagFlag, int kernel, int xbins=25,
     for (q2Bin=0; q2Bin<nBins; ++q2Bin) {
       if (tagFlag < 2 && tagFlag > -1) {
 	cout<<endl<<"q2 bin "<<q2Bin<<(tagFlag==1?" correctly":" wrongly")<<" tagged events"<<endl;
-	plotEff_customKDE_uniformBin(q2Bin, (tagFlag==1), kernel, xbins, ybins, zbins);
+	plotEff_customKDE_uniformBin(q2Bin, (tagFlag==1), kernel, xbins, ybins, zbins, (doMirror==1));
       }
       if (tagFlag == 2) {
 	cout<<endl<<"q2 bin "<<q2Bin<<" correctly and wrongly tagged events"<<endl;
-	plotEff_customKDE_uniformBin(q2Bin, true,  kernel, xbins, ybins, zbins);
-	plotEff_customKDE_uniformBin(q2Bin, false, kernel, xbins, ybins, zbins);
+	plotEff_customKDE_uniformBin(q2Bin, true,  kernel, xbins, ybins, zbins, (doMirror==1));
+	plotEff_customKDE_uniformBin(q2Bin, false, kernel, xbins, ybins, zbins, (doMirror==1));
       }
     }
   }
   
 }
 
-void plotEff_customKDE_uniformBin(int q2Bin, bool tagFlag, int kernel, int xbins, int ybins, int zbins)
+void plotEff_customKDE_uniformBin(int q2Bin, bool tagFlag, int kernel, int xbins, int ybins, int zbins, bool doMirror)
 {
 
   string shortString = Form(tagFlag?"b%ict":"b%iwt",q2Bin);
   string longString  = Form(tagFlag?"q2 bin %i correct-tag":"q2 bin %i wrong-tag",q2Bin);
+  string confString  = "effKDEun_"+shortString+Form((doMirror?"_kn%i_%i_%i_%i":"_NoMirr_kn%i_%i_%i_%i"),kernel,xbins,ybins,zbins);
   int confIndex = (tagFlag?q2Bin:q2Bin+nBins);
 
   // Load datasets
@@ -80,20 +83,20 @@ void plotEff_customKDE_uniformBin(int q2Bin, bool tagFlag, int kernel, int xbins
   RooArgList vars (* ctK,* ctL,* phi);
 
   // open file with efficiency and import efficiency function
-  TFile* fin = new TFile( ( "effKDE_"+shortString+Form("_k%i_%i_%i_%i.root",kernel,xbins,ybins,zbins)).c_str(), "READ" );
+  TFile* fin = new TFile( (confString+".root").c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
-    cout<<"File not found: effKDE_"+shortString+Form("_k%i_%i_%i_%i.root",kernel,xbins,ybins,zbins)<<endl;
+    cout<<"File not found: "<<confString<<".root"<<endl;
     return;
   }
   RooWorkspace* ws = (RooWorkspace*)fin->Get("ws");
   if ( !ws || ws->IsZombie() ) {
-    cout<<"Workspace not found in file: effKDE_"+shortString+Form("_k%i_%i_%i_%i.root",kernel,xbins,ybins,zbins)<<endl;
+    cout<<"Workspace not found in file: "<<confString<<".root"<<endl;
     return;
   } 
   TH3D* denHist = (TH3D*)ws->obj("denHist");
   TH3D* numHist = (TH3D*)ws->obj("numHist");
   if ( !denHist || !numHist || denHist->IsZombie() || numHist->IsZombie() ) {
-    cout<<"Efficiency histograms not found in file: effKDE_"+shortString+Form("_k%i_%i_%i_%i.root",kernel,xbins,ybins,zbins)<<endl;
+    cout<<"Efficiency histograms not found in file: "<<confString<<".root"<<endl;
     return;
   } 
   TH3D* effHist = new TH3D(*numHist);
@@ -129,7 +132,7 @@ void plotEff_customKDE_uniformBin(int q2Bin, bool tagFlag, int kernel, int xbins
   h3_y->Draw();
   c1[confIndex]->cd(3);
   h3_z->Draw();
-  c1[confIndex]->SaveAs( ("effKDE_"+shortString+Form("_k%i_%i_%i_%i_1DProj.pdf",kernel,xbins,ybins,zbins)).c_str() );
+  c1[confIndex]->SaveAs( (confString+"_1DProj.pdf").c_str() );
 
   // 2D projections
   c3[confIndex] = new TCanvas(Form("c3-%i",confIndex),("Efficiency 2D projections - "+longString).c_str(),1800,800);
@@ -152,7 +155,7 @@ void plotEff_customKDE_uniformBin(int q2Bin, bool tagFlag, int kernel, int xbins
   h3_xz->Draw("SURF3");
   c3[confIndex]->cd(3);
   h3_yz->Draw("SURF3");
-  c3[confIndex]->SaveAs( ("effKDE_"+shortString+Form("_k%i_%i_%i_%i_2DProj.pdf",kernel,xbins,ybins,zbins)).c_str() );
+  c3[confIndex]->SaveAs( (confString+"_2DProj.pdf").c_str() );
 
   // create the weighted dataset for GEN events
   RooAbsReal* effVal = (RooAbsReal*)data->addColumn(*eff);
@@ -194,7 +197,7 @@ void plotEff_customKDE_uniformBin(int q2Bin, bool tagFlag, int kernel, int xbins
   zframe->Draw();
   leg->Draw("same");
 
-  c[confIndex]->SaveAs( ("closure_effKDE_"+shortString+Form("_k%i_%i_%i_%i.pdf",kernel,xbins,ybins,zbins)).c_str() );
+  c[confIndex]->SaveAs( ("closure_"+confString+".pdf").c_str() );
 
 }
 

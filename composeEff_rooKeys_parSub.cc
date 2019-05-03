@@ -59,7 +59,6 @@ void composeEff_rooKeys_parSubBin(int q2Bin, bool tagFlag, int xbins, int ybins,
 
   string shortString = Form(tagFlag?"b%ict":"b%iwt",q2Bin);
   string longString  = Form(tagFlag?"q2 bin %i correct-tag":"q2 bin %i wrong-tag",q2Bin);
-  int confIndex = (tagFlag?q2Bin:q2Bin+nBins);
 
   // Load datasets
   TFile* fin = TFile::Open( ("effDataset_"+shortString+".root").c_str() );
