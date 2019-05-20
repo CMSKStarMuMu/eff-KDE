@@ -1,15 +1,16 @@
 Executable  = run_composeEff_rooKeys.sh
-bin         = 0
-tag         = 0
+bin         = ( $(ProcId) / 100 ) % 900
+indx        = $(ProcId) / 900
+par	    = ( $(ProcId) / 50 ) % 2
+wid	    = 0.3
 xbin        = 50
 ybin        = 50
 zbin        = 50
-wid	    = 0.8
-ndiv        = $(ProcId)
+ndiv        = $(ProcId) % 50
 totdiv      = 50
-Arguments   = $INT(bin) $INT(tag) $INT(xbin) $INT(ybin) $INT(zbin) $(wid) $INT(ndiv) $INT(totdiv)
-Log         = logs/sub_$(ClusterId).log
-Output      = logs/log_sub_composeEff_rooKeys_$INT(bin)_$INT(tag)_$INT(xbin)_$INT(ybin)_$INT(zbin)_$(wid)_$INT(ndiv)_$INT(totdiv).log
-Error       = logs/log_sub_composeEff_rooKeys_$INT(bin)_$INT(tag)_$INT(xbin)_$INT(ybin)_$INT(zbin)_$(wid)_$INT(ndiv)_$INT(totdiv).log
+Arguments   = $INT(bin) $INT(indx) $INT(par) $(wid) $INT(xbin) $INT(ybin) $INT(zbin) $INT(ndiv) $INT(totdiv)
+Log         = logs_parSub/sub_$(ClusterId).log
+Output      = logs_parSub/composeEff_rooKeys_$INT(bin)_$INT(indx)_$INT(par)_$(wid)_$INT(xbin)_$INT(ybin)_$INT(zbin)_$INT(ndiv)_$INT(totdiv).out
+Error       = logs_parSub/composeEff_rooKeys_$INT(bin)_$INT(indx)_$INT(par)_$(wid)_$INT(xbin)_$INT(ybin)_$INT(zbin)_$INT(ndiv)_$INT(totdiv).out
 +JobFlavour = "workday"
-Queue 50
+Queue 5400

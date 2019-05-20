@@ -1,20 +1,28 @@
 #!/bin/bash
 
-cd /afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/CMSSW_10_4_0/src
+export HOME=/eos/user/a/aboletti/BdToKstarMuMu/efficiency
+export CMSSWDIR=/eos/user/a/aboletti/BdToKstarMuMu/CMSSW_10_4_0/src
+export WORKDIR=$PWD
+
+cd $CMSSWDIR
 source  /cvmfs/cms.cern.ch/cmsset_default.sh
 eval `scram runtime -sh`
 
-cd /afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/eff-KDE/
-pwd
+cd $WORKDIR
 
 bin=${1}
-tag=${2}
-xbin=${3}
-ybin=${4}
-zbin=${5}
-wid=${6}
-ndiv=${7}
-totdiv=${8}
+indx=${2}
+par=${3}
+wid=${4}
+xbin=${5}
+ybin=${6}
+zbin=${7}
+ndiv=${8}
+totdiv=${9}
 
-root -q -b 'composeEff_rooKeys_parSub.cc('${bin}','${tag}','${xbin}','${ybin}','${zbin}','${wid}','${ndiv}','${totdiv}')' \
-    &>logs/log_run_composeEff_rooKeys_${bin}_${tag}_${xbin}_${ybin}_${zbin}_${wid}_${ndiv}_${totdiv}.out
+cp $HOME/effDataset_b${bin}.root .
+cp $HOME/composeEff_rooKeys_parSub.cc .
+
+root -l -q -b 'composeEff_rooKeys_parSub.cc('${bin}','${indx}','${par}','${wid}','${xbin}','${ybin}','${zbin}','${ndiv}','${totdiv}')'
+
+cp KDEhist* $HOME/

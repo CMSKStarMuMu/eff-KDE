@@ -8,121 +8,155 @@
 using namespace RooFit ;
 using namespace std ;
 
+bool safeFilling = false;
+
 static const int nBins = 9;
 
-TCanvas* cx1 [2*nBins];
-TCanvas* cy1 [2*nBins];
-TCanvas* cz1 [2*nBins];
+TCanvas* csx [12*nBins];
+TCanvas* csy [12*nBins];
+TCanvas* csz [12*nBins];
+TCanvas* cp1 [12*nBins];
+TCanvas* cp2 [12*nBins];
 
-void mergeParSub_rooKeysBin(int q2Bin, bool tagFlag, int xbins, int ybins, int zbins, float width, int totdiv, bool plot);
+// q2-bin format: [0-8] for one bin
+//                [-1] for each bin recursively
+// effIndx format: [0] GEN no-filter
+//                 [1] GEN filtered
+//                 [2] GEN filtered from full MC sample
+//                 [3] correct-tag RECO candidates
+//                 [4] wrong-tag RECO candidates
+//                 [5] RECO candidates
+//                 [-1] for each effIndx recursively
+// parity format: [0] even
+//                [1] odd
+//                [-1] for each parity recursively
 
-void mergeParSub_rooKeys(int q2Bin, int tagFlag, int xbins=25, int ybins = 0, int zbins = 0, float width = 1, int totdiv = 1, bool plot = true)
+void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float width, int xbins, int ybins, int zbins, int totdiv, bool plot)
 {
-  // q2-bin format: [0-8] for one bin, [-1] for each bin recursively
-  // tag format:    [1] correctly-tagged. [0] mistagged, [2] each tag, recursively
+  string shortString = Form("b%ie%ip%i",q2Bin,effIndx,parity);
+  cout<<"Conf: "<<shortString<<endl;
 
-  if ( ybins<1 ) ybins = xbins;
-  if ( zbins<1 ) zbins = xbins;
-  if ( xbins<1 ) return;
-
-  if ( width <= 0 ) return;
-
-  if ( totdiv <= 0 ) return;
-
-  if ( q2Bin > -1 && q2Bin < nBins ) {
-    if (tagFlag < 2 && tagFlag > -1) {
-      cout<<"Computing efficiency for q2 bin "<<q2Bin<<(tagFlag==1?" correctly":" wrongly")<<" tagged events"<<endl;
-      mergeParSub_rooKeysBin(q2Bin, (tagFlag==1), xbins, ybins, zbins, width, totdiv, plot);
-    }
-    if (tagFlag == 2) {
-      cout<<"Computing efficiency for q2 bin "<<q2Bin<<" correctly and wrongly tagged events"<<endl;
-      mergeParSub_rooKeysBin(q2Bin, true,  xbins, ybins, zbins, width, totdiv, plot);
-      mergeParSub_rooKeysBin(q2Bin, false, xbins, ybins, zbins, width, totdiv, plot);
-    }
+  string datasetString = "data_";
+  switch (effIndx) {
+  case 0:  datasetString = datasetString+"genDen"; break;
+  case 1:  datasetString = datasetString+"genNum"; break;
+  case 2:  datasetString = datasetString+"den"   ; break;
+  case 3:  datasetString = datasetString+"ctRECO"; break;
+  default: datasetString = datasetString+"wtRECO";
   }
-  if (q2Bin == -1) {
-    cout<<"Computing efficiency for all q2 bins"<<endl;
-    for (q2Bin=0; q2Bin<nBins; ++q2Bin) {
-      if (tagFlag < 2 && tagFlag > -1) {
-	cout<<endl<<"q2 bin "<<q2Bin<<(tagFlag==1?" correctly":" wrongly")<<" tagged events"<<endl;
-	mergeParSub_rooKeysBin(q2Bin, (tagFlag==1), xbins, ybins, zbins, width, totdiv, plot);
-      }
-      if (tagFlag == 2) {
-	cout<<endl<<"q2 bin "<<q2Bin<<" correctly and wrongly tagged events"<<endl;
-	mergeParSub_rooKeysBin(q2Bin, true,  xbins, ybins, zbins, width, totdiv, plot);
-	mergeParSub_rooKeysBin(q2Bin, false, xbins, ybins, zbins, width, totdiv, plot);
-      }
-    }
+  datasetString = datasetString + Form((parity==0?"_ev_b%i":"_od_b%i"),q2Bin);
+
+  string longString = Form(parity==0?" distribution - q2 bin %i (even)":" distribution - q2 bin %i (odd)",q2Bin);
+  switch (effIndx) {
+  case 0: longString = "GEN denominator"     +longString; break;
+  case 1: longString = "GEN numerator"       +longString; break;
+  case 2: longString = "Full denominator"    +longString; break;
+  case 3: longString = "Selected correct-tag"+longString; break;
+  case 4: longString = "Selected wrong-tag"  +longString; break;
+  case 5: longString = "Selected"            +longString;
   }
-  
-}
 
-void mergeParSub_rooKeysBin(int q2Bin, bool tagFlag, int xbins, int ybins, int zbins, float width, int totdiv, bool plot)
-{
+  string confString = Form("/eos/user/a/aboletti/BdToKstarMuMu/efficiency/KDEhist_%s_rooKeys_mw%.2f_%i_%i_%i",shortString.c_str(),width,xbins,ybins,zbins);
 
-  string shortString = Form(tagFlag?"b%ict":"b%iwt",q2Bin);
-  string longString  = Form(tagFlag?"q2 bin %i correct-tag":"q2 bin %i wrong-tag",q2Bin);
-  string confString  = "effKDE_"+shortString+Form("_rooKeys_mw%.2f_%i_%i_%i",width,xbins,ybins,zbins);
-  int confIndex = (tagFlag?q2Bin:q2Bin+nBins);
+  TH3D* KDEhist = new TH3D(Form("KDEhist_%s",shortString.c_str()),Form("KDEhist_%s",shortString.c_str()),xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
+  KDEhist->Sumw2();
 
-  TH3D* denHist = new TH3D("denHist","denHist",xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
-  TH3D* numHist = new TH3D("numHist","numHist",xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
-  denHist->Sumw2();
-  numHist->Sumw2();
-
-  // import partial histogram
-  RooArgSet vars;
-  string filename;
+  // import partial histograms
+  string inFileName;
+  int goodHistCnt = 0;
   for (int ndiv=0; ndiv<totdiv; ++ndiv) {
-    filename = confString+Form("_%i-frac-%i.root",ndiv,totdiv);
-    TFile* fin = TFile::Open( filename.c_str() );
+    inFileName = confString+Form("_%i-frac-%i.root",ndiv,totdiv);
+    TFile* fin = TFile::Open( inFileName.c_str() );
     if ( !fin || !fin->IsOpen() ) {
-      cout<<"File not found: "<<filename<<endl;
-      return;
+      cout<<"File not found: "<<inFileName<<endl;
+      continue;
     }
-    RooWorkspace* wsp = (RooWorkspace*)fin->Get("ws");
-    if ( !wsp || wsp->IsZombie() ) {
-      cout<<"Workspace not found in file: "<<filename<<endl;
-      return;
+    TH3D* partHist = (TH3D*)fin->Get(("KDEhist_"+shortString+"__ctK_ctL_phi").c_str());
+    if ( !partHist || partHist->IsZombie() ) {
+      cout<<"Histogram not found in file: "<<inFileName<<endl;
+      continue;
     }
-    denHist->Add((TH3D*)wsp->obj(("denHist"+shortString+"__ctK_ctL_phi").c_str()));
-    numHist->Add((TH3D*)wsp->obj(("numHist"+shortString+"__ctK_ctL_phi").c_str()));
-    if (vars.getSize()<3) vars = RooArgSet(*wsp->var("ctK"),*wsp->var("ctL"),*wsp->var("phi"));
+    KDEhist->Add(partHist);
+    ++goodHistCnt;
+    delete partHist;
+    fin->Close();
+    delete fin;
+  }
+  if ( goodHistCnt!=totdiv ) {
+    cout<<"Warning! Not all partial histograms found: "<<goodHistCnt<<" of "<<totdiv<<endl;
+    if (safeFilling) return;
   }
 
-  // check histograms
-  double minDen = denHist->GetMinimum();
-  double minNum = numHist->GetMinimum();
-  if (minDen<=0 || minNum<=0) {
-    cout<<"Histogram not entirely filled, abort!"<<endl;
+  // check histogram
+  double minVal = KDEhist->GetMinimum();
+  if ( minVal<=0 ) {
+    cout<<"Histogram has empty bins, this is bad. Abort!"<<endl;
     return;
   }
 
-  // save histograms to file
-  RooWorkspace *wsp_out = new RooWorkspace("ws","Workspace with efficiency parameterisation");
-  wsp_out->import( *denHist );
-  wsp_out->import( *numHist );
-  if (vars.getSize()>0) wsp_out->import( vars, Silence() );
-  wsp_out->writeToFile( (confString+".root").c_str() );
+  // save histogram in map to file
+  TFile* fout = TFile::Open( Form((parity==0?"KDEhist_b%i_ev.root":"KDEhist_b%i_od.root"),q2Bin), "UPDATE" );
+  KDEhist->Write( Form("hist_indx%i_%1.2f_%i_%i_%i",effIndx,width,xbins,ybins,zbins), TObject::kWriteDelete );
+  fout->Close();
 
   if (plot) {
-    // Plot 1D slices of the efficiency function and binned efficiency
-    vector <TEfficiency*> effHistsX; 
-    vector <TEfficiency*> effHistsY;
-    vector <TEfficiency*> effHistsZ;
-    cx1[confIndex] = new TCanvas(("cx1"+shortString).c_str(),("KDE efficiency - "+longString+" - cos(theta_k) slices").c_str(),1500,1500) ;
-    cy1[confIndex] = new TCanvas(("cy1"+shortString).c_str(),("KDE efficiency - "+longString+" - cos(theta_l) slices").c_str(),1500,1500) ;
-    cz1[confIndex] = new TCanvas(("cz1"+shortString).c_str(),("KDE efficiency - "+longString+" - phi slices"         ).c_str(),1500,1500) ;
-    cx1[confIndex]->Divide(5,5);
-    cy1[confIndex]->Divide(5,5);
-    cz1[confIndex]->Divide(5,5);
+    gStyle->SetOptStat(0);
+
+    int confIndex = 6*nBins*parity + nBins*effIndx + q2Bin;
+
+    // Load variables and dataset
+    string filename = Form("effDataset_b%i.root",q2Bin);
+    TFile* fin_data = TFile::Open( filename.c_str() );
+    if ( !fin_data || !fin_data->IsOpen() ) {
+      cout<<"File not found: "<<filename<<endl;
+      return;
+    }
+    RooWorkspace* wsp_data = (RooWorkspace*)fin_data->Get(Form("ws_b%i",q2Bin));
+    if ( !wsp_data || wsp_data->IsZombie() ) {
+      cout<<"Workspace not found in file: "<<filename<<endl;
+      return;
+    }
+    RooRealVar* ctK = wsp_data->var("ctK");
+    RooRealVar* ctL = wsp_data->var("ctL");
+    RooRealVar* phi = wsp_data->var("phi");
+    if ( !ctK || !ctL || !phi || ctK->IsZombie() || ctL->IsZombie() || phi->IsZombie() ) {
+      cout<<"Variables not found in file: "<<filename<<endl;
+      return;
+    }
+    RooDataSet* data = (RooDataSet*)wsp_data->data(datasetString.c_str());
+    if ( !data || data->IsZombie() ) {
+      cout<<"Dataset "<<datasetString<<" not found in file: "<<filename<<endl;
+      return;
+    }
+    if ( effIndx==5 ) {
+      RooDataSet* extradata = (RooDataSet*)wsp_data->data(Form((parity==0?"data_ctRECO_ev_b%i":"data_ctRECO_od_b%i"),q2Bin));
+      if ( !extradata || extradata->IsZombie() ) {
+	cout<<"Dataset data_ctRECO_"<<(parity==0?"ev":"od")<<"_b"<<q2Bin<<" not found in file: "<<filename<<endl;
+	return;
+      }
+      data->append(*extradata);
+    }
+
+    // Plot 1D slices of the KDE function and original dataset
+    vector <TH1D*> histSliceX;
+    vector <TH1D*> histSliceY;
+    vector <TH1D*> histSliceZ;
+    vector <TH1D*> distSliceX;
+    vector <TH1D*> distSliceY;
+    vector <TH1D*> distSliceZ;
+    csx[confIndex] = new TCanvas(("csx"+shortString).c_str(),(longString+" - cos(theta_k) slices").c_str(),1500,1500) ;
+    csy[confIndex] = new TCanvas(("csy"+shortString).c_str(),(longString+" - cos(theta_l) slices").c_str(),1500,1500) ;
+    csz[confIndex] = new TCanvas(("csz"+shortString).c_str(),(longString+" - phi slices").c_str(),1500,1500) ;
+    csx[confIndex]->Divide(5,5);
+    csy[confIndex]->Divide(5,5);
+    csz[confIndex]->Divide(5,5);
 
     // width of the slices in the hidden variables ("border" is half of it)
-    double border = 0.005;
-    // variables to be filled with global efficiency maximum
-    double maxEffX = 0;
-    double maxEffY = 0;
-    double maxEffZ = 0;
+    double border = 0.05;
+    // variables to be filled with global maxima
+    double maxValX = 0;
+    double maxValY = 0;
+    double maxValZ = 0;
 
     // loop over slice grid
     for (int i=0; i<5; ++i) for (int j=0; j<5; ++j) {
@@ -130,96 +164,198 @@ void mergeParSub_rooKeysBin(int q2Bin, bool tagFlag, int xbins, int ybins, int z
 	// central values and borders of the slices in the hidden variables
 	double centA = -0.8 + 1.6*i/4;
 	double centB = -0.8 + 1.6*j/4;
-	double lowA  = TMath::Max( centA - border,  1e-4-1 );
-	double lowB  = TMath::Max( centB - border,  1e-4-1 );
-	double highA = TMath::Min( centA + border, -1e-4+1 );
-	double highB = TMath::Min( centB + border, -1e-4+1 );
+	string cutX = Form("fabs(ctL-%1.1f)<%1.3f && fabs((phi/%1.6f)-%1.1f)<%1.3f",centA,border,TMath::Pi(),centB,border);
+	string cutY = Form("fabs(ctK-%1.1f)<%1.3f && fabs((phi/%1.6f)-%1.1f)<%1.3f",centA,border,TMath::Pi(),centB,border);
+	string cutZ = Form("fabs(ctK-%1.1f)<%1.3f && fabs(ctL-%1.1f)<%1.3f",centA,border,centB,border);
 
-	// slicing num and den distributions    
-	auto numProjX = numHist->ProjectionX("numProjX", 
-					     numHist->GetYaxis()->FindBin(lowA            ), numHist->GetYaxis()->FindBin(highA            ),
-					     numHist->GetZaxis()->FindBin(lowB*TMath::Pi()), numHist->GetZaxis()->FindBin(highB*TMath::Pi()),"e");
-	auto numProjY = numHist->ProjectionY("numProjY", 
-					     numHist->GetXaxis()->FindBin(lowA            ), numHist->GetXaxis()->FindBin(highA            ),
-					     numHist->GetZaxis()->FindBin(lowB*TMath::Pi()), numHist->GetZaxis()->FindBin(highB*TMath::Pi()),"e");
-	auto numProjZ = numHist->ProjectionZ("numProjZ", 
-					     numHist->GetXaxis()->FindBin(lowA            ), numHist->GetXaxis()->FindBin(highA            ),
-					     numHist->GetYaxis()->FindBin(lowB            ), numHist->GetYaxis()->FindBin(highB            ),"e");
-	auto denProjX = denHist->ProjectionX("denProjX", 
-					     denHist->GetYaxis()->FindBin(lowA            ), denHist->GetYaxis()->FindBin(highA            ),
-					     denHist->GetZaxis()->FindBin(lowB*TMath::Pi()), denHist->GetZaxis()->FindBin(highB*TMath::Pi()),"e");
-	auto denProjY = denHist->ProjectionY("denProjY", 
-					     denHist->GetXaxis()->FindBin(lowA            ), denHist->GetXaxis()->FindBin(highA            ),
-					     denHist->GetZaxis()->FindBin(lowB*TMath::Pi()), denHist->GetZaxis()->FindBin(highB*TMath::Pi()),"e");
-	auto denProjZ = denHist->ProjectionZ("denProjZ", 
-					     denHist->GetXaxis()->FindBin(lowA            ), denHist->GetXaxis()->FindBin(highA            ),
-					     denHist->GetYaxis()->FindBin(lowB            ), denHist->GetYaxis()->FindBin(highB            ),"e");
+	// slicing distribution
+	distSliceX.push_back( (TH1D*)data->reduce(RooArgSet(*ctK),cutX.c_str())
+			      ->createHistogram( Form("distSliceX_%i_%i_%s",i,j,shortString.c_str()), *ctK, Binning(20,-1,1) ) );
+	distSliceY.push_back( (TH1D*)data->reduce(RooArgSet(*ctL),cutY.c_str())
+			      ->createHistogram( Form("distSliceY_%i_%i_%s",i,j,shortString.c_str()), *ctL, Binning(20,-1,1) ) );
+	distSliceZ.push_back( (TH1D*)data->reduce(RooArgSet(*phi),cutZ.c_str())
+			      ->createHistogram( Form("distSliceZ_%i_%i_%s",i,j,shortString.c_str()), *phi, Binning(20,-TMath::Pi(),TMath::Pi()) ) );
+	distSliceX.back()->SetTitle( Form("%s - slice ctL=%1.2f phi=%1.2f;cos(#theta_{K});Events",longString.c_str(),centA,centB*TMath::Pi()) );
+	distSliceY.back()->SetTitle( Form("%s - slice ctK=%1.2f phi=%1.2f;cos(#theta_{L});Events",longString.c_str(),centA,centB*TMath::Pi()) );
+	distSliceZ.back()->SetTitle( Form("%s - slice ctK=%1.2f ctL=%1.2f;#phi;Events"           ,longString.c_str(),centA,centB) );
+	
+	// producing 1D slices of KDE description
+	histSliceX.push_back( (TH1D*)KDEhist->ProjectionX( Form("histSliceX_%i_%i_%s",i,j,shortString.c_str()),
+						    KDEhist->GetYaxis()->FindBin(centA            ), KDEhist->GetYaxis()->FindBin(centA            ),
+						    KDEhist->GetZaxis()->FindBin(centB*TMath::Pi()), KDEhist->GetZaxis()->FindBin(centB*TMath::Pi()) ) ); 
+	histSliceY.push_back( (TH1D*)KDEhist->ProjectionY( Form("histSliceY_%i_%i_%s",i,j,shortString.c_str()),
+						    KDEhist->GetXaxis()->FindBin(centA            ), KDEhist->GetXaxis()->FindBin(centA            ),
+						    KDEhist->GetZaxis()->FindBin(centB*TMath::Pi()), KDEhist->GetZaxis()->FindBin(centB*TMath::Pi()) ) );
+	histSliceZ.push_back( (TH1D*)KDEhist->ProjectionZ( Form("histSliceZ_%i_%i_%s",i,j,shortString.c_str()),
+						    KDEhist->GetXaxis()->FindBin(centA), KDEhist->GetXaxis()->FindBin(centA),
+						    KDEhist->GetYaxis()->FindBin(centB), KDEhist->GetYaxis()->FindBin(centB) ) );
 
-	// producing 1D efficiencies from the slices
-	effHistsX.push_back( new TEfficiency(*numProjX,*denProjX) );
-	effHistsX.back()->SetName( Form("effHistX_%i_%i",i,j) );
-	effHistsX.back()->SetTitle( ("Efficiency - "+longString+Form(" - slice ctL=%1.2f phi=%1.2f;cos(#theta_{K});Efficiency",centA,centB*TMath::Pi())).c_str() );
-    
-	effHistsY.push_back( new TEfficiency(*numProjY,*denProjY) );
-	effHistsY.back()->SetName( Form("effHistY_%i_%i",i,j) );
-	effHistsY.back()->SetTitle( ("Efficiency - "+longString+Form(" - slice ctK=%1.2f phi=%1.2f;cos(#theta_{L});Efficiency",centA,centB*TMath::Pi())).c_str() );
-
-	effHistsZ.push_back( new TEfficiency(*numProjZ,*denProjZ) );
-	effHistsZ.back()->SetName( Form("effHistZ_%i_%i",i,j) );
-	effHistsZ.back()->SetTitle( ("Efficiency - "+longString+Form(" - slice ctK=%1.2f ctL=%1.2f;#phi;Efficiency",centA,centB)).c_str() );
+	// scale KDE slices to match distribution density
+	histSliceX.back()->Scale( 2*border * 2*border*TMath::Pi() / KDEhist->GetYaxis()->GetBinWidth(1) / KDEhist->GetZaxis()->GetBinWidth(1) );
+	histSliceY.back()->Scale( 2*border * 2*border*TMath::Pi() / KDEhist->GetXaxis()->GetBinWidth(1) / KDEhist->GetZaxis()->GetBinWidth(1) );
+	histSliceZ.back()->Scale( 2*border * 2*border             / KDEhist->GetXaxis()->GetBinWidth(1) / KDEhist->GetYaxis()->GetBinWidth(1) );
+	histSliceX.back()->Scale( 1.0 * histSliceX.back()->GetNbinsX() / distSliceX.back()->GetNbinsX() );
+	histSliceY.back()->Scale( 1.0 * histSliceY.back()->GetNbinsX() / distSliceY.back()->GetNbinsX() );
+	histSliceZ.back()->Scale( 1.0 * histSliceZ.back()->GetNbinsX() / distSliceZ.back()->GetNbinsX() );
+	histSliceX.back()->SetLineWidth(2);
+	histSliceY.back()->SetLineWidth(2);
+	histSliceZ.back()->SetLineWidth(2);
+	histSliceX.back()->SetLineColor(kRed+1);
+	histSliceY.back()->SetLineColor(kRed+1);
+	histSliceZ.back()->SetLineColor(kRed+1);
 
 	// plot in canvas
-	cx1[confIndex]->cd(5*j+i+1);
+	csx[confIndex]->cd(5*j+i+1);
 	gPad->SetLeftMargin(0.18);
-	effHistsX.back()->Draw();
-	cx1[confIndex]->cd(5*j+i+1)->Update(); 
-	auto graphx = effHistsX.back()->GetPaintedGraph(); 
-	graphx->SetMinimum(0);
-	auto effValsX = graphx->GetY();
-	for (int iBin=0; iBin<graphx->GetN(); ++iBin) if (maxEffX<effValsX[iBin]) maxEffX = effValsX[iBin];
-	graphx->GetYaxis()->SetTitleOffset(1.7);
-	cx1[confIndex]->cd(5*j+i+1)->Update();
+	distSliceX.back()->GetYaxis()->SetTitleOffset(1.7);
+	distSliceX.back()->Draw();
+	histSliceX.back()->Draw("sameLHIST");
 
-	cy1[confIndex]->cd(5*j+i+1);
+	csy[confIndex]->cd(5*j+i+1);
 	gPad->SetLeftMargin(0.18);
-	effHistsY.back()->Draw();
-	cy1[confIndex]->cd(5*j+i+1)->Update(); 
-	auto graphy = effHistsY.back()->GetPaintedGraph(); 
-	graphy->SetMinimum(0);
-	auto effValsY = graphy->GetY();
-	for (int iBin=0; iBin<graphy->GetN(); ++iBin) if (maxEffY<effValsY[iBin]) maxEffY = effValsY[iBin];
-	graphy->GetYaxis()->SetTitleOffset(1.7);
-	cy1[confIndex]->cd(5*j+i+1)->Update();
+	distSliceY.back()->GetYaxis()->SetTitleOffset(1.7);
+	distSliceY.back()->Draw();
+	histSliceY.back()->Draw("sameLHIST");
 
-	cz1[confIndex]->cd(5*j+i+1);
+	csz[confIndex]->cd(5*j+i+1);
 	gPad->SetLeftMargin(0.18);
-	effHistsZ.back()->Draw();
-	cz1[confIndex]->cd(5*j+i+1)->Update(); 
-	auto graphz = effHistsZ.back()->GetPaintedGraph(); 
-	graphz->SetMinimum(0);
-	auto effValsZ = graphz->GetY();
-	for (int iBin=0; iBin<graphz->GetN(); ++iBin) if (maxEffZ<effValsZ[iBin]) maxEffZ = effValsZ[iBin];
-	graphz->GetYaxis()->SetTitleOffset(1.7);
-	cz1[confIndex]->cd(5*j+i+1)->Update();
+	distSliceZ.back()->GetYaxis()->SetTitleOffset(1.7);
+	distSliceZ.back()->Draw();
+	histSliceZ.back()->Draw("sameLHIST");
 
-      }    
+	// checking maximum value
+	if ( maxValX<distSliceX.back()->GetMaximum() ) maxValX = distSliceX.back()->GetMaximum();
+	if ( maxValY<distSliceY.back()->GetMaximum() ) maxValY = distSliceY.back()->GetMaximum();
+	if ( maxValZ<distSliceZ.back()->GetMaximum() ) maxValZ = distSliceZ.back()->GetMaximum();
+	if ( maxValX<histSliceX.back()->GetMaximum() ) maxValX = histSliceX.back()->GetMaximum();
+	if ( maxValY<histSliceY.back()->GetMaximum() ) maxValY = histSliceY.back()->GetMaximum();
+	if ( maxValZ<histSliceZ.back()->GetMaximum() ) maxValZ = histSliceZ.back()->GetMaximum();
+
+      }
 
     // set uniform y-axis ranges
-    for (int i=0; i<effHistsX.size(); ++i) (effHistsX[i]->GetPaintedGraph())->SetMaximum(maxEffX*1.1);
-    for (int i=0; i<effHistsY.size(); ++i) (effHistsY[i]->GetPaintedGraph())->SetMaximum(maxEffY*1.1);
-    for (int i=0; i<effHistsZ.size(); ++i) (effHistsZ[i]->GetPaintedGraph())->SetMaximum(maxEffZ*1.1);
-    for (int i=0; i<5; ++i) for (int j=0; j<5; ++j) {
-	cx1[confIndex]->cd(5*j+i+1)->Update();
-	cy1[confIndex]->cd(5*j+i+1)->Update();
-	cz1[confIndex]->cd(5*j+i+1)->Update();
-      }	
+    for (int i=0; i<distSliceX.size(); ++i) distSliceX[i]->GetYaxis()->SetRangeUser(0,maxValX*1.1);
+    for (int i=0; i<distSliceY.size(); ++i) distSliceY[i]->GetYaxis()->SetRangeUser(0,maxValY*1.1);
+    for (int i=0; i<distSliceZ.size(); ++i) distSliceZ[i]->GetYaxis()->SetRangeUser(0,maxValZ*1.1);
 
-    cx1[confIndex]->SaveAs( (confString+Form("_CTKslices_dp%i.pdf",(int)(border*200))).c_str() );
-    cy1[confIndex]->SaveAs( (confString+Form("_CTLslices_dp%i.pdf",(int)(border*200))).c_str() );
-    cz1[confIndex]->SaveAs( (confString+Form("_PHIslices_dp%i.pdf",(int)(border*200))).c_str() );
+    csx[confIndex]->SaveAs( (confString+Form("_CTKslices_dp%i.pdf",(int)(border*200))).c_str() );
+    csy[confIndex]->SaveAs( (confString+Form("_CTLslices_dp%i.pdf",(int)(border*200))).c_str() );
+    csz[confIndex]->SaveAs( (confString+Form("_PHIslices_dp%i.pdf",(int)(border*200))).c_str() );
+
+    // Plot 1D projections
+    cp1[confIndex] = new TCanvas(("cp1"+shortString).c_str(),(longString+" - 1D Projections").c_str(),2000,700) ;
+    cp1[confIndex]->Divide(3,1);
+    TH1D* distProj1X = (TH1D*)data->createHistogram( Form("distProj1X_%s",shortString.c_str()), *ctK, Binning(20,-1,1) );
+    TH1D* distProj1Y = (TH1D*)data->createHistogram( Form("distProj1Y_%s",shortString.c_str()), *ctL, Binning(20,-1,1) );
+    TH1D* distProj1Z = (TH1D*)data->createHistogram( Form("distProj1Z_%s",shortString.c_str()), *phi, Binning(20,-TMath::Pi(),TMath::Pi()) );
+    distProj1X->SetTitle( Form("%s;cos(#theta_{K});Events",longString.c_str()) );
+    distProj1Y->SetTitle( Form("%s;cos(#theta_{L});Events",longString.c_str()) );
+    distProj1Z->SetTitle( Form("%s;#phi;Events",longString.c_str()) );
+    TH1D* histProj1X = (TH1D*)KDEhist->ProjectionX( Form("histProj1X_%s",shortString.c_str()) );
+    TH1D* histProj1Y = (TH1D*)KDEhist->ProjectionY( Form("histProj1Y_%s",shortString.c_str()) );
+    TH1D* histProj1Z = (TH1D*)KDEhist->ProjectionZ( Form("histProj1Z_%s",shortString.c_str()) );
+    histProj1X->Scale( 1.0 * histProj1X->GetNbinsX() / distProj1X->GetNbinsX() );
+    histProj1Y->Scale( 1.0 * histProj1Y->GetNbinsX() / distProj1Y->GetNbinsX() );
+    histProj1Z->Scale( 1.0 * histProj1Z->GetNbinsX() / distProj1Z->GetNbinsX() );
+    histProj1X->SetLineWidth(2);
+    histProj1Y->SetLineWidth(2);
+    histProj1Z->SetLineWidth(2);
+    histProj1X->SetLineColor(kRed+1);
+    histProj1Y->SetLineColor(kRed+1);
+    histProj1Z->SetLineColor(kRed+1);
+    cp1[confIndex]->cd(1);
+    gPad->SetLeftMargin(0.18);
+    distProj1X->GetYaxis()->SetTitleOffset(1.7);
+    distProj1X->SetMinimum(0);
+    distProj1X->Draw();
+    histProj1X->Draw("sameLHIST");
+    cp1[confIndex]->cd(2);
+    gPad->SetLeftMargin(0.18);
+    distProj1Y->GetYaxis()->SetTitleOffset(1.7);
+    distProj1Y->SetMinimum(0);
+    distProj1Y->Draw();
+    histProj1Y->Draw("sameLHIST");
+    cp1[confIndex]->cd(3);
+    gPad->SetLeftMargin(0.18);
+    distProj1Z->GetYaxis()->SetTitleOffset(1.7);
+    distProj1Z->SetMinimum(0);
+    distProj1Z->Draw();
+    histProj1Z->Draw("sameLHIST");
+    cp1[confIndex]->SaveAs( (confString+"_Proj1D.pdf").c_str() );
+    
+    // Plot 2D projections
+    cp2[confIndex] = new TCanvas(("cp2"+shortString).c_str(),(longString+" - 2D Projections").c_str(),2000,700) ;
+    cp2[confIndex]->Divide(3,1);
+    TH2D* histProj2XY = (TH2D*)KDEhist->Project3D( "xy" );
+    TH2D* histProj2XZ = (TH2D*)KDEhist->Project3D( "xz" );
+    TH2D* histProj2YZ = (TH2D*)KDEhist->Project3D( "yz" );
+    histProj2XY->SetName( Form("histProj2XY_%s",shortString.c_str()) );
+    histProj2XZ->SetName( Form("histProj2XZ_%s",shortString.c_str()) );
+    histProj2YZ->SetName( Form("histProj2YZ_%s",shortString.c_str()) );
+    histProj2XY->SetTitle( Form("%s;cos(#theta_{K});cos(#theta_{K});Events",longString.c_str()) );
+    histProj2XZ->SetTitle( Form("%s;cos(#theta_{K});#phi;Events",longString.c_str()) );
+    histProj2YZ->SetTitle( Form("%s;cos(#theta_{L});#phi;Events",longString.c_str()) );
+    cp2[confIndex]->cd(1);
+    histProj2XY->SetMinimum(0);
+    histProj2XY->Draw("SURF3");
+    cp2[confIndex]->cd(2);
+    histProj2XZ->SetMinimum(0);
+    histProj2XZ->Draw("SURF3");
+    cp2[confIndex]->cd(3);
+    histProj2YZ->SetMinimum(0);
+    histProj2YZ->Draw("SURF3");
+    cp2[confIndex]->SaveAs( (confString+"_Proj2D.pdf").c_str() );
+
   }
   
   // Remind user to delete partial files
-  cout<<"Please, remove partial files running:\nrm "<<confString<<Form("_*-frac-%i.root",totdiv)<<endl<<endl;
+  cout<<endl<<"Please, remove partial files running:\nrm "<<confString<<Form("_*-frac-%i.root",totdiv)<<endl<<endl;
+  
+}
+
+void mergeParSub_rooKeysBin2(int q2Bin, int effIndx, int parity, float width, int xbins, int ybins, int zbins, int totdiv, bool plot)
+{
+  if ( parity==-1 )
+    for (parity=0; parity<2; ++parity)
+      mergeParSub_rooKeysBin(q2Bin, effIndx, parity, width, xbins, ybins, zbins, totdiv, plot);
+  else
+    mergeParSub_rooKeysBin(q2Bin, effIndx, parity, width, xbins, ybins, zbins, totdiv, plot);
+}
+
+void mergeParSub_rooKeysBin1(int q2Bin, int effIndx, int parity, float width, int xbins, int ybins, int zbins, int totdiv, bool plot)
+{
+  if ( effIndx==-1 )
+    for (effIndx=0; effIndx<6; ++effIndx)
+      mergeParSub_rooKeysBin2(q2Bin, effIndx, parity, width, xbins, ybins, zbins, totdiv, plot);
+  else
+    mergeParSub_rooKeysBin2(q2Bin, effIndx, parity, width, xbins, ybins, zbins, totdiv, plot);
+}
+
+void mergeParSub_rooKeys(int q2Bin = -1, int effIndx = -1, int parity = -1, float width = 0.3, int xbins=50, int ybins = 50, int zbins = 50, int totdiv = 50, bool plot = false)
+{
+
+  if ( q2Bin<-1 || q2Bin>=nBins ) return;
+
+  if ( effIndx<-1 || effIndx>5 ) return;
+
+  if ( parity<-1 || parity>1 ) return;
+
+  if ( width<=0 ) return;
+
+  if ( xbins<1 ) return;
+  if ( ybins<1 ) ybins = xbins;
+  if ( zbins<1 ) zbins = xbins;
+
+  if ( totdiv<1 ) return;
+
+  if ( q2Bin==-1 )   cout<<"Running all the q2 bins"<<endl;
+  if ( effIndx==-1 ) cout<<"Running all the efficiency terms"<<endl;
+  if ( parity==-1 )  cout<<"Running both the parity datasets"<<endl;
+
+  if ( q2Bin==-1 )
+    for (q2Bin=0; q2Bin<nBins; ++q2Bin)
+      mergeParSub_rooKeysBin1(q2Bin, effIndx, parity, width, xbins, ybins, zbins, totdiv, plot);
+  else
+    mergeParSub_rooKeysBin1(q2Bin, effIndx, parity, width, xbins, ybins, zbins, totdiv, plot);
   
 }
