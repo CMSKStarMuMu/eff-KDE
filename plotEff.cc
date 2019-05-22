@@ -61,7 +61,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
 
   int confIndex = nBins*parity + q2Bin;
 
-  int distBins = 15;
+  int distBins = 10;
 
   // Load variables and dataset
   string filename_data = Form("effDataset_b%i.root",q2Bin);
@@ -189,7 +189,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   // TLegend* leg = new TLegend (0.35,0.8,0.9,0.9);
 
   // width of the slices in the hidden variables ("border" is half of it)
-  double border = 0.05;
+  double border = 0.04;
 
   // variables to be filled with global efficiency maximum
   double maxEffX = 0;
@@ -312,6 +312,22 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
       mistFracDistX->SetTitle( Form("Mistag fraction (q2-bin %i, %s) slice ctL=%1.2f phi=%1.2f;cos(#theta_{K});Mistag fraction",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
       mistFracDistY->SetTitle( Form("Mistag fraction (q2-bin %i, %s) slice ctK=%1.2f phi=%1.2f;cos(#theta_{L});Mistag fraction",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
       mistFracDistZ->SetTitle( Form("Mistag fraction (q2-bin %i, %s) slice ctK=%1.2f ctL=%1.2f;#phi;Mistag fraction",q2Bin,(parity==0?"even":"odd"),centA,centB) );
+      // set minimum value
+      effDistX->SetMinimum(0);
+      effCDistX->SetMinimum(0);
+      effWDistX->SetMinimum(0);
+      corrFracDistX->SetMinimum(0);
+      mistFracDistX->SetMinimum(0);
+      effDistY->SetMinimum(0);
+      effCDistY->SetMinimum(0);
+      effWDistY->SetMinimum(0);
+      corrFracDistY->SetMinimum(0);
+      mistFracDistY->SetMinimum(0);
+      effDistZ->SetMinimum(0);
+      effCDistZ->SetMinimum(0);
+      effWDistZ->SetMinimum(0);
+      corrFracDistZ->SetMinimum(0);
+      mistFracDistZ->SetMinimum(0);
       // fill vector of slices
       effSliceX.push_back( effDistX );
       effCSliceX.push_back( effCDistX );
@@ -816,87 +832,165 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
 
   if (!doClosure) return;
 
-  // create the weighted dataset of GEN events
-  data_genDen->addColumn(*eff );
-  data_genDen->addColumn(*effC);
-  data_genDen->addColumn(*effW);
-
-  RooDataSet* data_genDen_weff  = new RooDataSet( ("data_genDen_weff" +shortString).c_str(), Form("Full-efficiency weighted %s"       ,data_genDen->GetTitle()),
-						  data_genDen, *data_genDen->get(), 0, eff ->GetName() );
-  RooDataSet* data_genDen_weffC = new RooDataSet( ("data_genDen_weffC"+shortString).c_str(), Form("Correct-tag-efficiency weighted %s",data_genDen->GetTitle()),
-						  data_genDen, *data_genDen->get(), 0, effC->GetName() );
-  RooDataSet* data_genDen_weffW = new RooDataSet( ("data_genDen_weffW"+shortString).c_str(), Form("Wrong-tag-efficiency weighted %s"  ,data_genDen->GetTitle()),
-						  data_genDen, *data_genDen->get(), 0, effW->GetName() );
-
-  // create the weighted dataset of selected events
-  RooDataSet* data_RECO = new RooDataSet( *data_ctRECO, ("data_RECO_"+shortString).c_str() );
-  data_RECO->append(*data_wtRECO);
-  data_RECO->addColumn(*corrFrac);
-  data_RECO->addColumn(*mistFrac);
-
-  RooDataSet* data_RECO_wcf = new RooDataSet( ("data_RECO_wcf"+shortString).c_str(), ("data_RECO_wcf"+shortString).c_str(),
-					      data_RECO, *data_RECO->get(), 0, corrFrac->GetName() );
-  RooDataSet* data_RECO_wmf = new RooDataSet( ("data_RECO_wmf"+shortString).c_str(), ("data_RECO_wmf"+shortString).c_str(),
-					      data_RECO, *data_RECO->get(), 0, mistFrac->GetName() );
-
-  RooDataSet* data_ctRECO_noWgt = new RooDataSet( ("data_ctRECO_noWgt"+shortString).c_str(), ("data_ctRECO_noWgt"+shortString).c_str(), data_ctRECO, vars);
-  RooDataSet* data_wtRECO_noWgt = new RooDataSet( ("data_ctRECO_noWgt"+shortString).c_str(), ("data_ctRECO_noWgt"+shortString).c_str(), data_ctRECO, vars);
-
-  // Plot projections for closure test
   int nbins_ct = 30;
-  cct  [confIndex] = new TCanvas(("ccteff_" +shortString).c_str(),("ccteff_" +shortString).c_str(),2000,700);
+
+  // create and fill GEN histograms
+  TH1D* hXctGEN_effC = new TH1D( Form("hXctGEN_effC_%s",shortString.c_str()), Form("hXctGEN_effC_%s",shortString.c_str()), nbins_ct, -1, 1 );
+  TH1D* hXctGEN_cf   = new TH1D( Form("hXctGEN_effW_%s",shortString.c_str()), Form("hXctGEN_effW_%s",shortString.c_str()), nbins_ct, -1, 1 );
+  TH1D* hXctGEN_effW = new TH1D( Form("hXctGEN_cf_%s"  ,shortString.c_str()), Form("hXctGEN_cf_%s"  ,shortString.c_str()), nbins_ct, -1, 1 );
+  TH1D* hXctGEN_mf   = new TH1D( Form("hXctGEN_mf_%s"  ,shortString.c_str()), Form("hXctGEN_mf_%s"  ,shortString.c_str()), nbins_ct, -1, 1 );
+  TH1D* hYctGEN_effC = new TH1D( Form("hYctGEN_effC_%s",shortString.c_str()), Form("hYctGEN_effC_%s",shortString.c_str()), nbins_ct, -1, 1 );
+  TH1D* hYctGEN_cf   = new TH1D( Form("hYctGEN_effW_%s",shortString.c_str()), Form("hYctGEN_effW_%s",shortString.c_str()), nbins_ct, -1, 1 );
+  TH1D* hYctGEN_effW = new TH1D( Form("hYctGEN_cf_%s"  ,shortString.c_str()), Form("hYctGEN_cf_%s"  ,shortString.c_str()), nbins_ct, -1, 1 );
+  TH1D* hYctGEN_mf   = new TH1D( Form("hYctGEN_mf_%s"  ,shortString.c_str()), Form("hYctGEN_mf_%s"  ,shortString.c_str()), nbins_ct, -1, 1 );
+  TH1D* hZctGEN_effC = new TH1D( Form("hZctGEN_effC_%s",shortString.c_str()), Form("hZctGEN_effC_%s",shortString.c_str()), nbins_ct, -TMath::Pi(), TMath::Pi() );
+  TH1D* hZctGEN_cf   = new TH1D( Form("hZctGEN_effW_%s",shortString.c_str()), Form("hZctGEN_effW_%s",shortString.c_str()), nbins_ct, -TMath::Pi(), TMath::Pi() );
+  TH1D* hZctGEN_effW = new TH1D( Form("hZctGEN_cf_%s"  ,shortString.c_str()), Form("hZctGEN_cf_%s"  ,shortString.c_str()), nbins_ct, -TMath::Pi(), TMath::Pi() );
+  TH1D* hZctGEN_mf   = new TH1D( Form("hZctGEN_mf_%s"  ,shortString.c_str()), Form("hZctGEN_mf_%s"  ,shortString.c_str()), nbins_ct, -TMath::Pi(), TMath::Pi() );
+  hXctGEN_effC->Sumw2();
+  hXctGEN_effW->Sumw2();
+  hXctGEN_cf  ->Sumw2();
+  hXctGEN_mf  ->Sumw2();
+  hYctGEN_effC->Sumw2();
+  hYctGEN_effW->Sumw2();
+  hYctGEN_cf  ->Sumw2();
+  hYctGEN_mf  ->Sumw2();
+  hZctGEN_effC->Sumw2();
+  hZctGEN_effW->Sumw2();
+  hZctGEN_cf  ->Sumw2();
+  hZctGEN_mf  ->Sumw2();
+  for (int iEv=0; iEv<data_genDen->numEntries(); ++iEv) {
+    const RooArgSet* set = data_genDen->get(iEv);
+    double gen_ctK = ((RooRealVar*)set->find("ctK"))->getVal();
+    double gen_ctL = ((RooRealVar*)set->find("ctL"))->getVal();
+    double gen_phi = ((RooRealVar*)set->find("phi"))->getVal();
+    ctK->setVal(gen_ctK);
+    ctL->setVal(gen_ctL);
+    phi->setVal(gen_phi);
+    double wei = effC->getVal();
+    hXctGEN_effC->Fill( gen_ctK, wei );
+    hYctGEN_effC->Fill( gen_ctL, wei );
+    hZctGEN_effC->Fill( gen_phi, wei );
+    ctK->setVal(-1*gen_ctK);
+    ctL->setVal(-1*gen_ctL);
+    phi->setVal(-1*gen_phi);
+    wei = effW->getVal();
+    hXctGEN_effW->Fill( -1*gen_ctK, wei );
+    hYctGEN_effW->Fill( -1*gen_ctL, wei );
+    hZctGEN_effW->Fill( -1*gen_phi, wei );
+  }
+  for (int iEv=0; iEv<data_ctRECO->numEntries(); ++iEv) {
+    const RooArgSet* set = data_ctRECO->get(iEv);
+    double reco_ctK = ((RooRealVar*)set->find("ctK"))->getVal();
+    double reco_ctL = ((RooRealVar*)set->find("ctL"))->getVal();
+    double reco_phi = ((RooRealVar*)set->find("phi"))->getVal();
+    ctK->setVal(reco_ctK);
+    ctL->setVal(reco_ctL);
+    phi->setVal(reco_phi);
+    double wei = corrFrac->getVal();
+    hXctGEN_cf->Fill( reco_ctK, wei );
+    hYctGEN_cf->Fill( reco_ctL, wei );
+    hZctGEN_cf->Fill( reco_phi, wei );
+    wei = mistFrac->getVal();
+    hXctGEN_mf->Fill( reco_ctK, wei );
+    hYctGEN_mf->Fill( reco_ctL, wei );
+    hZctGEN_mf->Fill( reco_phi, wei );
+  }
+  for (int iEv=0; iEv<data_wtRECO->numEntries(); ++iEv) {
+    const RooArgSet* set = data_wtRECO->get(iEv);
+    double reco_ctK = ((RooRealVar*)set->find("ctK"))->getVal();
+    double reco_ctL = ((RooRealVar*)set->find("ctL"))->getVal();
+    double reco_phi = ((RooRealVar*)set->find("phi"))->getVal();
+    ctK->setVal(reco_ctK);
+    ctL->setVal(reco_ctL);
+    phi->setVal(reco_phi);
+    double wei = corrFrac->getVal();
+    hXctGEN_cf->Fill( reco_ctK, wei );
+    hYctGEN_cf->Fill( reco_ctL, wei );
+    hZctGEN_cf->Fill( reco_phi, wei );
+    wei = mistFrac->getVal();
+    hXctGEN_mf->Fill( reco_ctK, wei );
+    hYctGEN_mf->Fill( reco_ctL, wei );
+    hZctGEN_mf->Fill( reco_phi, wei );
+  }
+
+  // create RECO histograms
+  TH1D* hXctREC_effC = (TH1D*)data_ctRECO->createHistogram( Form("hXctREC_effC_%s",shortString.c_str()), *ctK, Binning(nbins_ct,-1,1) );
+  TH1D* hXctREC_effW = (TH1D*)data_wtRECO->createHistogram( Form("hXctREC_effW_%s",shortString.c_str()), *ctK, Binning(nbins_ct,-1,1) );
+  TH1D* hYctREC_effC = (TH1D*)data_ctRECO->createHistogram( Form("hYctREC_effC_%s",shortString.c_str()), *ctL, Binning(nbins_ct,-1,1) );
+  TH1D* hYctREC_effW = (TH1D*)data_wtRECO->createHistogram( Form("hYctREC_effW_%s",shortString.c_str()), *ctL, Binning(nbins_ct,-1,1) );
+  TH1D* hZctREC_effC = (TH1D*)data_ctRECO->createHistogram( Form("hZctREC_effC_%s",shortString.c_str()), *phi, Binning(nbins_ct,-TMath::Pi(),TMath::Pi()) );
+  TH1D* hZctREC_effW = (TH1D*)data_wtRECO->createHistogram( Form("hZctREC_effW_%s",shortString.c_str()), *phi, Binning(nbins_ct,-TMath::Pi(),TMath::Pi()) );
+
+  // prepare for plot
+  hXctGEN_effC->SetTitle( Form("Closure test of correct-tag efficiency (q2-bin %i, %s);cos(#theta_{K});Events",q2Bin,(parity==0?"even":"odd")) );
+  hXctGEN_effW->SetTitle( Form(  "Closure test of wrong-tag efficiency (q2-bin %i, %s);cos(#theta_{K});Events",q2Bin,(parity==0?"even":"odd")) );
+  hXctGEN_cf  ->SetTitle( Form(  "Closure test of correct-tag fraction (q2-bin %i, %s);cos(#theta_{K});Events",q2Bin,(parity==0?"even":"odd")) );
+  hXctGEN_mf  ->SetTitle( Form(       "Closure test of mistag fraction (q2-bin %i, %s);cos(#theta_{K});Events",q2Bin,(parity==0?"even":"odd")) );
+  hYctGEN_effC->SetTitle( Form("Closure test of correct-tag efficiency (q2-bin %i, %s);cos(#theta_{L});Events",q2Bin,(parity==0?"even":"odd")) );
+  hYctGEN_effW->SetTitle( Form(  "Closure test of wrong-tag efficiency (q2-bin %i, %s);cos(#theta_{L});Events",q2Bin,(parity==0?"even":"odd")) );
+  hYctGEN_cf  ->SetTitle( Form(  "Closure test of correct-tag fraction (q2-bin %i, %s);cos(#theta_{L});Events",q2Bin,(parity==0?"even":"odd")) );
+  hYctGEN_mf  ->SetTitle( Form(       "Closure test of mistag fraction (q2-bin %i, %s);cos(#theta_{L});Events",q2Bin,(parity==0?"even":"odd")) );
+  hZctGEN_effC->SetTitle( Form("Closure test of correct-tag efficiency (q2-bin %i, %s);#phi;Events",q2Bin,(parity==0?"even":"odd")) );
+  hZctGEN_effW->SetTitle( Form(  "Closure test of wrong-tag efficiency (q2-bin %i, %s);#phi;Events",q2Bin,(parity==0?"even":"odd")) );
+  hZctGEN_cf  ->SetTitle( Form(  "Closure test of correct-tag fraction (q2-bin %i, %s);#phi;Events",q2Bin,(parity==0?"even":"odd")) );
+  hZctGEN_mf  ->SetTitle( Form(       "Closure test of mistag fraction (q2-bin %i, %s);#phi;Events",q2Bin,(parity==0?"even":"odd")) );
+  hXctGEN_effC->Scale( hXctREC_effC->Integral() / hXctGEN_effC->Integral() );
+  hXctGEN_effW->Scale( hXctREC_effW->Integral() / hXctGEN_effW->Integral() );
+  hYctGEN_effC->Scale( hYctREC_effC->Integral() / hYctGEN_effC->Integral() );
+  hYctGEN_effW->Scale( hYctREC_effW->Integral() / hYctGEN_effW->Integral() );
+  hZctGEN_effC->Scale( hZctREC_effC->Integral() / hZctGEN_effC->Integral() );
+  hZctGEN_effW->Scale( hZctREC_effW->Integral() / hZctGEN_effW->Integral() );
+  hXctGEN_effC->SetMinimum(0);
+  hXctGEN_effW->SetMinimum(0);
+  hXctGEN_cf  ->SetMinimum(0);
+  hXctGEN_mf  ->SetMinimum(0);
+  hYctGEN_effC->SetMinimum(0);
+  hYctGEN_effW->SetMinimum(0);
+  hYctGEN_cf  ->SetMinimum(0);
+  hYctGEN_mf  ->SetMinimum(0);
+  hZctGEN_effC->SetMinimum(0);
+  hZctGEN_effW->SetMinimum(0);
+  hZctGEN_cf  ->SetMinimum(0);
+  hZctGEN_mf  ->SetMinimum(0);
+  hXctGEN_effC->SetLineColor(kRed+1);
+  hXctGEN_effW->SetLineColor(kRed+1);
+  hXctGEN_cf->SetLineColor(kRed+1);
+  hXctGEN_mf->SetLineColor(kRed+1);
+  hYctGEN_effC->SetLineColor(kRed+1);
+  hYctGEN_effW->SetLineColor(kRed+1);
+  hYctGEN_cf->SetLineColor(kRed+1);
+  hYctGEN_mf->SetLineColor(kRed+1);
+  hZctGEN_effC->SetLineColor(kRed+1);
+  hZctGEN_effW->SetLineColor(kRed+1);
+  hZctGEN_cf->SetLineColor(kRed+1);
+  hZctGEN_mf->SetLineColor(kRed+1);
+  hXctGEN_effC->SetLineWidth(2);
+  hXctGEN_effW->SetLineWidth(2);
+  hXctGEN_cf->SetLineWidth(2);
+  hXctGEN_mf->SetLineWidth(2);
+  hYctGEN_effC->SetLineWidth(2);
+  hYctGEN_effW->SetLineWidth(2);
+  hYctGEN_cf->SetLineWidth(2);
+  hYctGEN_mf->SetLineWidth(2);
+  hZctGEN_effC->SetLineWidth(2);
+  hZctGEN_effW->SetLineWidth(2);
+  hZctGEN_cf->SetLineWidth(2);
+  hZctGEN_mf->SetLineWidth(2);
+  hXctREC_effC->SetLineWidth(2);
+  hXctREC_effW->SetLineWidth(2);
+  hYctREC_effC->SetLineWidth(2);
+  hYctREC_effW->SetLineWidth(2);
+  hZctREC_effC->SetLineWidth(2);
+  hZctREC_effW->SetLineWidth(2);
+
+
+  // Plot closure test
   cctC [confIndex] = new TCanvas(("ccteffC_"+shortString).c_str(),("ccteffC_"+shortString).c_str(),2000,700);
   cctW [confIndex] = new TCanvas(("ccteffW_"+shortString).c_str(),("ccteffW_"+shortString).c_str(),2000,700);
   cctcf[confIndex] = new TCanvas(("cctcf_"  +shortString).c_str(),("cctcf_"  +shortString).c_str(),2000,700);
   cctmf[confIndex] = new TCanvas(("cctmf_"  +shortString).c_str(),("cctmf_"  +shortString).c_str(),2000,700);
   // TLegend* leg = new TLegend (0.25,0.8,0.9,0.9);
-  RooPlot* fxct   = ctK->frame(Title( Form("Closure test of full efficiency (q2-bin %i, %s) cos(#theta_{K}) distributions"       ,q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fxctC  = ctK->frame(Title( Form("Closure test of correct-tag efficiency (q2-bin %i, %s) cos(#theta_{K}) distributions",q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fxctW  = ctK->frame(Title( Form("Closure test of wrong-tag efficiency (q2-bin %i, %s) cos(#theta_{K}) distributions"  ,q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fxctcf = ctK->frame(Title( Form("Closure test of correct-tag fraction (q2-bin %i, %s) cos(#theta_{K}) distributions"  ,q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fxctmf = ctK->frame(Title( Form("Closure test of mistag fraction (q2-bin %i, %s) cos(#theta_{K}) distributions"       ,q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fyct   = ctL->frame(Title( Form("Closure test of full efficiency (q2-bin %i, %s) cos(#theta_{L}) distributions"       ,q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fyctC  = ctL->frame(Title( Form("Closure test of correct-tag efficiency (q2-bin %i, %s) cos(#theta_{L}) distributions",q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fyctW  = ctL->frame(Title( Form("Closure test of wrong-tag efficiency (q2-bin %i, %s) cos(#theta_{L}) distributions"  ,q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fyctcf = ctL->frame(Title( Form("Closure test of correct-tag fraction (q2-bin %i, %s) cos(#theta_{L}) distributions"  ,q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fyctmf = ctL->frame(Title( Form("Closure test of mistag fraction (q2-bin %i, %s) cos(#theta_{L}) distributions"       ,q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fzct   = phi->frame(Title( Form("Closure test of full efficiency (q2-bin %i, %s) #phi distributions"       ,q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fzctC  = phi->frame(Title( Form("Closure test of correct-tag efficiency (q2-bin %i, %s) #phi distributions",q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fzctW  = phi->frame(Title( Form("Closure test of wrong-tag efficiency (q2-bin %i, %s) #phi distributions"  ,q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fzctcf = phi->frame(Title( Form("Closure test of correct-tag fraction (q2-bin %i, %s) #phi distributions"  ,q2Bin,(parity==0?"even":"odd")) ));
-  RooPlot* fzctmf = phi->frame(Title( Form("Closure test of mistag fraction (q2-bin %i, %s) #phi distributions"       ,q2Bin,(parity==0?"even":"odd")) ));
-  // Plot efficiency-corrected denominator distributions
-  data_genDen_weff ->plotOn(fxct ,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2),Name("plDenDist"));
-  data_genDen_weffC->plotOn(fxctC,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));
-  data_genDen_weffW->plotOn(fxctW,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));
-  data_RECO_wcf->plotOn(fxctcf,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));  
-  data_RECO_wmf->plotOn(fxctmf,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));  
-  data_genDen_weff ->plotOn(fyct ,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));
-  data_genDen_weffC->plotOn(fyctC,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));
-  data_genDen_weffW->plotOn(fyctW,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));
-  data_RECO_wcf->plotOn(fyctcf,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));  
-  data_RECO_wmf->plotOn(fyctmf,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));  
-  data_genDen_weff ->plotOn(fzct ,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));
-  data_genDen_weffC->plotOn(fzctC,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));
-  data_genDen_weffW->plotOn(fzctW,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));
-  data_RECO_wcf->plotOn(fzctcf,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));  
-  data_RECO_wmf->plotOn(fzctmf,MarkerColor(kRed+1),LineColor(kRed+1),Binning(nbins_ct),DataError(RooAbsData::SumW2));  
-  // Plot numerator distributions
-  data_RECO  ->plotOn(fxct ,Binning(nbins_ct),Name("plNumDist"));
-  data_ctRECO->plotOn(fxctC,Binning(nbins_ct));
-  data_wtRECO->plotOn(fxctW,Binning(nbins_ct));
-  data_ctRECO_noWgt->plotOn(fxctcf,Binning(nbins_ct));
-  data_wtRECO_noWgt->plotOn(fxctmf,Binning(nbins_ct));
-  data_RECO  ->plotOn(fyct ,Binning(nbins_ct));
-  data_ctRECO->plotOn(fyctC,Binning(nbins_ct));
-  data_wtRECO->plotOn(fyctW,Binning(nbins_ct));
-  data_ctRECO_noWgt->plotOn(fyctcf,Binning(nbins_ct));
-  data_wtRECO_noWgt->plotOn(fyctmf,Binning(nbins_ct));
-  data_RECO  ->plotOn(fzct ,Binning(nbins_ct));
-  data_ctRECO->plotOn(fzctC,Binning(nbins_ct));
-  data_wtRECO->plotOn(fzctW,Binning(nbins_ct));
-  data_ctRECO_noWgt->plotOn(fzctcf,Binning(nbins_ct));
-  data_wtRECO_noWgt->plotOn(fzctmf,Binning(nbins_ct));
 
   // xframe->GetYaxis()->SetTitleOffset(1.6);
   // yframe->GetYaxis()->SetTitleOffset(1.6);
@@ -908,46 +1002,51 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   // leg->AddEntry(xframe->findObject("plNumDist"),"Post-selection RECO distribution" ,"lep");
   // leg->AddEntry(xframe->findObject("plDenDist"),"Efficiency-corrected GEN distribution" ,"lep");
 
-  // gPad->SetLeftMargin(0.17); 
   // leg->Draw("same");
 
-  cct  [confIndex]->Divide(3,1);
+  gPad->SetLeftMargin(0.17); 
+
   cctC [confIndex]->Divide(3,1);
   cctW [confIndex]->Divide(3,1);
   cctcf[confIndex]->Divide(3,1);
   cctmf[confIndex]->Divide(3,1);
-  cct[confIndex]->cd(1);
-  fxct->Draw();
   cctC[confIndex]->cd(1);
-  fxctC->Draw();
-  cctW[confIndex]->cd(1);
-  fxctW->Draw();
+  hXctGEN_effC->Draw();
+  hXctREC_effC->Draw("same");
+  cctW[confIndex]->cd(1); 
+  hXctGEN_effW->Draw();
+  hXctREC_effW->Draw("same");
   cctcf[confIndex]->cd(1);
-  fxctcf->Draw();
+  hXctGEN_cf->Draw();
+  hXctREC_effC->Draw("same");
   cctmf[confIndex]->cd(1);
-  fxctmf->Draw();
-  cct[confIndex]->cd(2);
-  fyct->Draw();
+  hXctGEN_mf->Draw();
+  hXctREC_effW->Draw("same");
   cctC[confIndex]->cd(2);
-  fyctC->Draw();
-  cctW[confIndex]->cd(2);
-  fyctW->Draw();
+  hYctGEN_effC->Draw();
+  hYctREC_effC->Draw("same");
+  cctW[confIndex]->cd(2); 
+  hYctGEN_effW->Draw();
+  hYctREC_effW->Draw("same");
   cctcf[confIndex]->cd(2);
-  fyctcf->Draw();
+  hYctGEN_cf->Draw();
+  hYctREC_effC->Draw("same");
   cctmf[confIndex]->cd(2);
-  fyctmf->Draw();
-  cct[confIndex]->cd(3);
-  fzct->Draw();
+  hYctGEN_mf->Draw();
+  hYctREC_effW->Draw("same");
   cctC[confIndex]->cd(3);
-  fzctC->Draw();
-  cctW[confIndex]->cd(3);
-  fzctW->Draw();
+  hZctGEN_effC->Draw();
+  hZctREC_effC->Draw("same");
+  cctW[confIndex]->cd(3); 
+  hZctGEN_effW->Draw();
+  hZctREC_effW->Draw("same");
   cctcf[confIndex]->cd(3);
-  fzctcf->Draw();
+  hZctGEN_cf->Draw();
+  hZctREC_effC->Draw("same");
   cctmf[confIndex]->cd(3);
-  fzctmf->Draw();
+  hZctGEN_mf->Draw();
+  hZctREC_effW->Draw("same");
 
-  cct  [confIndex]->SaveAs( (confString+"_eff_ClosureTest.pdf"    ).c_str() );    
   cctC [confIndex]->SaveAs( (confString+"_eff-ct_ClosureTest.pdf" ).c_str() );    
   cctW [confIndex]->SaveAs( (confString+"_eff-wt_ClosureTest.pdf" ).c_str() );    
   cctcf[confIndex]->SaveAs( (confString+"_ct-frac_ClosureTest.pdf").c_str() );    

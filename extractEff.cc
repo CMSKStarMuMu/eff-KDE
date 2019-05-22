@@ -65,6 +65,46 @@ void extractEffBin(int q2Bin, int parity, float width0, float width1, float widt
   TH3D* mistFracHist = (TH3D*)KDEhist[4]->Clone(("mistFracHist_"+shortString).c_str());
   mistFracHist->Divide(KDEhist[5]);
 
+  // Check histograms to be in range
+  // Usually the correct-tag and mistag fractions need some adjustment to be forced <1
+  for (int iBinX=1; iBinX<=effHist->GetNbinsX(); ++iBinX)
+    for (int iBinY=1; iBinY<=effHist->GetNbinsY(); ++iBinY)
+      for (int iBinZ=1; iBinZ<=effHist->GetNbinsZ(); ++iBinZ) {
+	double effVal  = effHist ->GetBinContent(iBinX,iBinY,iBinZ);
+	double effCVal = effCHist->GetBinContent(iBinX,iBinY,iBinZ);
+	double effWVal = effWHist->GetBinContent(iBinX,iBinY,iBinZ);
+	double corrFracVal = corrFracHist->GetBinContent(iBinX,iBinY,iBinZ);
+	double mistFracVal = mistFracHist->GetBinContent(iBinX,iBinY,iBinZ);
+	if ( effVal <=0 ) { cout<<"ERROR: NEGATIVE EFF!"<<endl; return;}
+	if ( effCVal<=0 ) { cout<<"ERROR: NEGATIVE EFF-CT!"<<endl; return;}
+	if ( effWVal<=0 ) { cout<<"ERROR: NEGATIVE EFF-WT!"<<endl; return;}
+	if ( corrFracVal<=0 ) { cout<<"ERROR: NEGATIVE CORR-FRAC!"<<endl; return;}
+	if ( mistFracVal<=0 ) { cout<<"ERROR: NEGATIVE MIST-FRAC!"<<endl; return;}
+	if ( effVal>1 ) {
+	  cout<<"Warning: correcting eff value > 1"<<endl;
+	  effHist->SetBinContent(iBinX,iBinY,iBinZ,1);
+	  effHist->SetBinError(iBinX,iBinY,iBinZ,effHist->GetBinError(iBinX,iBinY,iBinZ)/effVal);
+	}
+	if ( effCVal>1 ) {
+	  cout<<"Warning: correcting eff-ct value > 1"<<endl;
+	  effCHist->SetBinContent(iBinX,iBinY,iBinZ,1);
+	  effCHist->SetBinError(iBinX,iBinY,iBinZ,effCHist->GetBinError(iBinX,iBinY,iBinZ)/effCVal);
+	}
+	if ( effWVal>1 ) {
+	  cout<<"Warning: correcting eff-wt value > 1"<<endl;
+	  effWHist->SetBinContent(iBinX,iBinY,iBinZ,1);
+	  effWHist->SetBinError(iBinX,iBinY,iBinZ,effWHist->GetBinError(iBinX,iBinY,iBinZ)/effWVal);
+	}
+	if ( corrFracVal>1 ) {
+	  corrFracHist->SetBinContent(iBinX,iBinY,iBinZ,1);
+	  corrFracHist->SetBinError(iBinX,iBinY,iBinZ,corrFracHist->GetBinError(iBinX,iBinY,iBinZ)/corrFracVal);
+	}
+	if ( mistFracVal>1 ) {
+	  mistFracHist->SetBinContent(iBinX,iBinY,iBinZ,1);
+	  mistFracHist->SetBinError(iBinX,iBinY,iBinZ,mistFracHist->GetBinError(iBinX,iBinY,iBinZ)/mistFracVal);
+	}
+      }
+
   // Save width and binning info in histograms' titles
   effHist->SetTitle(("eff-hist_"+confString).c_str());
   effCHist->SetTitle(("eff-ct-hist_"+confString).c_str());

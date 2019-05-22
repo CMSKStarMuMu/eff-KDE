@@ -56,7 +56,8 @@ void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float width, int
   case 5: longString = "Selected"            +longString;
   }
 
-  string confString = Form("/eos/user/a/aboletti/BdToKstarMuMu/efficiency/KDEhist_%s_rooKeys_mw%.2f_%i_%i_%i",shortString.c_str(),width,xbins,ybins,zbins);
+  string confString = Form("KDEhist_%s_rooKeys_mw%.2f_%i_%i_%i",shortString.c_str(),width,xbins,ybins,zbins);
+  // string confString = Form("/eos/user/a/aboletti/BdToKstarMuMu/efficiency/KDEhist_%s_rooKeys_mw%.2f_%i_%i_%i",shortString.c_str(),width,xbins,ybins,zbins);
 
   TH3D* KDEhist = new TH3D(Form("KDEhist_%s",shortString.c_str()),Form("KDEhist_%s",shortString.c_str()),xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
   KDEhist->Sumw2();
