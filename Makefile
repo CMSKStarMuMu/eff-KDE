@@ -8,6 +8,7 @@ SOURCEDIR  := ./src
 
 #exe_files
 EXECUTABLE0 := plotEff
+EXECUTABLE1 := preComp_Integrals_MC
 EXTRACLASS  := RooDataHist.cxx
 
 #compiling options
@@ -17,8 +18,10 @@ CXXFLAGS := $(DEBUGFLAGS)
 $(EXECUTABLE0): $(EXECUTABLE0).cc 
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(SOURCEDIR)/$(EXTRACLASS) $(ROOTLIBS) $(ROOTFLAGS)
 
+$(EXECUTABLE1): $(EXECUTABLE1).cc
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(SOURCEDIR)/$(EXTRACLASS) $(ROOTLIBS) $(ROOTFLAGS)
 
 #cleaning options
 .PHONY: clean
 clean:
-	rm -f $(EXECUTABLE0)
+	rm -f $(EXECUTABLE0) $(EXECUTABLE1)
