@@ -8,6 +8,7 @@
 
 #include <RooRealVar.h>
 #include <RooAbsPdf.h>
+#include <RooAddPdf.h>
 #include <RooWorkspace.h>
 #include <RooDataSet.h>
 #include <RooFitResult.h>
@@ -16,8 +17,9 @@
 #include <RooDataHist.h>
 #include <RooNumIntConfig.h>
 
-#include "PdfRT.h"
-#include "PdfWT.h"
+// #include "PdfRT.h"
+// #include "PdfWT.h"
+#include "PdfSigAng.h"
 
 using namespace RooFit;
 using namespace std;
@@ -26,12 +28,12 @@ static const int nBins = 9;
 
 float binBorders [nBins+1] = { 1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16, 19};
 
-TCanvas* c [4*nBins];
+TCanvas* c [2*nBins];
 
-void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot, bool save)
+void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
 {
 
-  string shortString = Form("b%ip%it%i",q2Bin,parity,tagFlag);
+  string shortString = Form("b%ip%i",q2Bin,parity);
   cout<<"Conf: "<<shortString<<endl;
 
   // Load variables and dataset
@@ -54,14 +56,15 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
     return;
   }
   RooArgList vars (* ctK,* ctL,* phi);
-  string datasetString = (tagFlag==1?"data_ctRECO":"data_wtRECO");
-  // import the complementary dataset, to fit statistically uncorrelated values
-  datasetString = datasetString + Form((parity==1?"_ev_b%i":"_od_b%i"),q2Bin);
-  RooDataSet* data = (RooDataSet*)wsp->data(datasetString.c_str());
-  if ( !data || data->IsZombie() ) {
-    cout<<"Dataset "<<datasetString<<" not found in file: "<<filename_data<<endl;
+  // import the complementary datasets, to fit statistically uncorrelated values
+  RooDataSet* dataCT = (RooDataSet*)wsp->data(Form((parity==1?"data_ctRECO_ev_b%i":"data_ctRECO_od_b%i"),q2Bin));
+  RooDataSet* dataWT = (RooDataSet*)wsp->data(Form((parity==1?"data_wtRECO_ev_b%i":"data_wtRECO_od_b%i"),q2Bin));
+  if ( !dataCT || dataCT->IsZombie() || !dataWT || dataWT->IsZombie() ) {
+    cout<<"Datasets not found in file: "<<filename_data<<endl;
     return;
   }
+  RooDataSet* data = new RooDataSet(*dataCT,("data_"+shortString).c_str());
+  data->append(*dataWT);
 
   // import KDE efficiency histograms
   string filename = "/afs/cern.ch/user/a/aboletti/public/Run2-KstarMuMu/KDEeff/testVersion-integrals/";
@@ -71,30 +74,38 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
     cout<<"File not found: "<<filename<<endl;
     return;
   }
-  string effString = Form((tagFlag==0?"effWHist_b%ip%i":"effCHist_b%ip%i"),q2Bin,parity);
-  TH3D* effHist = (TH3D*)fin->Get(effString.c_str());
-  if ( !effHist || effHist->IsZombie() ) {
-    cout<<"Efficiency histogram "<<effString<<" not found in file: "<<filename<<endl;
+  TH3D* effCHist = (TH3D*)fin->Get(Form("effCHist_b%ip%i",q2Bin,parity));
+  TH3D* effWHist = (TH3D*)fin->Get(Form("effWHist_b%ip%i",q2Bin,parity));
+  if ( !effCHist || effCHist->IsZombie() || !effWHist || effWHist->IsZombie() ) {
+    cout<<"Efficiency histograms not found in file: "<<filename<<endl;
     return;
   }
   // create efficiency functions
-  RooDataHist* effData = new RooDataHist(("effData_"+shortString).c_str(),"effData",vars,effHist);
-  RooAbsReal* eff = new RooHistFunc(("eff_"+shortString).c_str(),"eff",vars,*effData,1);
+  RooDataHist* effCData = new RooDataHist(("effCData_"+shortString).c_str(),"effCData",vars,effCHist);
+  RooDataHist* effWData = new RooDataHist(("effWData_"+shortString).c_str(),"effWData",vars,effWHist);
+  RooAbsReal* effC = new RooHistFunc(("effC_"+shortString).c_str(),"effC",vars,*effCData,1);
+  RooAbsReal* effW = new RooHistFunc(("effW_"+shortString).c_str(),"effW",vars,*effWData,1);
   // import precomputed integrals
-  vector<double> intVec (0);
-  string intHistString = "MCint_"+shortString;
-  TH1D* intHist = (TH1D*)fin->Get(intHistString.c_str());
-  if ( !intHist || intHist->IsZombie() ) {
-    cout<<"Integral histogram "<<intHistString<<" not found in file: "<<filename<<endl<<"Using rooFit integration"<<endl;
-    intVec.push_back(0);
-  } else if ( strcmp( intHist->GetTitle(), effHist->GetTitle() ) ) {
-    cout<<"Integral histogram "<<intHistString<<" is incoherent with efficiency "<<effString<<" in file: "<<filename<<endl;
-    cout<<"Efficiency conf: "<<effHist->GetTitle()<<endl;
-    cout<<"Integral conf: "<<intHist->GetTitle()<<endl;
+  vector<double> intCVec (0);
+  vector<double> intWVec (0);
+  TH1D* intCHist = (TH1D*)fin->Get(("MCint_"+shortString+"t1").c_str());
+  TH1D* intWHist = (TH1D*)fin->Get(("MCint_"+shortString+"t0").c_str());
+  if ( !intCHist || intCHist->IsZombie() || !intWHist || intWHist->IsZombie() ) {
+    cout<<"Integral histograms not found in file: "<<filename<<endl<<"Using rooFit integration"<<endl;
+    intCVec.push_back(0);
+    intWVec.push_back(0);
+  } else if ( strcmp( intCHist->GetTitle(), effCHist->GetTitle() ) || strcmp( intWHist->GetTitle(), effWHist->GetTitle() ) ) {
+    cout<<"Integral histograms are incoherent with efficiency in file: "<<filename<<endl;
+    cout<<"Efficiency (CT) conf: "<<effCHist->GetTitle()<<endl;
+    cout<<"Integral (CT) conf: "<<intCHist->GetTitle()<<endl;
+    cout<<"Efficiency (WT) conf: "<<effWHist->GetTitle()<<endl;
+    cout<<"Integral (WT) conf: "<<intWHist->GetTitle()<<endl;
     cout<<"Using rooFit integration"<<endl;
-    intVec.push_back(0);
+    intCVec.push_back(0);
+    intWVec.push_back(0);
   } else {
-    for (int i=1; i<=intHist->GetNbinsX(); ++i) intVec.push_back(intHist->GetBinContent(i));
+    for (int i=1; i<=intCHist->GetNbinsX(); ++i) intCVec.push_back(intCHist->GetBinContent(i));
+    for (int i=1; i<=intWHist->GetNbinsX(); ++i) intWVec.push_back(intWHist->GetBinContent(i));
   }
 
   // define angular parameters
@@ -106,49 +117,28 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
   RooRealVar* P5p = new RooRealVar("P5p","P'_{5}",0,-1*sqrt(2),sqrt(2));
   RooRealVar* P6p = new RooRealVar("P6p","P'_{6}",0,-1*sqrt(2),sqrt(2));
   RooRealVar* P8p = new RooRealVar("P8p","P'_{8}",0,-1*sqrt(2),sqrt(2));
+  RooRealVar* mFrac = new RooRealVar("mFrac","mistag fraction",1);
+  mFrac->setConstant();
 
-  // Customise initial values of parameters
-  // b3wt
-  // Fl->setVal( 0.60);
-  // P1->setVal(-0.16);
-  // P2->setVal(-0.39);
-  // P3->setVal(-0.01);
-  // P4p->setVal(-0.88);
-  // P5p->setVal( 0.75);
-  // P6p->setVal(-0.03);
-  // P8p->setVal(-0.06);
-  // b0wt
-  // Fl->setVal( 0.71);
-  // P1->setVal(-0.02);
-  // P2->setVal( 0.39);
-  // P3->setVal(-0.01);
-  // P4p->setVal( 0.10);
-  // P5p->setVal(-0.35);
-  // P6p->setVal( 0.04);
-  // P8p->setVal( 0.01);
-
-  RooAbsPdf* PDF_sig_ang_singleComponent = 0;
-  if (tagFlag==1) PDF_sig_ang_singleComponent = new PdfRT(("PDF_sig_ang_singleComponent_"+shortString).c_str(),"PDF_sig_ang_singleComponent",
-							  *ctK,*ctL,*phi,*Fl,*P1,*P2,*P3,*P4p,*P5p,*P6p,*P8p,*eff,intVec);
-  else            PDF_sig_ang_singleComponent = new PdfWT(("PDF_sig_ang_singleComponent_"+shortString).c_str(),"PDF_sig_ang_singleComponent",
-							  *ctK,*ctL,*phi,*Fl,*P1,*P2,*P3,*P4p,*P5p,*P6p,*P8p,*eff,intVec);
+  RooAbsPdf* PDF_sig_ang_fullAngular = new PdfSigAng(("PDF_sig_ang_fullAngular_CT_"+shortString).c_str(),"PDF_sig_ang_fullAngular_CT",
+						     *ctK,*ctL,*phi,*Fl,*P1,*P2,*P3,*P4p,*P5p,*P6p,*P8p,*mFrac,*effC,*effW,intCVec,intWVec);
 
   // Customise rooFit integrator
-  // PDF_sig_ang_singleComponent->getIntegratorConfig()->methodND().setLabel("RooMCIntegrator");
+  // PDF_sig_ang_fullAngular->getIntegratorConfig()->methodND().setLabel("RooMCIntegrator");
 
-  RooFitResult* fitResult = PDF_sig_ang_singleComponent->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(1),Hesse(true),Strategy(2),Minos(true)); 
+  RooFitResult* fitResult = PDF_sig_ang_fullAngular->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(1),Hesse(true),Strategy(2),Minos(true),Offset(true)); 
   fitResult->Print("v");
 
   if (save) {
-    TFile* fout = new TFile("fitResult_recoMC_singleComponent.root","UPDATE");
+    TFile* fout = new TFile("fitResult_recoMC_fullAngular.root","UPDATE");
     fitResult->Write(("fitResult_"+shortString).c_str(),TObject::kWriteDelete);
     fout->Close();
   }
 
   if (!plot) return;
 
-  int confIndex = 2*nBins*parity + nBins*tagFlag + q2Bin;
-  string longString  = (tagFlag==1?"Fit to correctly tagged events":"Fit to wrongly tagged events");
+  int confIndex = nBins*parity + q2Bin;
+  string longString  = "Fit to reconstructed events";
   longString = longString + Form(parity==1?" (q2-bin %i even)":" (q2-bin %i odd)",q2Bin);
 
   // plot fit plojections
@@ -160,9 +150,9 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
   data->plotOn(xframe,MarkerColor(kRed+1),LineColor(kRed+1),Binning(40),Name("plData"));
   data->plotOn(yframe,MarkerColor(kRed+1),LineColor(kRed+1),Binning(40));
   data->plotOn(zframe,MarkerColor(kRed+1),LineColor(kRed+1),Binning(40));
-  PDF_sig_ang_singleComponent->plotOn(xframe,LineWidth(1),Name("plPDF"));
-  PDF_sig_ang_singleComponent->plotOn(yframe,LineWidth(1));
-  PDF_sig_ang_singleComponent->plotOn(zframe,LineWidth(1));
+  PDF_sig_ang_fullAngular->plotOn(xframe,LineWidth(1),Name("plPDF"));
+  PDF_sig_ang_fullAngular->plotOn(yframe,LineWidth(1));
+  PDF_sig_ang_fullAngular->plotOn(zframe,LineWidth(1));
   xframe->GetYaxis()->SetTitleOffset(1.8);
   yframe->GetYaxis()->SetTitleOffset(1.8);
   zframe->GetYaxis()->SetTitleOffset(1.8);
@@ -194,22 +184,13 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
 
 }
 
-void fit_recoMC_singleComponentBin2(int q2Bin, int parity, int tagFlag, bool plot, bool save)
-{
-  if ( tagFlag==-1 )
-    for (tagFlag=0; tagFlag<2; ++tagFlag)
-      fit_recoMC_singleComponentBin(q2Bin, parity, tagFlag, plot, save);
-  else
-    fit_recoMC_singleComponentBin(q2Bin, parity, tagFlag, plot, save);
-}
-
-void fit_recoMC_singleComponentBin1(int q2Bin, int parity, int tagFlag, bool plot, bool save)
+void fit_recoMC_fullAngularBin1(int q2Bin, int parity, bool plot, bool save)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      fit_recoMC_singleComponentBin2(q2Bin, parity, tagFlag, plot, save);
+      fit_recoMC_fullAngularBin(q2Bin, parity, plot, save);
   else
-    fit_recoMC_singleComponentBin2(q2Bin, parity, tagFlag, plot, save);
+    fit_recoMC_fullAngularBin(q2Bin, parity, plot, save);
 }
 
 int main(int argc, char** argv)
@@ -219,37 +200,30 @@ int main(int argc, char** argv)
   // parity format: [0] even efficiency
   //                [1] odd efficiency
   //                [-1] for each parity recursively
-  // tag format: [0] mistagged
-  //             [1] correctly-tagged
-  //             [-1] for each tag recursively
 
   int q2Bin   = -1;
   int parity  = -1; 
-  int tagFlag = -1;
 
   if ( argc >= 2 ) q2Bin   = atoi(argv[1]);
   if ( argc >= 3 ) parity  = atoi(argv[2]);
-  if ( argc >= 4 ) tagFlag = atoi(argv[3]);
 
   bool plot = true;
   bool save = true;
 
-  if ( argc >= 5 && atoi(argv[4]) == 0 ) plot = false;
-  if ( argc >= 6 && atoi(argv[5]) == 0 ) save = false;
+  if ( argc >= 4 && atoi(argv[3]) == 0 ) plot = false;
+  if ( argc >= 5 && atoi(argv[4]) == 0 ) save = false;
 
   if ( q2Bin   < -1 || q2Bin   >= nBins ) return 1;
   if ( parity  < -1 || parity  > 1      ) return 1;
-  if ( tagFlag < -1 || tagFlag > 1      ) return 1;
 
   if ( q2Bin==-1 )   cout<<"Running all the q2 bins"<<endl;
   if ( parity==-1 )  cout<<"Running both the parity datasets"<<endl;
-  if ( tagFlag==-1 ) cout<<"Running both the tag conditions"<<endl;
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      fit_recoMC_singleComponentBin1(q2Bin, parity, tagFlag, plot, save);
+      fit_recoMC_fullAngularBin1(q2Bin, parity, plot, save);
   else
-    fit_recoMC_singleComponentBin1(q2Bin, parity, tagFlag, plot, save);
+    fit_recoMC_fullAngularBin1(q2Bin, parity, plot, save);
 
   return 0;
 
