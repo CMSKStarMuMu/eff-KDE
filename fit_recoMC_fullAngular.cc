@@ -30,7 +30,7 @@ float binBorders [nBins+1] = { 1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16, 19};
 
 TCanvas* c [2*nBins];
 
-void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
+void fit_recoMC_fullAngularBin(int q2Bin, int parity, int altIndx, bool plot, bool save)
 {
 
   string shortString = Form("b%ip%i",q2Bin,parity);
@@ -67,8 +67,8 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
   data->append(*dataWT);
 
   // import KDE efficiency histograms
-  string filename = "/afs/cern.ch/user/a/aboletti/public/Run2-KstarMuMu/KDEeff/testVersion-integrals/";
-  filename = filename + Form((parity==0?"KDEeff_b%i_ev.root":"KDEeff_b%i_od.root"),q2Bin);
+  string filename = "/afs/cern.ch/user/a/aboletti/public/Run2-KstarMuMu/KDEeff/altVersion-integrals/";
+  filename = filename + Form((parity==0?"KDEeff_b%i_ev_alt%i.root":"KDEeff_b%i_od_alt%i.root"),q2Bin,altIndx);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -130,7 +130,7 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
   fitResult->Print("v");
 
   if (save) {
-    TFile* fout = new TFile("fitResult_recoMC_fullAngular.root","UPDATE");
+    TFile* fout = new TFile(Form("fitResult_recoMC_fullAngular_alt%i.root",altIndx),"UPDATE");
     fitResult->Write(("fitResult_"+shortString).c_str(),TObject::kWriteDelete);
     fout->Close();
   }
@@ -180,17 +180,17 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
   zframe->Draw();
   leg->Draw("same");
 
-  c[confIndex]->SaveAs( ("fitResult_recoMC_"+shortString+".pdf").c_str() );
+  c[confIndex]->SaveAs( ("fitResult_recoMC_"+shortString+Form("_alt%i.pdf",altIndx)).c_str() );
 
 }
 
-void fit_recoMC_fullAngularBin1(int q2Bin, int parity, bool plot, bool save)
+void fit_recoMC_fullAngularBin1(int q2Bin, int parity, int altIndx, bool plot, bool save)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      fit_recoMC_fullAngularBin(q2Bin, parity, plot, save);
+      fit_recoMC_fullAngularBin(q2Bin, parity, altIndx, plot, save);
   else
-    fit_recoMC_fullAngularBin(q2Bin, parity, plot, save);
+    fit_recoMC_fullAngularBin(q2Bin, parity, altIndx, plot, save);
 }
 
 int main(int argc, char** argv)
@@ -202,16 +202,18 @@ int main(int argc, char** argv)
   //                [-1] for each parity recursively
 
   int q2Bin   = -1;
-  int parity  = -1; 
+  int parity  = -1;
+  int altIndx = 33324;
 
   if ( argc >= 2 ) q2Bin   = atoi(argv[1]);
   if ( argc >= 3 ) parity  = atoi(argv[2]);
+  if ( argc >= 4 ) altIndx = atoi(argv[3]);
 
   bool plot = true;
   bool save = true;
 
-  if ( argc >= 4 && atoi(argv[3]) == 0 ) plot = false;
-  if ( argc >= 5 && atoi(argv[4]) == 0 ) save = false;
+  if ( argc >= 5 && atoi(argv[4]) == 0 ) plot = false;
+  if ( argc >= 6 && atoi(argv[5]) == 0 ) save = false;
 
   if ( q2Bin   < -1 || q2Bin   >= nBins ) return 1;
   if ( parity  < -1 || parity  > 1      ) return 1;
@@ -221,9 +223,9 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      fit_recoMC_fullAngularBin1(q2Bin, parity, plot, save);
+      fit_recoMC_fullAngularBin1(q2Bin, parity, altIndx, plot, save);
   else
-    fit_recoMC_fullAngularBin1(q2Bin, parity, plot, save);
+    fit_recoMC_fullAngularBin1(q2Bin, parity, altIndx, plot, save);
 
   return 0;
 

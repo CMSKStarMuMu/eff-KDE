@@ -113,7 +113,8 @@ void extractEffBin(int q2Bin, int parity, float width0, float width1, float widt
   mistFracHist->SetTitle(("mistFrac-hist_"+confString).c_str());
 
   // save histograms in file
-  TFile* fout = TFile::Open( Form((parity==0?"KDEeff_b%i_ev.root":"KDEeff_b%i_od.root"),q2Bin), "UPDATE" );
+  TFile* fout = TFile::Open( Form((parity==0?"KDEeff_b%i_ev_alt%i%i%i%i%i.root":"KDEeff_b%i_od_alt%i%i%i%i%i.root"),q2Bin,
+				  (int)(width0*10),(int)(width1*10),(int)(width2*10),(int)(width3*10),(int)(width4*10)), "UPDATE" );
   effHist->Write(0,TObject::kWriteDelete);
   effCHist->Write(0,TObject::kWriteDelete);
   effWHist->Write(0,TObject::kWriteDelete);
