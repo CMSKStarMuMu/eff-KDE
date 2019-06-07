@@ -54,7 +54,7 @@ TCanvas* cctmf [2*nBins];
 
 TH1D* Invert1Dhist(TH1D* hin, string hname);
 
-void plotEffBin(int q2Bin, int parity, bool doClosure)
+void plotEffBin(int q2Bin, int parity, int altIndx, bool doClosure)
 {
   string shortString = Form("b%ip%i",q2Bin,parity);
   cout<<"Conf: "<<shortString<<endl;
@@ -92,7 +92,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   RooDataSet* data_wtRECO = (RooDataSet*)wsp->data(("data_wtRECO"+datasetString).c_str());
   
   // import KDE efficiency histograms
-  string filename = Form((parity==0?"KDEeff_b%i_ev.root":"KDEeff_b%i_od.root"),q2Bin);
+  string filename = Form((parity==0?"KDEeff_b%i_ev_alt%i.root":"KDEeff_b%i_od_alt%i.root"),q2Bin,altIndx);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -533,21 +533,21 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   for (vector<TH1D*>::iterator hist = cfSliceZ  .begin(); hist != cfSliceZ  .end(); ++hist) (*hist)->SetMaximum(maxCFZ  *1.1);
   for (vector<TH1D*>::iterator hist = mfSliceZ  .begin(); hist != mfSliceZ  .end(); ++hist) (*hist)->SetMaximum(maxMFZ  *1.1);
 
-  csx  [confIndex]->SaveAs( (confString+Form("_eff_CTKslices_comp_dp%i.pdf"    ,(int)(border*200))).c_str() );
-  csxC [confIndex]->SaveAs( (confString+Form("_eff-ct_CTKslices_comp_dp%i.pdf" ,(int)(border*200))).c_str() );
-  csxW [confIndex]->SaveAs( (confString+Form("_eff-wt_CTKslices_comp_dp%i.pdf" ,(int)(border*200))).c_str() );
-  csxmf[confIndex]->SaveAs( (confString+Form("_mt-frac_CTKslices_comp_dp%i.pdf",(int)(border*200))).c_str() );
-  csxcf[confIndex]->SaveAs( (confString+Form("_ct-frac_CTKslices_comp_dp%i.pdf",(int)(border*200))).c_str() );
-  csy  [confIndex]->SaveAs( (confString+Form("_eff_CTLslices_comp_dp%i.pdf"    ,(int)(border*200))).c_str() );
-  csyC [confIndex]->SaveAs( (confString+Form("_eff-ct_CTLslices_comp_dp%i.pdf" ,(int)(border*200))).c_str() );
-  csyW [confIndex]->SaveAs( (confString+Form("_eff-wt_CTLslices_comp_dp%i.pdf" ,(int)(border*200))).c_str() );
-  csymf[confIndex]->SaveAs( (confString+Form("_mt-frac_CTLslices_comp_dp%i.pdf",(int)(border*200))).c_str() );
-  csycf[confIndex]->SaveAs( (confString+Form("_ct-frac_CTLslices_comp_dp%i.pdf",(int)(border*200))).c_str() );
-  csz  [confIndex]->SaveAs( (confString+Form("_eff_PHIslices_comp_dp%i.pdf"    ,(int)(border*200))).c_str() );
-  cszC [confIndex]->SaveAs( (confString+Form("_eff-ct_PHIslices_comp_dp%i.pdf" ,(int)(border*200))).c_str() );
-  cszW [confIndex]->SaveAs( (confString+Form("_eff-wt_PHIslices_comp_dp%i.pdf" ,(int)(border*200))).c_str() );
-  cszmf[confIndex]->SaveAs( (confString+Form("_mt-frac_PHIslices_comp_dp%i.pdf",(int)(border*200))).c_str() );
-  cszcf[confIndex]->SaveAs( (confString+Form("_ct-frac_PHIslices_comp_dp%i.pdf",(int)(border*200))).c_str() );
+  csx  [confIndex]->SaveAs( (confString+Form("_eff_CTKslices_comp_dp%i_alt%i.pdf"    ,(int)(border*200),altIndx)).c_str() );
+  csxC [confIndex]->SaveAs( (confString+Form("_eff-ct_CTKslices_comp_dp%i_alt%i.pdf" ,(int)(border*200),altIndx)).c_str() );
+  csxW [confIndex]->SaveAs( (confString+Form("_eff-wt_CTKslices_comp_dp%i_alt%i.pdf" ,(int)(border*200),altIndx)).c_str() );
+  csxmf[confIndex]->SaveAs( (confString+Form("_mt-frac_CTKslices_comp_dp%i_alt%i.pdf",(int)(border*200),altIndx)).c_str() );
+  csxcf[confIndex]->SaveAs( (confString+Form("_ct-frac_CTKslices_comp_dp%i_alt%i.pdf",(int)(border*200),altIndx)).c_str() );
+  csy  [confIndex]->SaveAs( (confString+Form("_eff_CTLslices_comp_dp%i_alt%i.pdf"    ,(int)(border*200),altIndx)).c_str() );
+  csyC [confIndex]->SaveAs( (confString+Form("_eff-ct_CTLslices_comp_dp%i_alt%i.pdf" ,(int)(border*200),altIndx)).c_str() );
+  csyW [confIndex]->SaveAs( (confString+Form("_eff-wt_CTLslices_comp_dp%i_alt%i.pdf" ,(int)(border*200),altIndx)).c_str() );
+  csymf[confIndex]->SaveAs( (confString+Form("_mt-frac_CTLslices_comp_dp%i_alt%i.pdf",(int)(border*200),altIndx)).c_str() );
+  csycf[confIndex]->SaveAs( (confString+Form("_ct-frac_CTLslices_comp_dp%i_alt%i.pdf",(int)(border*200),altIndx)).c_str() );
+  csz  [confIndex]->SaveAs( (confString+Form("_eff_PHIslices_comp_dp%i_alt%i.pdf"    ,(int)(border*200),altIndx)).c_str() );
+  cszC [confIndex]->SaveAs( (confString+Form("_eff-ct_PHIslices_comp_dp%i_alt%i.pdf" ,(int)(border*200),altIndx)).c_str() );
+  cszW [confIndex]->SaveAs( (confString+Form("_eff-wt_PHIslices_comp_dp%i_alt%i.pdf" ,(int)(border*200),altIndx)).c_str() );
+  cszmf[confIndex]->SaveAs( (confString+Form("_mt-frac_PHIslices_comp_dp%i_alt%i.pdf",(int)(border*200),altIndx)).c_str() );
+  cszcf[confIndex]->SaveAs( (confString+Form("_ct-frac_PHIslices_comp_dp%i_alt%i.pdf",(int)(border*200),altIndx)).c_str() );
 
   // Plot projections of efficiency functions
   // test: method 1
@@ -819,16 +819,16 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   cp2mf[confIndex]->cd(3);
   mfProj_yz->Draw("SURF3");
 
-  cp1  [confIndex]->SaveAs( (confString+"_eff_1DProj.pdf"    ).c_str() );    
-  cp1C [confIndex]->SaveAs( (confString+"_eff-ct_1DProj.pdf" ).c_str() );    
-  cp1W [confIndex]->SaveAs( (confString+"_eff-wt_1DProj.pdf" ).c_str() );    
-  cp1cf[confIndex]->SaveAs( (confString+"_ct-frac_1DProj.pdf").c_str() );    
-  cp1mf[confIndex]->SaveAs( (confString+"_mt-frac_1DProj.pdf").c_str() );    
-  cp2  [confIndex]->SaveAs( (confString+"_eff_2DProj.pdf"    ).c_str() );    
-  cp2C [confIndex]->SaveAs( (confString+"_eff-ct_2DProj.pdf" ).c_str() );    
-  cp2W [confIndex]->SaveAs( (confString+"_eff-wt_2DProj.pdf" ).c_str() );    
-  cp2cf[confIndex]->SaveAs( (confString+"_ct-frac_2DProj.pdf").c_str() );    
-  cp2mf[confIndex]->SaveAs( (confString+"_mt-frac_2DProj.pdf").c_str() );    
+  cp1  [confIndex]->SaveAs( (confString+Form("_eff_1DProj_alt%i.pdf"    ,altIndx)).c_str() );    
+  cp1C [confIndex]->SaveAs( (confString+Form("_eff-ct_1DProj_alt%i.pdf" ,altIndx)).c_str() );    
+  cp1W [confIndex]->SaveAs( (confString+Form("_eff-wt_1DProj_alt%i.pdf" ,altIndx)).c_str() );    
+  cp1cf[confIndex]->SaveAs( (confString+Form("_ct-frac_1DProj_alt%i.pdf",altIndx)).c_str() );    
+  cp1mf[confIndex]->SaveAs( (confString+Form("_mt-frac_1DProj_alt%i.pdf",altIndx)).c_str() );    
+  cp2  [confIndex]->SaveAs( (confString+Form("_eff_2DProj_alt%i.pdf"    ,altIndx)).c_str() );    
+  cp2C [confIndex]->SaveAs( (confString+Form("_eff-ct_2DProj_alt%i.pdf" ,altIndx)).c_str() );    
+  cp2W [confIndex]->SaveAs( (confString+Form("_eff-wt_2DProj_alt%i.pdf" ,altIndx)).c_str() );    
+  cp2cf[confIndex]->SaveAs( (confString+Form("_ct-frac_2DProj_alt%i.pdf",altIndx)).c_str() );    
+  cp2mf[confIndex]->SaveAs( (confString+Form("_mt-frac_2DProj_alt%i.pdf",altIndx)).c_str() );    
 
   if (!doClosure) return;
 
@@ -1047,10 +1047,10 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   hZctGEN_mf->Draw();
   hZctREC_effW->Draw("same");
 
-  cctC [confIndex]->SaveAs( (confString+"_eff-ct_ClosureTest.pdf" ).c_str() );    
-  cctW [confIndex]->SaveAs( (confString+"_eff-wt_ClosureTest.pdf" ).c_str() );    
-  cctcf[confIndex]->SaveAs( (confString+"_ct-frac_ClosureTest.pdf").c_str() );    
-  cctmf[confIndex]->SaveAs( (confString+"_mt-frac_ClosureTest.pdf").c_str() );    
+  cctC [confIndex]->SaveAs( (confString+Form("_eff-ct_ClosureTest_alt%i.pdf" ,altIndx)).c_str() );    
+  cctW [confIndex]->SaveAs( (confString+Form("_eff-wt_ClosureTest_alt%i.pdf" ,altIndx)).c_str() );    
+  cctcf[confIndex]->SaveAs( (confString+Form("_ct-frac_ClosureTest_alt%i.pdf",altIndx)).c_str() );    
+  cctmf[confIndex]->SaveAs( (confString+Form("_mt-frac_ClosureTest_alt%i.pdf",altIndx)).c_str() );    
 
 }
 
@@ -1081,32 +1081,34 @@ int main(int argc, char** argv)
 
   int q2Bin  = -1;
   int parity = -1; 
+  int altIndx = 33323; 
 
   if ( argc >= 2 ) q2Bin  = atoi(argv[1]);
   if ( argc >= 3 ) parity = atoi(argv[2]);
+  if ( argc >= 4 ) altIndx = atoi(argv[3]);
 
   if ( q2Bin  < -1 || q2Bin  >= nBins ) return 1;
   if ( parity < -1 || parity > 1      ) return 1;
 
   bool doClosure = true;
-  if ( argc >= 4 && atoi(argv[3]) == 0 ) doClosure = false;
+  if ( argc >= 5 && atoi(argv[4]) == 0 ) doClosure = false;
 
   if ( q2Bin > -1 ) {
     if ( parity > -1 ) {
       cout<<"Plotting efficiency for q2 bin "<<q2Bin<<(parity==1?" - odd":" - even")<<" events"<<endl;
-      plotEffBin( q2Bin, parity, doClosure );
+      plotEffBin( q2Bin, parity, altIndx, doClosure );
     } else {
       cout<<"Plotting efficiency for q2 bin "<<q2Bin<<" - both event parities"<<endl;
-      plotEffBin( q2Bin, 0, doClosure );
-      plotEffBin( q2Bin, 1, doClosure );
+      plotEffBin( q2Bin, 0, altIndx, doClosure );
+      plotEffBin( q2Bin, 1, altIndx, doClosure );
     }
   } else {
     cout<<"Plotting efficiency for all q2 bins - "<<(parity==1?"odd events":(parity==0?"even events":"both event parities"))<<endl;
     for (q2Bin=0; q2Bin<nBins; ++q2Bin) {
-      if ( parity > -1 ) plotEffBin( q2Bin, parity, doClosure );
+      if ( parity > -1 ) plotEffBin( q2Bin, parity, altIndx, doClosure );
       else {
-	plotEffBin( q2Bin, 0, doClosure );
-	plotEffBin( q2Bin, 1, doClosure );
+	plotEffBin( q2Bin, 0, altIndx, doClosure );
+	plotEffBin( q2Bin, 1, altIndx, doClosure );
       }
     }
   }

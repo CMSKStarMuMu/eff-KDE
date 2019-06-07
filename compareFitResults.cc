@@ -7,9 +7,9 @@ static const int nPars = 8;
 string ParName  [nPars] = { "Fl", "P1", "P2", "P3", "P4p", "P5p", "P6p", "P8p" };
 const char* ParTitle [nPars] = { "F_{L}", "P_{1}", "P_{2}", "P_{3}", "P'_{4}", "P'_{5}", "P'_{6}", "P'_{8}" };
 
-static const int nAlt = 9;
-int AltIndx [nAlt] = { 23324, 53324, 32324, 35324, 33524, 33334, 33344, 33323, 33325 };
-int AltColor [nAlt] = { 633, 417, 879, 857, 839, 402, 887, 801, 921 };
+static const int nAlt = 13;
+int AltIndx [nAlt] = { 23324, 53324, 32324, 35324, 33524, 33334, 33344, 33323, 33325, 52324, 52524, 32524, 52523 };
+int AltColor [nAlt] = { 633, 417, 879, 857, 839, 402, 887, 801, 921, 607, 807, 419, 907 };
 const char* AltLabel [nAlt] = { "denGen SF: 0.3->0.2",
 				"denGen SF: 0.3->0.5",
 				"numGen SF: 0.3->0.2",
@@ -18,7 +18,11 @@ const char* AltLabel [nAlt] = { "denGen SF: 0.3->0.2",
 				"ctRECO SF: 0.2->0.3",
 				"ctRECO SF: 0.2->0.4",
 				"wtRECO SF: 0.4->0.3",
-				"wtRECO SF: 0.4->0.5" };
+				"wtRECO SF: 0.4->0.5",
+				"dG->0.5, nG->0.2",
+				"dG->0.5, nG->0.2, d->0.5",
+				"nG->0.2, d->0.5",
+				"dG->0.5, nG->0.2, d->0.5, wt->0.3" };
 
 TCanvas* c[3];
 
@@ -31,8 +35,8 @@ void compareFitResults(int q2Bin, int parity, bool plotCT = true, bool plotWT = 
   string shortString = Form("b%ip%i",q2Bin,parity);
 
   // maximum bias value plotted
-  float diffMax = 0.1499;
-  // float diffMax = 0.0799;
+  float diffMax = 0.0799;
+  if (q2Bin==0) diffMax = 0.1499;
 
   // Histograms to plot axes
   TH1D * HistLab = new TH1D("HistLab","Fit bias;;(RECO - GEN)",nPars,0,nPars);
@@ -114,7 +118,7 @@ void compareFitResults(int q2Bin, int parity, bool plotCT = true, bool plotWT = 
     if ( plotCT && finReco[iAlt] && !finReco[iAlt]->IsZombie() ) {
       // Fill values of correct-tag fit 
       RooFitResult* fitResultCT = (RooFitResult*)finReco[iAlt]->Get(("fitResult_"+shortString+"t1").c_str());
-      if (fitResultCT && !fitResultCT->IsZombie()) for (int ParIndx=0; ParIndx<nPars; ++ParIndx) {
+      if (fitResultCT && !fitResultCT->IsZombie() && fitResultCT->status()==0) for (int ParIndx=0; ParIndx<nPars; ++ParIndx) {
 	RooRealVar* ParCT = (RooRealVar*)fitResultCT->floatParsFinal().find(ParName[ParIndx].c_str());
 	ctDiff.back()[ParIndx] = ParCT->getValV()-genRes[ParIndx];
 	ctDiffErrH.back()[ParIndx] = sqrt(ParCT->getErrorHi()*ParCT->getErrorHi()+genErrL[ParIndx]*genErrL[ParIndx]);
@@ -125,7 +129,7 @@ void compareFitResults(int q2Bin, int parity, bool plotCT = true, bool plotWT = 
     if ( plotWT && finReco[iAlt] && !finReco[iAlt]->IsZombie() ) {
       // Fill values of wrong-tag fit 
       RooFitResult* fitResultWT = (RooFitResult*)finReco[iAlt]->Get(("fitResult_"+shortString+"t0").c_str());
-      if (fitResultWT && !fitResultWT->IsZombie()) for (int ParIndx=0; ParIndx<nPars; ++ParIndx) {
+      if (fitResultWT && !fitResultWT->IsZombie() && fitResultWT->status()==0) for (int ParIndx=0; ParIndx<nPars; ++ParIndx) {
 	RooRealVar* ParWT = (RooRealVar*)fitResultWT->floatParsFinal().find(ParName[ParIndx].c_str());
 	wtDiff.back()[ParIndx] = ParWT->getValV()-genRes[ParIndx];
 	wtDiffErrH.back()[ParIndx] = sqrt(ParWT->getErrorHi()*ParWT->getErrorHi()+genErrL[ParIndx]*genErrL[ParIndx]);
@@ -136,7 +140,7 @@ void compareFitResults(int q2Bin, int parity, bool plotCT = true, bool plotWT = 
     if ( plotRECO && finFullReco[iAlt] && !finFullReco[iAlt]->IsZombie() ) {
       // Fill values of RECO fit 
       RooFitResult* fitResult = (RooFitResult*)finFullReco[iAlt]->Get(("fitResult_"+shortString).c_str());
-      if (fitResult && !fitResult->IsZombie()) for (int ParIndx=0; ParIndx<nPars; ++ParIndx) {
+      if (fitResult && !fitResult->IsZombie() && fitResult->status()==0) for (int ParIndx=0; ParIndx<nPars; ++ParIndx) {
 	RooRealVar* Par = (RooRealVar*)fitResult->floatParsFinal().find(ParName[ParIndx].c_str());
 	Diff.back()[ParIndx] = Par->getValV()-genRes[ParIndx];
 	DiffErrH.back()[ParIndx] = sqrt(Par->getErrorHi()*Par->getErrorHi()+genErrL[ParIndx]*genErrL[ParIndx]);
@@ -197,13 +201,18 @@ void compareFitResults(int q2Bin, int parity, bool plotCT = true, bool plotWT = 
   HistLab->GetXaxis()->SetLabelSize(35);
 
   // Legend
-  TLegend *leg = new TLegend(0.15,0.89-0.025*(nAlt+1),0.4,0.89);
-  leg->SetBorderSize(0);
-  leg->SetFillColor(0);
-  leg->SetTextSize(0.025);
-  leg->AddEntry(GrDiff[0],"legacy","lep");
+  TLegend *leg1 = new TLegend(0.15,0.89-0.025*((nAlt+2)/2),0.45,0.89);
+  TLegend *leg2 = new TLegend(0.45,0.89-0.025*((nAlt+1)/2),0.75,0.89);
+  leg1->SetBorderSize(0);
+  leg2->SetBorderSize(0);
+  leg1->SetFillColor(0);
+  leg2->SetFillColor(0);
+  leg1->SetTextSize(0.023);
+  leg2->SetTextSize(0.023);
+  leg1->AddEntry(GrDiff[0],"legacy","lep");
   for (int iAlt=1; iAlt<=nAlt; ++iAlt)
-    leg->AddEntry(GrDiff[iAlt],AltLabel[iAlt-1],"lep");
+    if (iAlt<(nAlt+2)/2) leg1->AddEntry(GrDiff[iAlt],AltLabel[iAlt-1],"lep");
+    else leg2->AddEntry(GrDiff[iAlt],AltLabel[iAlt-1],"lep");
 
   // Zero line
   TLine *line = new TLine(0,0,nPars,0);
@@ -224,7 +233,8 @@ void compareFitResults(int q2Bin, int parity, bool plotCT = true, bool plotWT = 
     HistLab->Draw("AXIS");
     line->Draw();
     for (int iAlt=0; iAlt<=nAlt; ++iAlt) GrDiffCT[iAlt]->Draw("p");
-    leg->Draw();
+    leg1->Draw();
+    leg2->Draw();
     TitleTex->DrawLatex(0.5,0.91,("Bias in fit to correct-tag events - "+longString).c_str());
     c[0]->SaveAs( ("fitResult_alternativeComp_"+shortString+"_ctRECO.pdf").c_str() );
   }
@@ -234,7 +244,8 @@ void compareFitResults(int q2Bin, int parity, bool plotCT = true, bool plotWT = 
     HistLab->Draw("AXIS");
     line->Draw();
     for (int iAlt=0; iAlt<=nAlt; ++iAlt) GrDiffWT[iAlt]->Draw("p");
-    leg->Draw();
+    leg1->Draw();
+    leg2->Draw();
     TitleTex->DrawLatex(0.5,0.91,("Bias in fit to wrong-tag events - "+longString).c_str());
     c[1]->SaveAs( ("fitResult_alternativeComp_"+shortString+"_wtRECO.pdf").c_str() );
   }
@@ -244,7 +255,8 @@ void compareFitResults(int q2Bin, int parity, bool plotCT = true, bool plotWT = 
     HistLab->Draw("AXIS");
     line->Draw();
     for (int iAlt=0; iAlt<=nAlt; ++iAlt) GrDiff[iAlt]->Draw("p");
-    leg->Draw();
+    leg1->Draw();
+    leg2->Draw();
     TitleTex->DrawLatex(0.5,0.91,("Bias in fit to RECO events - "+longString).c_str());
     c[2]->SaveAs( ("fitResult_alternativeComp_"+shortString+"_RECO.pdf").c_str() );
   }
