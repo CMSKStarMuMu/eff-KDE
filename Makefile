@@ -13,6 +13,7 @@ EXECUTABLE1 := preComp_Integrals_MC
 EXECUTABLE2 := fit_recoMC_singleComponent
 EXECUTABLE3 := fit_genMC
 EXECUTABLE4 := fit_recoMC_fullAngular
+EXECUTABLE5 := createCorrectionWeights
 
 EXTRACLASS := RooDataHist.cxx
 CLASS0     := PdfRT
@@ -47,8 +48,11 @@ $(EXECUTABLE3): $(EXECUTABLE3).cc
 $(EXECUTABLE4): $(EXECUTABLE4).cc 
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR)
 
+$(EXECUTABLE5): $(EXECUTABLE5).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR)
+
 
 #cleaning options
 .PHONY: clean
 clean:
-	rm -f $(EXECUTABLE0) $(EXECUTABLE1) $(EXECUTABLE2) $(EXECUTABLE3) $(EXECUTABLE4)
+	rm -f $(EXECUTABLE0) $(EXECUTABLE1) $(EXECUTABLE2) $(EXECUTABLE3) $(EXECUTABLE4) $(EXECUTABLE5)
