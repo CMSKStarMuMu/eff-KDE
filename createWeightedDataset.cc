@@ -22,6 +22,7 @@ void createWeightedDataset(int year, int q2Bin = -1, bool plot = false)
   RooRealVar ctL ("ctL","cos(#theta_{L})",-1,1);
   RooRealVar phi ("phi","#phi",-TMath::Pi(),TMath::Pi());
   RooArgSet vars (ctK, ctL, phi);
+  RooRealVar wei ("weight","weight",1);
 
   bool runBin [nBins];
   string shortString [nBins];
@@ -156,16 +157,26 @@ void createWeightedDataset(int year, int q2Bin = -1, bool plot = false)
   RooDataSet* data_wtRECO_ev [nBins];
   RooDataSet* data_wtRECO_od [nBins];
   for (int i=0; i<nBins; ++i) if (runBin[i]) {
-      data_genDen_ev [i] = new RooDataSet( ("data_genDen_ev_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (even)", vars );
-      data_genDen_od [i] = new RooDataSet( ("data_genDen_od_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (odd)", vars );
-      data_genNum_ev [i] = new RooDataSet( ("data_genNum_ev_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (even)", vars );
-      data_genNum_od [i] = new RooDataSet( ("data_genNum_od_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (odd)", vars );
-      data_den_ev    [i] = new RooDataSet( ("data_den_ev_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (even)", vars );
-      data_den_od    [i] = new RooDataSet( ("data_den_od_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (odd)", vars );
-      data_ctRECO_ev [i] = new RooDataSet( ("data_ctRECO_ev_"+shortString[i]).c_str(), "Correctly-tagged reconstructed candidates after selections (even)", vars ); 
-      data_ctRECO_od [i] = new RooDataSet( ("data_ctRECO_od_"+shortString[i]).c_str(), "Correctly-tagged reconstructed candidates after selections (odd)", vars ); 
-      data_wtRECO_ev [i] = new RooDataSet( ("data_wtRECO_ev_"+shortString[i]).c_str(), "Wrongly-tagged reconstructed candidates after selections (even)", vars ); 
-      data_wtRECO_od [i] = new RooDataSet( ("data_wtRECO_od_"+shortString[i]).c_str(), "Wrongly-tagged reconstructed candidates after selections (odd)", vars ); 
+      data_genDen_ev [i] = new RooDataSet( ("data_genDen_ev_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (even)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_genDen_od [i] = new RooDataSet( ("data_genDen_od_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (odd)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_genNum_ev [i] = new RooDataSet( ("data_genNum_ev_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (even)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_genNum_od [i] = new RooDataSet( ("data_genNum_od_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (odd)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_den_ev    [i] = new RooDataSet( ("data_den_ev_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (even)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_den_od    [i] = new RooDataSet( ("data_den_od_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (odd)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_ctRECO_ev [i] = new RooDataSet( ("data_ctRECO_ev_"+shortString[i]).c_str(), "Correctly-tagged reconstructed candidates after selections (even)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_ctRECO_od [i] = new RooDataSet( ("data_ctRECO_od_"+shortString[i]).c_str(), "Correctly-tagged reconstructed candidates after selections (odd)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_wtRECO_ev [i] = new RooDataSet( ("data_wtRECO_ev_"+shortString[i]).c_str(), "Wrongly-tagged reconstructed candidates after selections (even)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_wtRECO_od [i] = new RooDataSet( ("data_wtRECO_od_"+shortString[i]).c_str(), "Wrongly-tagged reconstructed candidates after selections (odd)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
     }
 
   // Prepare GEN-level datasets

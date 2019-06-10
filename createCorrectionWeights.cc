@@ -246,6 +246,9 @@ void createCorrectionWeightsBin(int q2Bin, int parity, bool plot, bool save)
   histProj2XY->SetTitle( Form("%s;cos(#theta_{L});cos(#theta_{K});Events",longString.c_str()) );
   histProj2XZ->SetTitle( Form("%s;#phi;cos(#theta_{K});;Events",longString.c_str()) );
   histProj2YZ->SetTitle( Form("%s;#phi;cos(#theta_{L});Events",longString.c_str()) );
+  histProj2XY->Scale( 1.0 / hBins );
+  histProj2XZ->Scale( 1.0 / hBins );
+  histProj2YZ->Scale( 1.0 / hBins );
   histProj2XY->GetXaxis()->SetTitleOffset(1.4);
   histProj2XY->GetYaxis()->SetTitleOffset(2);
   histProj2XZ->GetXaxis()->SetTitleOffset(1.4);
