@@ -136,7 +136,7 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
   // Customise rooFit integrator
   // PDF_sig_ang_singleComponent->getIntegratorConfig()->methodND().setLabel("RooMCIntegrator");
 
-  RooFitResult* fitResult = PDF_sig_ang_singleComponent->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(1),Hesse(true),Strategy(2),Minos(true)); 
+  RooFitResult* fitResult = PDF_sig_ang_singleComponent->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(1),Hesse(true),Strategy(2),Minos(true),SumW2Error(true)); 
   fitResult->Print("v");
 
   if (save) {

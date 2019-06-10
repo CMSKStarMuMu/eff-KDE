@@ -126,7 +126,7 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
   // Customise rooFit integrator
   // PDF_sig_ang_fullAngular->getIntegratorConfig()->methodND().setLabel("RooMCIntegrator");
 
-  RooFitResult* fitResult = PDF_sig_ang_fullAngular->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(1),Hesse(true),Strategy(2),Minos(true),Offset(true)); 
+  RooFitResult* fitResult = PDF_sig_ang_fullAngular->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),Hesse(true),Strategy(2),Minos(true),Offset(true),SumW2Error(true)); 
   fitResult->Print("v");
 
   if (save) {
