@@ -1,5 +1,5 @@
 Executable  = run_composeEff_rooKeys.sh
-bin         = ( $(ProcId) / 100 ) % 900
+bin         = ( $(ProcId) / 100 ) % 9
 indx        = $(ProcId) / 900
 par	    = ( $(ProcId) / 50 ) % 2
 wid	    = 0.3
