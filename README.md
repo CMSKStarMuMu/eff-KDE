@@ -6,7 +6,7 @@ Use this list of commands to produce a result as quickly as possible
 
 ## Setup working area
 Make sure to be in an area with ROOT v6.12 (or later) available. The code could work with previous versions, but it is not guaranteed.
-If you are on CERN lxplus machines, you can acheive it by running:
+If you are on CERN lxplus machines, you can achieve it by running:
 ```sh
 export SCRAM_ARCH=slc7_amd64_gcc820
 cmsrel CMSSW_10_4_0
