@@ -37,7 +37,7 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
   cout<<"Conf: "<<shortString<<endl;
 
   // Load variables and dataset
-  string filename_data = Form("effDataset_b%i.root",q2Bin);
+  string filename_data = Form("effWeightedDataset_b%i.root",q2Bin);
   TFile* fin_data = TFile::Open( filename_data.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;
@@ -130,7 +130,7 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
   fitResult->Print("v");
 
   if (save) {
-    TFile* fout = new TFile("fitResult_recoMC_fullAngular.root","UPDATE");
+    TFile* fout = new TFile("fitResultWeighted_recoMC_fullAngular.root","UPDATE");
     fitResult->Write(("fitResult_"+shortString).c_str(),TObject::kWriteDelete);
     fout->Close();
   }
@@ -180,7 +180,7 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
   zframe->Draw();
   leg->Draw("same");
 
-  c[confIndex]->SaveAs( ("fitResult_recoMC_"+shortString+".pdf").c_str() );
+  c[confIndex]->SaveAs( ("fitResultWeighted_recoMC_fullAngular_"+shortString+".pdf").c_str() );
 
 }
 
