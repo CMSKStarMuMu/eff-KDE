@@ -35,7 +35,7 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
     cout<<"File not found: "<<filename_data<<endl;
     return;
   }
-  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%i",q2Bin));
+  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,1-parity));
   if ( !wsp || wsp->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename_data<<endl;
     return;
@@ -69,7 +69,7 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
   RooAbsPdf* PDF_sig_ang_decayRate = new DecayRate(("PDF_sig_ang_decayRate_"+shortString).c_str(),"PDF_sig_ang_decayRate",
 						   *ctK,*ctL,*phi,*Fl,*P1,*P2,*P3,*P4p,*P5p,*P6p,*P8p);
 
-  RooFitResult * fitResult = PDF_sig_ang_decayRate->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(2),Hesse(true),Strategy(2),Minos(false),SumW2Error(true)); 
+  RooFitResult * fitResult = PDF_sig_ang_decayRate->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(2),Strategy(2),Minos(false),Offset(true),SumW2Error(true));
   fitResult->Print("v");
 
   if (save) {
@@ -145,7 +145,7 @@ int main(int argc, char** argv)
   //                [-1] for each parity recursively
 
   int q2Bin   = -1;
-  int parity  = -1; 
+  int parity  = -1;
 
   if ( argc >= 2 ) q2Bin   = atoi(argv[1]);
   if ( argc >= 3 ) parity  = atoi(argv[2]);

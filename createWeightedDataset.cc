@@ -311,20 +311,25 @@ void createWeightedDataset(int year, int q2Bin = -1, bool plot = false)
   cout<<"Dataset prepared"<<endl;
 
   // Save datasets
-  RooWorkspace *ws [nBins];
+  RooWorkspace *ws_ev [nBins];
+  RooWorkspace *ws_od [nBins];
   for (int i=0; i<nBins; ++i) if (runBin[i]) {
-      ws [i] = new RooWorkspace(("ws_"+shortString[i]).c_str(),"Workspace with single-bin datasets");
-      ws[i]->import( *data_genDen_ev[i] );
-      ws[i]->import( *data_genDen_od[i] );
-      ws[i]->import( *data_genNum_ev[i] );
-      ws[i]->import( *data_genNum_od[i] );
-      ws[i]->import( *data_den_ev   [i] );
-      ws[i]->import( *data_den_od   [i] );
-      ws[i]->import( *data_ctRECO_ev[i] );
-      ws[i]->import( *data_ctRECO_od[i] );
-      ws[i]->import( *data_wtRECO_ev[i] );
-      ws[i]->import( *data_wtRECO_od[i] );
-      ws[i]->writeToFile( ( "effWeightedDataset_"+shortString[i]+".root" ).c_str() );
+      ws_ev[i] = new RooWorkspace(("ws_"+shortString[i]+"p0").c_str(),"Workspace with single-bin even datasets");
+      ws_od[i] = new RooWorkspace(("ws_"+shortString[i]+"p1").c_str(),"Workspace with single-bin odd datasets");
+      ws_ev[i]->import( *data_genDen_ev[i] );
+      ws_od[i]->import( *data_genDen_od[i] );
+      ws_ev[i]->import( *data_genNum_ev[i] );
+      ws_od[i]->import( *data_genNum_od[i] );
+      ws_ev[i]->import( *data_den_ev   [i] );
+      ws_od[i]->import( *data_den_od   [i] );
+      ws_ev[i]->import( *data_ctRECO_ev[i] );
+      ws_od[i]->import( *data_ctRECO_od[i] );
+      ws_ev[i]->import( *data_wtRECO_ev[i] );
+      ws_od[i]->import( *data_wtRECO_od[i] );
+      TFile* fout = new TFile( ( "effWeightedDataset_"+shortString[i]+".root" ).c_str(), "RECREATE" );
+      ws_ev[i]->Write();
+      ws_od[i]->Write();
+      fout->Close();
     }
 
   // compute and print average efficiency
