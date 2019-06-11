@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export HOME=/eos/user/a/aboletti/BdToKstarMuMu/efficiency
+export HOME=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE
 export CMSSWDIR=/eos/user/a/aboletti/BdToKstarMuMu/CMSSW_10_4_0/src
 export WORKDIR=$PWD
 
@@ -26,3 +26,6 @@ cp $HOME/composeEff_rooKeys_parSub.cc .
 root -l -q -b 'composeEff_rooKeys_parSub.cc('${bin}','${indx}','${par}','${wid}','${xbin}','${ybin}','${zbin}','${ndiv}','${totdiv}')'
 
 cp KDEhist* $HOME/
+rm composeEff_rooKeys_parSub.cc
+rm effDataset_b*
+rm KDEhist*
