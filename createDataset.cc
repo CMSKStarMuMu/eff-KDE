@@ -22,6 +22,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   RooRealVar ctL ("ctL","cos(#theta_{L})",-1,1);
   RooRealVar phi ("phi","#phi",-TMath::Pi(),TMath::Pi());
   RooArgSet vars (ctK, ctL, phi);
+  RooRealVar wei ("weight","weight",1);
 
   bool runBin [nBins];
   string shortString [nBins];
@@ -39,19 +40,18 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   TChain* t_den = new TChain();
   TChain* t_num = new TChain();
   t_gen->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/GEN_BFilter_B0MuMuKstar_p*.root/ntuple");
-  // 2016
   if ( year==6 ) {
-    return; 			// to remove when samples available
-    t_den->Add("");
-    t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/NtupleNov21/2016MC_LMNR_bdt0p96.root/ntuple");
-  // 2017
+    // 2016
+    t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/NtupleMay20/2016GEN_MC_LMNR.root/ntuple");
+    t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/NtupleMay20/2016MC_LMNR.root/ntuple");
   } else if ( year==7 ) {
-    t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/2017GEN_MC_LMNR_AddVtx_AddQ2.root/ntuple");
+    // 2017
+    t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/2017GEN_MC_LMNR.root/ntuple");
     t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/2017MC_LMNR.root/ntuple");
   } else if ( year==8 ) {
-    return; 			// to remove when samples available
-    t_den->Add("");
-    t_num->Add("");
+    // 2018
+    t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/2018GEN_MC_LMNR.root/ntuple");
+    t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/2018MC_LMNR.root/ntuple");
   }
   int genEntries = t_gen->GetEntries();
   int denEntries = t_den->GetEntries();
@@ -83,9 +83,9 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   t_gen->SetBranchAddress( "genkstTrkmPt", &genkstTrkmPt );
 
   // dimuon mass variables
-  double genDimuMass, recoDimuMass;
-  t_gen->SetBranchAddress( "genq2"   , &genDimuMass  );
-  t_den->SetBranchAddress( "genQ"    , &genDimuMass  );
+  double genDimuMass2, recoDimuMass;
+  t_gen->SetBranchAddress( "genQ2"   , &genDimuMass2 );
+  t_den->SetBranchAddress( "genQ2"   , &genDimuMass2 );
   t_num->SetBranchAddress( "mumuMass", &recoDimuMass );
 
   // B0-kinematic variables
@@ -127,16 +127,26 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   RooDataSet* data_wtRECO_ev [nBins];
   RooDataSet* data_wtRECO_od [nBins];
   for (int i=0; i<nBins; ++i) if (runBin[i]) {
-      data_genDen_ev [i] = new RooDataSet( ("data_genDen_ev_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (even)", vars );
-      data_genDen_od [i] = new RooDataSet( ("data_genDen_od_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (odd)", vars );
-      data_genNum_ev [i] = new RooDataSet( ("data_genNum_ev_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (even)", vars );
-      data_genNum_od [i] = new RooDataSet( ("data_genNum_od_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (odd)", vars );
-      data_den_ev    [i] = new RooDataSet( ("data_den_ev_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (even)", vars );
-      data_den_od    [i] = new RooDataSet( ("data_den_od_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (odd)", vars );
-      data_ctRECO_ev [i] = new RooDataSet( ("data_ctRECO_ev_"+shortString[i]).c_str(), "Correctly-tagged reconstructed candidates after selections (even)", vars ); 
-      data_ctRECO_od [i] = new RooDataSet( ("data_ctRECO_od_"+shortString[i]).c_str(), "Correctly-tagged reconstructed candidates after selections (odd)", vars ); 
-      data_wtRECO_ev [i] = new RooDataSet( ("data_wtRECO_ev_"+shortString[i]).c_str(), "Wrongly-tagged reconstructed candidates after selections (even)", vars ); 
-      data_wtRECO_od [i] = new RooDataSet( ("data_wtRECO_od_"+shortString[i]).c_str(), "Wrongly-tagged reconstructed candidates after selections (odd)", vars ); 
+      data_genDen_ev [i] = new RooDataSet( ("data_genDen_ev_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (even)",
+					   vars );
+      data_genDen_od [i] = new RooDataSet( ("data_genDen_od_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (odd)",
+					   vars );
+      data_genNum_ev [i] = new RooDataSet( ("data_genNum_ev_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (even)",
+					   vars );
+      data_genNum_od [i] = new RooDataSet( ("data_genNum_od_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (odd)",
+					   vars );
+      data_den_ev    [i] = new RooDataSet( ("data_den_ev_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (even)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_den_od    [i] = new RooDataSet( ("data_den_od_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (odd)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_ctRECO_ev [i] = new RooDataSet( ("data_ctRECO_ev_"+shortString[i]).c_str(), "Correctly-tagged reconstructed candidates after selections (even)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_ctRECO_od [i] = new RooDataSet( ("data_ctRECO_od_"+shortString[i]).c_str(), "Correctly-tagged reconstructed candidates after selections (odd)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_wtRECO_ev [i] = new RooDataSet( ("data_wtRECO_ev_"+shortString[i]).c_str(), "Wrongly-tagged reconstructed candidates after selections (even)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+      data_wtRECO_od [i] = new RooDataSet( ("data_wtRECO_od_"+shortString[i]).c_str(), "Wrongly-tagged reconstructed candidates after selections (odd)",
+					   RooArgSet(ctK,ctL,phi,wei), "weight" );
     }
 
   // Prepare GEN-level datasets
@@ -149,8 +159,8 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     xBin=-1;
     for (int i=0; i<nBins; ++i)
       if ( runBin[i] )
-	if ( ( pow(genDimuMass,2) < binBorders[i+1] ) &&
-	     ( pow(genDimuMass,2) > binBorders[i]   ) ) {
+	if ( ( genDimuMass2 < binBorders[i+1] ) &&
+	     ( genDimuMass2 > binBorders[i]   ) ) {
 	  xBin = i;
 	  break;
 	}
@@ -184,8 +194,8 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     xBin=-1;
     for (int i=0; i<nBins; ++i)
       if ( runBin[i] )
-	if ( ( pow(genDimuMass,2) < binBorders[i+1] ) &&
-	     ( pow(genDimuMass,2) > binBorders[i]   ) ) {
+	if ( ( genDimuMass2 < binBorders[i+1] ) &&
+	     ( genDimuMass2 > binBorders[i]   ) ) {
 	  xBin = i;
 	  break;
 	}
