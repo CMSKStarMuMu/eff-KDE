@@ -66,19 +66,18 @@ void createWeightedDataset(int year, int q2Bin = -1, bool plot = false)
   TChain* t_den = new TChain();
   TChain* t_num = new TChain();
   t_gen->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/GEN_BFilter_B0MuMuKstar_p*.root/ntuple");
-  // 2016
   if ( year==6 ) {
-    return; 			// to remove when samples available
-    t_den->Add("");
-    t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/NtupleNov21/2016MC_LMNR_bdt0p96.root/ntuple");
-  // 2017
+    // 2016
+    t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/NtupleMay20/2016GEN_MC_LMNR.root/ntuple");
+    t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/NtupleMay20/2016MC_LMNR.root/ntuple");
   } else if ( year==7 ) {
+    // 2017
     t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/2017GEN_MC_LMNR.root/ntuple");
     t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/2017MC_LMNR.root/ntuple");
   } else if ( year==8 ) {
-    return; 			// to remove when samples available
-    t_den->Add("");
-    t_num->Add("");
+    // 2018
+    t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/2018GEN_MC_LMNR.root/ntuple");
+    t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/2018MC_LMNR.root/ntuple");
   }
   int genEntries = t_gen->GetEntries();
   int denEntries = t_den->GetEntries();
