@@ -52,6 +52,10 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
   double DiffErrL [nBins];
 
   TFile* finGen = TFile::Open("fitResult_genMC.root");
+  if ( !finGen || finGen->IsZombie() ) {
+    cout<<"Missing gen file: fitResult_genMC.root"<<endl;
+    return;
+  }
   TFile* finReco;
   TFile* finFullReco;
   if (plotCT || plotWT) finReco = TFile::Open("fitResult_recoMC_singleComponent.root");
@@ -59,63 +63,73 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
 
   for (int i=0; i<nBins; ++i) {
 
-    if (i==4 || i==6 || i==8) {
-      genRes[i]=ctRes[i]=wtRes[i]=ctDiff[i]=wtDiff[i]=Res[i]=Diff[i]=-2;
-      genErrH[i]=genErrL[i]=ctErrH[i]=ctErrL[i]=wtErrH[i]=wtErrL[i]=0;
-      ctDiffErrH[i]=ctDiffErrL[i]=wtDiffErrH[i]=wtDiffErrL[i]=0;
-      ErrH[i]=ErrL[i]=DiffErrH[i]=DiffErrL[i]=0;
-      continue;
-    }
+    // fill default values
+    genRes[i]=ctRes[i]=wtRes[i]=ctDiff[i]=wtDiff[i]=Res[i]=Diff[i]=-2;
+    genErrH[i]=genErrL[i]=ctErrH[i]=ctErrL[i]=wtErrH[i]=wtErrL[i]=0;
+    ctDiffErrH[i]=ctDiffErrL[i]=wtDiffErrH[i]=wtDiffErrL[i]=0;
+    ErrH[i]=ErrL[i]=DiffErrH[i]=DiffErrL[i]=0;
+
+    if (i==4 || i==6 || i==8) continue;
 
     RooFitResult* fitResultGen = (RooFitResult*)finGen->Get(Form("fitResult_b%ip%i",i,parity));
-    RooRealVar* ParGen = (RooRealVar*)fitResultGen->floatParsFinal().find(ParName[ParIndx].c_str());
-    genRes[i] = ParGen->getValV();
-    genErrH[i] = ParGen->getErrorHi();
-    genErrL[i] = -1*ParGen->getErrorLo();
+    if (fitResultGen && !fitResultGen->IsZombie() && fitResultGen->status()==0) {
+      RooRealVar* ParGen = (RooRealVar*)fitResultGen->floatParsFinal().find(ParName[ParIndx].c_str());
+      genRes[i] = ParGen->getValV();
+      genErrH[i] = ParGen->getErrorHi();
+      genErrL[i] = -1*ParGen->getErrorLo();
+    }
 
-    if (plotCT) {
+    if ( plotCT && finReco && !finReco->IsZombie() ) {
       RooFitResult* fitResultCT = (RooFitResult*)finReco->Get(Form("fitResult_b%ip%it1",i,parity));
-      RooRealVar* ParCT  = (RooRealVar*)fitResultCT ->floatParsFinal().find(ParName[ParIndx].c_str());
-      ctRes[i] = ParCT->getValV();
-      ctErrH[i] = ParCT->getErrorHi();
-      ctErrL[i] = -1*ParCT->getErrorLo();
-      ctDiff[i] = ctRes[i]-genRes[i];
-      ctDiffErrH[i] = sqrt(ctErrH[i]*ctErrH[i]+genErrL[i]*genErrL[i]);
-      ctDiffErrL[i] = sqrt(ctErrL[i]*ctErrL[i]+genErrH[i]*genErrH[i]);
-    } else {
-      ctRes[i] = ctDiff[i] = -2;
-      ctErrH[i] = ctErrL[i] = ctDiffErrH[i] = ctDiffErrL[i] = 0;
+      if (fitResultCT && !fitResultCT->IsZombie() && fitResultCT->status()==0) {
+	RooRealVar* ParCT = (RooRealVar*)fitResultCT->floatParsFinal().find(ParName[ParIndx].c_str());
+	ctRes[i] = ParCT->getValV();
+	ctErrH[i] = ParCT->getErrorHi();
+	ctErrL[i] = -1*ParCT->getErrorLo();
+	if (fitResultGen && !fitResultGen->IsZombie() && fitResultGen->status()==0) {
+	  ctDiff[i] = ctRes[i]-genRes[i];
+	  ctDiffErrH[i] = sqrt(ctErrH[i]*ctErrH[i]+genErrL[i]*genErrL[i]);
+	  ctDiffErrL[i] = sqrt(ctErrL[i]*ctErrL[i]+genErrH[i]*genErrH[i]);
+	}
+      }
     }
 
-    if (plotWT) {
+    if ( plotWT && finReco && !finReco->IsZombie() ) {
       RooFitResult* fitResultWT = (RooFitResult*)finReco->Get(Form("fitResult_b%ip%it0",i,parity));
-      RooRealVar* ParWT  = (RooRealVar*)fitResultWT ->floatParsFinal().find(ParName[ParIndx].c_str());
-      wtRes[i] = ParWT->getValV();
-      wtErrH[i] = ParWT->getErrorHi();
-      wtErrL[i] = -1*ParWT->getErrorLo();
-      wtDiff[i] = wtRes[i]-genRes[i];
-      wtDiffErrH[i] = sqrt(wtErrH[i]*wtErrH[i]+genErrL[i]*genErrL[i]);
-      wtDiffErrL[i] = sqrt(wtErrL[i]*wtErrL[i]+genErrH[i]*genErrH[i]);
-    } else {
-      wtRes[i] = wtDiff[i] = -2;
-      wtErrH[i] = wtErrL[i] = wtDiffErrH[i] = wtDiffErrL[i] = 0;
+      if (fitResultWT && !fitResultWT->IsZombie() && fitResultWT->status()==0) {
+	RooRealVar* ParWT = (RooRealVar*)fitResultWT->floatParsFinal().find(ParName[ParIndx].c_str());
+	wtRes[i] = ParWT->getValV();
+	wtErrH[i] = ParWT->getErrorHi();
+	wtErrL[i] = -1*ParWT->getErrorLo();
+	if (fitResultGen && !fitResultGen->IsZombie() && fitResultGen->status()==0) {
+	  wtDiff[i] = wtRes[i]-genRes[i];
+	  wtDiffErrH[i] = sqrt(wtErrH[i]*wtErrH[i]+genErrL[i]*genErrL[i]);
+	  wtDiffErrL[i] = sqrt(wtErrL[i]*wtErrL[i]+genErrH[i]*genErrH[i]);
+	}
+      }
     }
 
-    if (plotRECO) {
+    if ( plotRECO && finFullReco && !finFullReco->IsZombie() ) {
       RooFitResult* fitResult = (RooFitResult*)finFullReco->Get(Form("fitResult_b%ip%i",i,parity));
-      RooRealVar* Par    = (RooRealVar*)fitResult   ->floatParsFinal().find(ParName[ParIndx].c_str());
-      Res[i] = Par->getValV();
-      ErrH[i] = Par->getErrorHi();
-      ErrL[i] = -1*Par->getErrorLo();
-      Diff[i] = Res[i]-genRes[i];
-      DiffErrH[i] = sqrt(ErrH[i]*ErrH[i]+genErrL[i]*genErrL[i]);
-      DiffErrL[i] = sqrt(ErrL[i]*ErrL[i]+genErrH[i]*genErrH[i]);
-    } else {
-      Res[i] = Diff[i] = -2;
-      ErrH[i] = ErrL[i] = DiffErrH[i] = DiffErrL[i] = 0;
+      if (fitResult && !fitResult->IsZombie() && fitResult->status()==0) {
+	RooRealVar* Par = (RooRealVar*)fitResult->floatParsFinal().find(ParName[ParIndx].c_str());
+	Res[i] = Par->getValV();
+	ErrH[i] = Par->getErrorHi();
+	ErrL[i] = -1*Par->getErrorLo();
+	if (fitResultGen && !fitResultGen->IsZombie() && fitResultGen->status()==0) {
+	  Diff[i] = Res[i]-genRes[i];
+	  DiffErrH[i] = sqrt(ErrH[i]*ErrH[i]+genErrL[i]*genErrL[i]);
+	  DiffErrL[i] = sqrt(ErrL[i]*ErrL[i]+genErrH[i]*genErrH[i]);
+	}
+      }
     }
 
   }
+
+  // close files 
+  finGen->Close();
+  if ( (plotCT || plotWT) && finReco ) finReco->Close();
+  if ( plotRECO && finFullReco ) finFullReco->Close();
 
   TGraphAsymmErrors* GrGen = new TGraphAsymmErrors(nBins,q2Val,genRes,q2ErrH,q2ErrL,genErrL,genErrH);
   TGraphAsymmErrors* GrCT  = new TGraphAsymmErrors(nBins,q2Val,ctRes ,q2ErrH,q2ErrL,ctErrL,ctErrH);
