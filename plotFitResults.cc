@@ -268,7 +268,7 @@ void plotFitResults(int parity, int ParIndx = -1, bool plotCT = true, bool plotW
 
   if ( parity<0 || parity>1 ) return;
 
-  if ( ParIndx<-1 || ParIndx>1 ) return;
+  if ( ParIndx<-1 || ParIndx>=nPars ) return;
 
   if ( ParIndx==-1 ) cout<<"Running all the parameters"<<endl;
 
