@@ -69,7 +69,7 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
   RooAbsPdf* PDF_sig_ang_decayRate = new DecayRate(("PDF_sig_ang_decayRate_"+shortString).c_str(),"PDF_sig_ang_decayRate",
 						   *ctK,*ctL,*phi,*Fl,*P1,*P2,*P3,*P4p,*P5p,*P6p,*P8p);
 
-  RooFitResult * fitResult = PDF_sig_ang_decayRate->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(6),Hesse(true),Strategy(2),Minos(false)); 
+  RooFitResult * fitResult = PDF_sig_ang_decayRate->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(2),Hesse(true),Strategy(2),Minos(false)); 
   fitResult->Print("v");
 
   if (save) {
@@ -90,9 +90,9 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
   RooPlot* xframe = ctK->frame(Title(longString.c_str()));
   RooPlot* yframe = ctL->frame(Title(longString.c_str()));
   RooPlot* zframe = phi->frame(Title(longString.c_str()));
-  data->plotOn(xframe,MarkerColor(kRed+1),LineColor(kRed+1),Binning(40),Name("plData"));
-  data->plotOn(yframe,MarkerColor(kRed+1),LineColor(kRed+1),Binning(40));
-  data->plotOn(zframe,MarkerColor(kRed+1),LineColor(kRed+1),Binning(40));
+  data->plotOn(xframe,MarkerColor(kRed+1),LineColor(kRed+1),Binning(100),Name("plData"));
+  data->plotOn(yframe,MarkerColor(kRed+1),LineColor(kRed+1),Binning(100));
+  data->plotOn(zframe,MarkerColor(kRed+1),LineColor(kRed+1),Binning(100));
   PDF_sig_ang_decayRate->plotOn(xframe,LineWidth(1),Name("plPDF"));
   PDF_sig_ang_decayRate->plotOn(yframe,LineWidth(1));
   PDF_sig_ang_decayRate->plotOn(zframe,LineWidth(1));
