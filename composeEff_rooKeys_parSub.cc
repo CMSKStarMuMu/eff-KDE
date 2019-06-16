@@ -83,11 +83,12 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float width =
   }
 
   // split dataset according to job number
+  // caveat: in the "EventRange" option, the end of the range is not included
   int totNev = totdata->numEntries();
   cout<<"Partition "<<ndiv<<" of "<<totdiv<<": "
       <<(int)((ndiv*totNev)/totdiv)<<"->"
       <<((int)(((ndiv+1)*totNev)/totdiv))-1<<" of total "<<totNev<<endl;
-  RooAbsData* data = totdata->reduce(EventRange((int)((ndiv*totNev)/totdiv),((int)(((ndiv+1)*totNev)/totdiv))-1));
+  RooAbsData* data = totdata->reduce(EventRange((int)((ndiv*totNev)/totdiv),(int)(((ndiv+1)*totNev)/totdiv)));
 
   // create the KDE description of numerator and denominator datasets
   TStopwatch t;
