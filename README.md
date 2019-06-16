@@ -1,5 +1,6 @@
 # eff-KDE
 Set of root macros used to create a description of selection efficiency, by means of Kernel Density Estimators 
+and perform maximum likelihood fits with them
 
 # Quick run
 Use this list of commands to produce a result as quickly as possible
@@ -14,7 +15,7 @@ cd CMSSW_10_4_0/src/ && cmsenv && cd ../..
 ```
 Clone this branch in the working directory:
 ```sh
-git clone -b working-basicMacroImplementation git@github.com:CMSKStarMuMu/eff-KDE.git
+git clone -b working-fitWorkflow git@github.com:CMSKStarMuMu/eff-KDE.git
 cd eff-KDE
 ```
 ## Create datasets
@@ -44,3 +45,18 @@ Compose the numerators and denominators to create efficiency descriptions:
 root 'extractEff.cc'
 ```
 and find the efficiency histograms in the `KDEeff_b*_*.root` files.
+
+## Run partial-integral numeric computation
+This code is configured to submit parallel computation of the KDE, using HTCondor (available at CERN and accessible from lxplus machines).
+Feel free to adapt the code to run on other kind of infrastructure or, discouraged, to run it locally.
+Adapt the paths to CMSSW area and working directory in [run_preComp_Integrals_MC.sh](run_preComp_Integrals_MC.sh#L3-L6).
+```sh
+mkdir logs_preComp
+make preComp_Integrals_MC
+condor_submit sub_preComp_Integrals_MC.sub
+```
+when all the jobs have finished (you can check with `condor_q`) you can merge them:
+```sh
+root 'mergeParSub_preComp_Integrals_MC.cc'
+```
+
