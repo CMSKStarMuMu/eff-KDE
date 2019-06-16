@@ -27,7 +27,7 @@ root -q -b 'createDataset.cc(7)'
 ## Produce KDE description of numerators and denominators
 This code is configured to submit parallel computation of the KDE, using HTCondor (available at CERN and accessible from lxplus machines).
 Feel free to adapt the code to run on other kind of infrastructure or, discouraged, to run it locally.
-Adapt the paths to CMSSW area and working directory in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L3-L4).
+Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L3-L4), and in [mergeParSub_rooKeys.cc](mergeParSub_rooKeys.cc).
 Here 50 jobs are submitted per bin, per parity, per efficiency term (5400 jobs with current q2 binning):
 ```sh
 mkdir logs_parSub
@@ -35,6 +35,7 @@ condor_submit sub_composeEff_rooKeys.sub
 ```
 when all the jobs have finished (you can check with `condor_q`) you can merge them:
 ```sh
+mkdir files
 root 'mergeParSub_rooKeys.cc'
 ```
 

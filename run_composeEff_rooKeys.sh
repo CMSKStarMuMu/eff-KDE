@@ -1,7 +1,8 @@
 #!/bin/bash
 
-export HOME=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE
+export HOME=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-parSub
 export CMSSWDIR=/eos/user/a/aboletti/BdToKstarMuMu/CMSSW_10_4_0/src
+export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/datasets/PUweight
 export WORKDIR=$PWD
 
 cd $CMSSWDIR
@@ -20,7 +21,7 @@ zbin=${7}
 ndiv=${8}
 totdiv=${9}
 
-cp $HOME/effDataset_b${bin}.root .
+cp $SAMPLEDIR/effDataset_b${bin}.root .
 cp $HOME/composeEff_rooKeys_parSub.cc .
 
 root -l -q -b 'composeEff_rooKeys_parSub.cc('${bin}','${indx}','${par}','${wid}','${xbin}','${ybin}','${zbin}','${ndiv}','${totdiv}')'

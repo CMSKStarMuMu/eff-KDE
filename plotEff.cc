@@ -64,7 +64,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   int distBins = 10;
 
   // Load variables and dataset
-  string filename_data = Form("effDataset_b%i.root",q2Bin);
+  string filename_data = Form("/eos/user/a/aboletti/BdToKstarMuMu/datasets/PUweight/effDataset_b%i.root",q2Bin);
   TFile* fin_data = TFile::Open( filename_data.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;
@@ -92,7 +92,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   RooDataSet* data_wtRECO = (RooDataSet*)wsp->data(("data_wtRECO"+datasetString).c_str());
   
   // import KDE efficiency histograms
-  string filename = Form((parity==0?"KDEeff_b%i_ev.root":"KDEeff_b%i_od.root"),q2Bin);
+  string filename = Form((parity==0?"files/KDEeff_b%i_ev.root":"files/KDEeff_b%i_od.root"),q2Bin);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
