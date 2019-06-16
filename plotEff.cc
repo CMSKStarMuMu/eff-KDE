@@ -887,11 +887,11 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
     ctK->setVal(reco_ctK);
     ctL->setVal(reco_ctL);
     phi->setVal(reco_phi);
-    double wei = corrFrac->getVal();
+    double wei = corrFrac->getVal() * data_ctRECO->weight();
     hXctGEN_cf->Fill( reco_ctK, wei );
     hYctGEN_cf->Fill( reco_ctL, wei );
     hZctGEN_cf->Fill( reco_phi, wei );
-    wei = mistFrac->getVal();
+    wei = mistFrac->getVal() * data_ctRECO->weight();
     hXctGEN_mf->Fill( reco_ctK, wei );
     hYctGEN_mf->Fill( reco_ctL, wei );
     hZctGEN_mf->Fill( reco_phi, wei );
@@ -904,11 +904,11 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
     ctK->setVal(reco_ctK);
     ctL->setVal(reco_ctL);
     phi->setVal(reco_phi);
-    double wei = corrFrac->getVal();
+    double wei = corrFrac->getVal() * data_wtRECO->weight();
     hXctGEN_cf->Fill( reco_ctK, wei );
     hYctGEN_cf->Fill( reco_ctL, wei );
     hZctGEN_cf->Fill( reco_phi, wei );
-    wei = mistFrac->getVal();
+    wei = mistFrac->getVal() * data_wtRECO->weight();
     hXctGEN_mf->Fill( reco_ctK, wei );
     hYctGEN_mf->Fill( reco_ctL, wei );
     hZctGEN_mf->Fill( reco_phi, wei );
