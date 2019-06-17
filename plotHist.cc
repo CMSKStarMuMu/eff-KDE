@@ -63,7 +63,7 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
     cout<<"File not found: "<<filename<<endl;
     return;
   }
-  RooWorkspace* wsp_data = (RooWorkspace*)fin_data->Get(Form("ws_b%i",q2Bin));
+  RooWorkspace* wsp_data = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,parity));
   if ( !wsp_data || wsp_data->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename<<endl;
     return;

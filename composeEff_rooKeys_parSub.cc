@@ -56,7 +56,7 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float width =
     cout<<"File not found: "<<filename<<endl;
     return;
   }
-  RooWorkspace* wsp = (RooWorkspace*)fin->Get(Form("ws_b%i",q2Bin));
+  RooWorkspace* wsp = (RooWorkspace*)fin->Get(Form("ws_b%ip%i",q2Bin,parity));
   if ( !wsp || wsp->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename<<endl;
     return;
