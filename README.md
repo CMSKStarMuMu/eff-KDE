@@ -58,6 +58,45 @@ condor_submit sub_preComp_Integrals_MC.sub
 ```
 when all the jobs have finished (you can check with `condor_q`) you can merge them:
 ```sh
-root 'mergeParSub_preComp_Integrals_MC.cc'
+root -b -q 'mergeParSub_preComp_Integrals_MC.cc'
 ```
 
+## Fit generator-level distributions
+Compile and run with:
+```sh
+mkdir fitResults
+mkdir plotFit_d
+make AngDict
+make fit_genMC
+./fit_genMC
+```
+This produces a root file `fitResults/fitResult_genMC.root` containing the RooFitResult objects, and fit projection plots in `plotFit_d/fitResult_genMC_*.pdf`.
+
+## Fit single flavour-tagged components of post-selection distributions
+Compile and run with:
+```sh
+mkdir fitResults
+mkdir plotFit_d
+make AngDict
+make fit_recoMC_singleComponent
+./fit_recoMC_singleComponent
+```
+This produces a root file `fitResults/fitResult_recoMC_singleComponent.root` containing the RooFitResult objects, and fit projection plots in `plotFit_d/fitResult_recoMC_singleComponent_*.pdf`.
+
+## Fit post-selection distributions
+Compile and run with:
+```sh
+mkdir fitResults
+mkdir plotFit_d
+make AngDict
+make fit_recoMC_fullAngular
+./fit_recoMC_fullAngular
+```
+This produces a root file `fitResults/fitResult_recoMC_fullAngular.root` containing the RooFitResult objects, and fit projection plots in `plotFit_d/fitResult_recoMC_fullAngular_*.pdf`.
+
+## Plot and compare fit results
+```sh
+root -b -q 'plotFitResults.cc(0)' # for fit with even efficiency on odd dataset
+root -b -q 'plotFitResults.cc(1)' # for fit with odd efficiency on even dataset
+```
+This produces one plot for each parameter in `plotFit_d/fitResult_*.pdf
