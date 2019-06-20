@@ -35,7 +35,8 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
     cout<<"File not found: "<<filename_data<<endl;
     return;
   }
-  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%i",q2Bin));
+  // import the "other parity" dataset, to stay coherent with fit_recoMC notation
+  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,1-parity));
   if ( !wsp || wsp->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename_data<<endl;
     return;
@@ -48,7 +49,6 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
     return;
   }
   RooArgList vars (* ctK,* ctL,* phi);
-  // import the "other parity" dataset, to stay coherent with fit_recoMC notation
   string datasetString = Form((parity==1?"data_genDen_ev_b%i":"data_genDen_od_b%i"),q2Bin);
   RooDataSet* data = (RooDataSet*)wsp->data(datasetString.c_str());
   if ( !data || data->IsZombie() ) {
@@ -73,7 +73,7 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
   fitResult->Print("v");
 
   if (save) {
-    TFile* fout = new TFile("fitResult_genMC.root","UPDATE");
+    TFile* fout = new TFile("fitResults/fitResult_genMC.root","UPDATE");
     fitResult->Write(("fitResult_"+shortString).c_str(),TObject::kWriteDelete);
     fout->Close();
   }
@@ -123,7 +123,7 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
   zframe->Draw();
   leg->Draw("same");
 
-  c[confIndex]->SaveAs( ("fitResult_genMC_"+shortString+".pdf").c_str() );
+  c[confIndex]->SaveAs( ("plotFit_d/fitResult_genMC_"+shortString+".pdf").c_str() );
 
 }
 

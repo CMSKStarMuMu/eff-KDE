@@ -51,15 +51,15 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
   double wtDiffErrL [nBins];
   double DiffErrL [nBins];
 
-  TFile* finGen = TFile::Open("fitResult_genMC.root");
+  TFile* finGen = TFile::Open("fitResults/fitResult_genMC.root");
   if ( !finGen || finGen->IsZombie() ) {
-    cout<<"Missing gen file: fitResult_genMC.root"<<endl;
+    cout<<"Missing gen file: fitResults/fitResult_genMC.root"<<endl;
     return;
   }
   TFile* finReco;
   TFile* finFullReco;
-  if (plotCT || plotWT) finReco = TFile::Open("fitResult_recoMC_singleComponent.root");
-  if (plotRECO) finFullReco = TFile::Open("fitResult_recoMC_fullAngular.root");
+  if (plotCT || plotWT) finReco = TFile::Open("fitResults/fitResult_recoMC_singleComponent.root");
+  if (plotRECO) finFullReco = TFile::Open("fitResults/fitResult_recoMC_fullAngular.root");
 
   for (int i=0; i<nBins; ++i) {
 
@@ -255,7 +255,7 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
   GrDiff->Draw("P");
   resDiffCover->Draw("e2");
 
-  string confString = "fitResult_";
+  string confString = "plotFit_d/fitResult_";
   if (plotCT) confString = confString + "ctRes_";
   if (plotWT) confString = confString + "wtRes_";
   if (plotRECO) confString = confString + "recoRes_";
