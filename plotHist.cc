@@ -57,13 +57,13 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
   string confString = "plotHist_d/KDEhist_"+shortString;
 
   // Load variables and dataset
-  string filename = Form("effDataset_b%i.root",q2Bin);
+  string filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/datasets/PUweight/effDataset_b%i.root",q2Bin);
   TFile* fin_data = TFile::Open( filename.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
     return;
   }
-  RooWorkspace* wsp_data = (RooWorkspace*)fin_data->Get(Form("ws_b%i",q2Bin));
+  RooWorkspace* wsp_data = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,parity));
   if ( !wsp_data || wsp_data->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename<<endl;
     return;
@@ -92,7 +92,7 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
   // import KDE histograms
   vector<TH3D*> KDEhists;
   vector<TString> KDEconfs;
-  string inFileName = Form((parity==0?"KDEhist_b%i_ev.root":"KDEhist_b%i_od.root"),q2Bin);
+  string inFileName = Form((parity==0?"files/KDEhist_b%i_ev.root":"files/KDEhist_b%i_od.root"),q2Bin);
   TFile* fin = TFile::Open( inFileName.c_str() );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<inFileName<<endl;

@@ -64,13 +64,14 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   int distBins = 10;
 
   // Load variables and dataset
-  string filename_data = Form("effDataset_b%i.root",q2Bin);
+  string filename_data = Form("/eos/user/a/aboletti/BdToKstarMuMu/datasets/PUweight/effDataset_b%i.root",q2Bin);
   TFile* fin_data = TFile::Open( filename_data.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;
     return;
   }
-  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%i",q2Bin));
+  // import the complementary dataset, to compare statistically uncorrelated values
+  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,1-parity));
   if ( !wsp || wsp->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename_data<<endl;
     return;
@@ -83,7 +84,6 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
     return;
   }
   RooArgList vars (* ctK,* ctL,* phi);
-  // import the complementary dataset, to compare statistically uncorrelated values
   string datasetString = Form((parity==1?"_ev_b%i":"_od_b%i"),q2Bin);
   RooDataSet* data_genDen = (RooDataSet*)wsp->data(("data_genDen"+datasetString).c_str());
   RooDataSet* data_genNum = (RooDataSet*)wsp->data(("data_genNum"+datasetString).c_str());
@@ -92,7 +92,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   RooDataSet* data_wtRECO = (RooDataSet*)wsp->data(("data_wtRECO"+datasetString).c_str());
   
   // import KDE efficiency histograms
-  string filename = Form((parity==0?"KDEeff_b%i_ev.root":"KDEeff_b%i_od.root"),q2Bin);
+  string filename = Form((parity==0?"files/KDEeff_b%i_ev.root":"files/KDEeff_b%i_od.root"),q2Bin);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;

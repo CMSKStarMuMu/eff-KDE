@@ -56,8 +56,8 @@ void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float width, int
   case 5: longString = "Selected"            +longString;
   }
 
-  string confString = Form("KDEhist_%s_rooKeys_mw%.2f_%i_%i_%i",shortString.c_str(),width,xbins,ybins,zbins);
-  // string confString = Form("/eos/user/a/aboletti/BdToKstarMuMu/efficiency/KDEhist_%s_rooKeys_mw%.2f_%i_%i_%i",shortString.c_str(),width,xbins,ybins,zbins);
+  // string confString = Form("KDEhist_%s_rooKeys_mw%.2f_%i_%i_%i",shortString.c_str(),width,xbins,ybins,zbins);
+  string confString = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE/KDEhist_%s_rooKeys_mw%.2f_%i_%i_%i",shortString.c_str(),width,xbins,ybins,zbins);
 
   TH3D* KDEhist = new TH3D(Form("KDEhist_%s",shortString.c_str()),Form("KDEhist_%s",shortString.c_str()),xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
   KDEhist->Sumw2();
@@ -96,7 +96,7 @@ void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float width, int
   }
 
   // save histogram in map to file
-  TFile* fout = TFile::Open( Form((parity==0?"KDEhist_b%i_ev.root":"KDEhist_b%i_od.root"),q2Bin), "UPDATE" );
+  TFile* fout = TFile::Open( Form((parity==0?"files/KDEhist_b%i_ev.root":"files/KDEhist_b%i_od.root"),q2Bin), "UPDATE" );
   KDEhist->Write( Form("hist_indx%i_%1.2f_%i_%i_%i",effIndx,width,xbins,ybins,zbins), TObject::kWriteDelete );
   fout->Close();
 
@@ -112,7 +112,7 @@ void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float width, int
       cout<<"File not found: "<<filename<<endl;
       return;
     }
-    RooWorkspace* wsp_data = (RooWorkspace*)fin_data->Get(Form("ws_b%i",q2Bin));
+    RooWorkspace* wsp_data = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,parity));
     if ( !wsp_data || wsp_data->IsZombie() ) {
       cout<<"Workspace not found in file: "<<filename<<endl;
       return;
