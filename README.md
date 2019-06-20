@@ -36,12 +36,12 @@ condor_submit sub_composeEff_rooKeys.sub
 when all the jobs have finished (you can check with `condor_q`) you can merge them:
 ```sh
 mkdir files
-root 'mergeParSub_rooKeys.cc'
+root -q -b 'mergeParSub_rooKeys.cc'
 ```
 
 ## Compose efficiency histograms
 Compose the numerators and denominators to create efficiency descriptions:
 ```sh
-root 'extractEff.cc'
+root -q -b 'extractEff.cc'
 ```
 and find the efficiency histograms in the `KDEeff_b*_*.root` files.
