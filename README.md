@@ -99,4 +99,4 @@ This produces a root file `fitResults/fitResult_recoMC_fullAngular.root` contain
 root -b -q 'plotFitResults.cc(0)' # for fit with even efficiency on odd dataset
 root -b -q 'plotFitResults.cc(1)' # for fit with odd efficiency on even dataset
 ```
-This produces one plot for each parameter in `plotFit_d/fitResult_*.pdf
+This produces one plot for each parameter in `plotFit_d/fitResult_*.pdf`
