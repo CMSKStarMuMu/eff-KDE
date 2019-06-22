@@ -56,7 +56,7 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float width =
     cout<<"File not found: "<<filename<<endl;
     return;
   }
-  RooWorkspace* wsp = (RooWorkspace*)fin->Get(Form("ws_b%i",q2Bin));
+  RooWorkspace* wsp = (RooWorkspace*)fin->Get(Form("ws_b%ip%i",q2Bin,parity));
   if ( !wsp || wsp->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename<<endl;
     return;
@@ -83,11 +83,12 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float width =
   }
 
   // split dataset according to job number
+  // caveat: in the "EventRange" option, the end of the range is not included
   int totNev = totdata->numEntries();
   cout<<"Partition "<<ndiv<<" of "<<totdiv<<": "
       <<(int)((ndiv*totNev)/totdiv)<<"->"
       <<((int)(((ndiv+1)*totNev)/totdiv))-1<<" of total "<<totNev<<endl;
-  RooAbsData* data = totdata->reduce(EventRange((int)((ndiv*totNev)/totdiv),((int)(((ndiv+1)*totNev)/totdiv))-1));
+  RooAbsData* data = totdata->reduce(EventRange((int)((ndiv*totNev)/totdiv),(int)(((ndiv+1)*totNev)/totdiv)));
 
   // create the KDE description of numerator and denominator datasets
   TStopwatch t;

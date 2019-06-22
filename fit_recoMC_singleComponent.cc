@@ -41,7 +41,8 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, int altIn
     cout<<"File not found: "<<filename_data<<endl;
     return;
   }
-  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%i",q2Bin));
+  // import the complementary dataset, to fit statistically uncorrelated values
+  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,1-parity));
   if ( !wsp || wsp->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename_data<<endl;
     return;
@@ -55,7 +56,6 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, int altIn
   }
   RooArgList vars (* ctK,* ctL,* phi);
   string datasetString = (tagFlag==1?"data_ctRECO":"data_wtRECO");
-  // import the complementary dataset, to fit statistically uncorrelated values
   datasetString = datasetString + Form((parity==1?"_ev_b%i":"_od_b%i"),q2Bin);
   RooDataSet* data = (RooDataSet*)wsp->data(datasetString.c_str());
   if ( !data || data->IsZombie() ) {
@@ -64,7 +64,7 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, int altIn
   }
 
   // import KDE efficiency histograms
-  string filename = "/afs/cern.ch/user/a/aboletti/public/Run2-KstarMuMu/KDEeff/altVersion-integrals/";
+  string filename = "files/";
   filename = filename + Form((parity==0?"KDEeff_b%i_ev_alt%i.root":"KDEeff_b%i_od_alt%i.root"),q2Bin,altIndx);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
@@ -140,7 +140,7 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, int altIn
   fitResult->Print("v");
 
   if (save) {
-    TFile* fout = new TFile(Form("fitResult_recoMC_singleComponent_alt%i.root",altIndx),"UPDATE");
+    TFile* fout = new TFile(Form("fitResults/fitResult_recoMC_singleComponent_alt%i.root",altIndx),"UPDATE");
     fitResult->Write(("fitResult_"+shortString).c_str(),TObject::kWriteDelete);
     fout->Close();
   }
@@ -190,7 +190,7 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, int altIn
   zframe->Draw();
   leg->Draw("same");
 
-  c[confIndex]->SaveAs( ("fitResult_recoMC_"+shortString+Form("_alt%i.pdf",altIndx)).c_str() );
+  c[confIndex]->SaveAs( ("plotFit_d/fitResult_recoMC_"+shortString+Form("_alt%i.pdf",altIndx)).c_str() );
 
 }
 

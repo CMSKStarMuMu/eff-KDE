@@ -1,8 +1,8 @@
 Executable  = run_composeEff_rooKeys.sh
-bin         = ( $(ProcId) / 100 ) % 9
-indx        = $(ProcId) / 900
+bin         = $(ProcId) / 100
+indx        = 5
 par	    = ( $(ProcId) / 50 ) % 2
-wid	    = 0.3
+wid	    = 0.2
 xbin        = 50
 ybin        = 50
 zbin        = 50
@@ -13,4 +13,4 @@ Log         = logs_parSub/sub_$(ClusterId).log
 Output      = logs_parSub/composeEff_rooKeys_$INT(bin)_$INT(indx)_$INT(par)_$(wid)_$INT(xbin)_$INT(ybin)_$INT(zbin)_$INT(ndiv)_$INT(totdiv).out
 Error       = logs_parSub/composeEff_rooKeys_$INT(bin)_$INT(indx)_$INT(par)_$(wid)_$INT(xbin)_$INT(ybin)_$INT(zbin)_$INT(ndiv)_$INT(totdiv).out
 +JobFlavour = "workday"
-Queue 5400
+Queue 900

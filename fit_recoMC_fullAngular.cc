@@ -43,7 +43,8 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, int altIndx, bool plot, bo
     cout<<"File not found: "<<filename_data<<endl;
     return;
   }
-  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%i",q2Bin));
+  // import the complementary datasets, to fit statistically uncorrelated values
+  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,1-parity));
   if ( !wsp || wsp->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename_data<<endl;
     return;
@@ -56,7 +57,6 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, int altIndx, bool plot, bo
     return;
   }
   RooArgList vars (* ctK,* ctL,* phi);
-  // import the complementary datasets, to fit statistically uncorrelated values
   RooDataSet* dataCT = (RooDataSet*)wsp->data(Form((parity==1?"data_ctRECO_ev_b%i":"data_ctRECO_od_b%i"),q2Bin));
   RooDataSet* dataWT = (RooDataSet*)wsp->data(Form((parity==1?"data_wtRECO_ev_b%i":"data_wtRECO_od_b%i"),q2Bin));
   if ( !dataCT || dataCT->IsZombie() || !dataWT || dataWT->IsZombie() ) {
@@ -67,7 +67,7 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, int altIndx, bool plot, bo
   data->append(*dataWT);
 
   // import KDE efficiency histograms
-  string filename = "/afs/cern.ch/user/a/aboletti/public/Run2-KstarMuMu/KDEeff/altVersion-integrals/";
+  string filename = "files/";
   filename = filename + Form((parity==0?"KDEeff_b%i_ev_alt%i.root":"KDEeff_b%i_od_alt%i.root"),q2Bin,altIndx);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
@@ -130,7 +130,7 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, int altIndx, bool plot, bo
   fitResult->Print("v");
 
   if (save) {
-    TFile* fout = new TFile(Form("fitResult_recoMC_fullAngular_alt%i.root",altIndx),"UPDATE");
+    TFile* fout = new TFile(Form("fitResults/fitResult_recoMC_fullAngular_alt%i.root",altIndx),"UPDATE");
     fitResult->Write(("fitResult_"+shortString).c_str(),TObject::kWriteDelete);
     fout->Close();
   }
@@ -180,7 +180,7 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, int altIndx, bool plot, bo
   zframe->Draw();
   leg->Draw("same");
 
-  c[confIndex]->SaveAs( ("fitResult_recoMC_"+shortString+Form("_alt%i.pdf",altIndx)).c_str() );
+  c[confIndex]->SaveAs( ("plotFit_d/fitResult_recoMC_"+shortString+Form("_alt%i.pdf",altIndx)).c_str() );
 
 }
 
