@@ -55,9 +55,9 @@ void compareFitResults(int q2Bin, int parity, bool plotCT = true, bool plotWT = 
   vector<double*> wtDiffErrL (0);
   vector<double*> DiffErrL (0);
 
-  TFile* finGen = TFile::Open("fitResult_genMC.root");
+  TFile* finGen = TFile::Open("fitResults/fitResult_genMC.root");
   if ( !finGen || finGen->IsZombie() ) {
-    cout<<"Missing gen file: fitResult_genMC.root"<<endl;
+    cout<<"Missing gen file: fitResults/fitResult_genMC.root"<<endl;
     return;
   }
   TFile* finReco[nAlt+1];
@@ -88,12 +88,12 @@ void compareFitResults(int q2Bin, int parity, bool plotCT = true, bool plotWT = 
 
     // open files with RECO fit results
     if (plotCT || plotWT) {
-      if (iAlt==0) finReco[iAlt] = TFile::Open("fitResult_recoMC_singleComponent.root");
-      else finReco[iAlt] = TFile::Open(Form("fitResult_recoMC_singleComponent_alt%i.root",AltIndx[iAlt-1]));
+      if (iAlt==0) finReco[iAlt] = TFile::Open("fitResults/fitResult_recoMC_singleComponent.root");
+      else finReco[iAlt] = TFile::Open(Form("fitResults/fitResult_recoMC_singleComponent_alt%i.root",AltIndx[iAlt-1]));
     }
     if (plotRECO) {
-      if (iAlt==0) finFullReco[iAlt] = TFile::Open("fitResult_recoMC_fullAngular.root");
-      else finFullReco[iAlt] = TFile::Open(Form("fitResult_recoMC_fullAngular_alt%i.root",AltIndx[iAlt-1]));
+      if (iAlt==0) finFullReco[iAlt] = TFile::Open("fitResults/fitResult_recoMC_fullAngular.root");
+      else finFullReco[iAlt] = TFile::Open(Form("fitResults/fitResult_recoMC_fullAngular_alt%i.root",AltIndx[iAlt-1]));
     }
 
     // Fill reference values
@@ -236,7 +236,7 @@ void compareFitResults(int q2Bin, int parity, bool plotCT = true, bool plotWT = 
     leg1->Draw();
     leg2->Draw();
     TitleTex->DrawLatex(0.5,0.91,("Bias in fit to correct-tag events - "+longString).c_str());
-    c[0]->SaveAs( ("fitResult_alternativeComp_"+shortString+"_ctRECO.pdf").c_str() );
+    c[0]->SaveAs( ("plotFit_d/fitResult_alternativeComp_"+shortString+"_ctRECO.pdf").c_str() );
   }
 
   if (plotWT) {
@@ -247,7 +247,7 @@ void compareFitResults(int q2Bin, int parity, bool plotCT = true, bool plotWT = 
     leg1->Draw();
     leg2->Draw();
     TitleTex->DrawLatex(0.5,0.91,("Bias in fit to wrong-tag events - "+longString).c_str());
-    c[1]->SaveAs( ("fitResult_alternativeComp_"+shortString+"_wtRECO.pdf").c_str() );
+    c[1]->SaveAs( ("plotFit_d/fitResult_alternativeComp_"+shortString+"_wtRECO.pdf").c_str() );
   }
   
   if (plotRECO) {
@@ -258,7 +258,7 @@ void compareFitResults(int q2Bin, int parity, bool plotCT = true, bool plotWT = 
     leg1->Draw();
     leg2->Draw();
     TitleTex->DrawLatex(0.5,0.91,("Bias in fit to RECO events - "+longString).c_str());
-    c[2]->SaveAs( ("fitResult_alternativeComp_"+shortString+"_RECO.pdf").c_str() );
+    c[2]->SaveAs( ("plotFit_d/fitResult_alternativeComp_"+shortString+"_RECO.pdf").c_str() );
   }
 
   // free memory
