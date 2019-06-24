@@ -21,7 +21,7 @@ using namespace std;
 static const int nBins = 9;
 static const int nFunc = 11;
 
-void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int cnt_hit, int seed)
+void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int cnt_hit, int seed, int altIndx)
 {
 
   string shortString = Form("b%ip%it%i",q2Bin,parity,tagFlag);
@@ -33,7 +33,7 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int cnt_hit, in
   RooArgList vars (*ctK, *ctL, *phi);
 
   // import KDE efficiency histograms
-  string filename = Form((parity==0?"KDEeff_b%i_ev.root":"KDEeff_b%i_od.root"),q2Bin);
+  string filename = Form((parity==0?"KDEeff_b%i_ev_alt%i.root":"KDEeff_b%i_od_alt%i.root"),q2Bin,altIndx);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -110,7 +110,7 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int cnt_hit, in
   }
 
   // save histograms to file
-  TFile* fout = TFile::Open(Form("PreIntMC_%s_s%i.root",shortString.c_str(),seed),"RECREATE");
+  TFile* fout = TFile::Open(Form("PreIntMC_%s_s%i_alt%i.root",shortString.c_str(),seed,altIndx),"RECREATE");
   fout->cd();
   hvolume ->Write();
   hcnt_p  ->Write();
@@ -120,22 +120,22 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int cnt_hit, in
 
 }
 
-void preComp_Integrals_MCBin2(int q2Bin, int parity, int tagFlag, int cnt_hit, int seed)
+void preComp_Integrals_MCBin2(int q2Bin, int parity, int tagFlag, int cnt_hit, int seed, int altIndx)
 {
   if ( tagFlag==-1 )
     for (tagFlag=0; tagFlag<2; ++tagFlag)
-      preComp_Integrals_MCBin(q2Bin, parity, tagFlag, cnt_hit, seed);
+      preComp_Integrals_MCBin(q2Bin, parity, tagFlag, cnt_hit, seed, altIndx);
   else
-    preComp_Integrals_MCBin(q2Bin, parity, tagFlag, cnt_hit, seed);
+    preComp_Integrals_MCBin(q2Bin, parity, tagFlag, cnt_hit, seed, altIndx);
 }
 
-void preComp_Integrals_MCBin1(int q2Bin, int parity, int tagFlag, int cnt_hit, int seed)
+void preComp_Integrals_MCBin1(int q2Bin, int parity, int tagFlag, int cnt_hit, int seed, int altIndx)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      preComp_Integrals_MCBin2(q2Bin, parity, tagFlag, cnt_hit, seed);
+      preComp_Integrals_MCBin2(q2Bin, parity, tagFlag, cnt_hit, seed, altIndx);
   else
-    preComp_Integrals_MCBin2(q2Bin, parity, tagFlag, cnt_hit, seed);
+    preComp_Integrals_MCBin2(q2Bin, parity, tagFlag, cnt_hit, seed, altIndx);
 }
 
 int main(int argc, char** argv)
@@ -154,12 +154,14 @@ int main(int argc, char** argv)
   int tagFlag = -1;
   int cnt_hit = 1e6;
   int seed    = 1;
+  int altIndx = 53324;
 
   if ( argc >= 2 ) q2Bin   = atoi(argv[1]);
   if ( argc >= 3 ) parity  = atoi(argv[2]);
   if ( argc >= 4 ) tagFlag = atoi(argv[3]);
   if ( argc >= 5 ) cnt_hit = atoi(argv[4]);
   if ( argc >= 6 ) seed    = atoi(argv[5]);
+  if ( argc >= 7 ) altIndx = atoi(argv[6]);
 
   if ( q2Bin   < -1 || q2Bin   >= nBins ) return 1;
   if ( parity  < -1 || parity  > 1      ) return 1;
@@ -170,9 +172,9 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      preComp_Integrals_MCBin1(q2Bin, parity, tagFlag, cnt_hit, seed);
+      preComp_Integrals_MCBin1(q2Bin, parity, tagFlag, cnt_hit, seed, altIndx);
   else
-    preComp_Integrals_MCBin1(q2Bin, parity, tagFlag, cnt_hit, seed);
+    preComp_Integrals_MCBin1(q2Bin, parity, tagFlag, cnt_hit, seed, altIndx);
 
   return 0;
 
