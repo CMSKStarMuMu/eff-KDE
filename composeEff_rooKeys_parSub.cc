@@ -93,7 +93,7 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   RooAbsData* data = totdata->reduce(EventRange((int)((ndiv*totNev)/totdiv),(int)(((ndiv+1)*totNev)/totdiv)));
 
   // create vector containing width scale factors
-  TVectorD* rho = new TVectorD(3);
+  TVectorD rho (3);
   rho[0] = widthCTK;
   rho[1] = widthCTL;
   rho[2] = widthPHI;
@@ -101,7 +101,7 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   // create the KDE description of numerator and denominator datasets
   TStopwatch t;
   t.Start();
-  RooNDKeysPdf* KDEfunc = new RooNDKeysPdf("KDEfunc","KDEfunc",RooArgList(*ctK,*ctL,*phi),*data,*rho,"m",3,false);
+  RooNDKeysPdf* KDEfunc = new RooNDKeysPdf("KDEfunc","KDEfunc",RooArgList(*ctK,*ctL,*phi),*data,rho,"m",3,false);
   t.Stop();
   t.Print();
 
