@@ -115,6 +115,10 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   t_den->SetBranchAddress( "weight", &PUweight );
   t_num->SetBranchAddress( "weight", &PUweight );
 
+  // final state radiation flag
+  double genSignHasFSR;
+  t_gen->SetBranchAddress( "genSignHasFSR", &genSignHasFSR );
+
   // Define datasets
   RooDataSet* data_genDen_ev [nBins];
   RooDataSet* data_genDen_od [nBins];
@@ -149,6 +153,13 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 					   RooArgSet(ctK,ctL,phi,wei), "weight" );
     }
 
+  // Define counter of total genDen events (w/o FSR rejection)
+  TH1I* n_genDen [nBins];
+  for (int i=0; i<nBins; ++i)
+    if (runBin[i])
+      n_genDen [i] = new TH1I( ("n_genDen_"+shortString[i]).c_str(), ("n_genDen_"+shortString[i]).c_str(),
+			       2, -0.5, 1.5);
+
   // Prepare GEN-level datasets
   cout<<"Starting GEN datasets filling..."<<endl;
   counter=0;
@@ -174,8 +185,11 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     ctL.setVal(genCosThetaL);
     phi.setVal(genPhi);
     // fill genDen dataset
-    if (((int)eventN_Dou)%2==0) data_genDen_ev[xBin]->add(vars);
-    else data_genDen_od[xBin]->add(vars);
+    n_genDen[xBin]->Fill(((int)eventN_Dou)%2);
+    if ( genSignHasFSR<0.5 ) {
+      if (((int)eventN_Dou)%2==0) data_genDen_ev[xBin]->add(vars);
+      else data_genDen_od[xBin]->add(vars);
+    }
     // fill genNum dataset
     if ( fabs(genmupEta)<2.5 && fabs(genmumEta)<2.5 &&
 	 fabs(genkstTrkpEta)<2.5 && fabs(genkstTrkmEta)<2.5 &&
@@ -266,6 +280,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       TFile* fout = new TFile( ( "effDataset_"+shortString[i]+".root" ).c_str(), "RECREATE" );
       ws_ev[i]->Write();
       ws_od[i]->Write();
+      n_genDen[i]->Write();
       fout->Close();
     }
 
@@ -281,8 +296,8 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       double avgEff_od = avgEff_ct_od + avgEff_wt_od;
       double avgMis_ev = avgEff_wt_ev / avgEff_ev;
       double avgMis_od = avgEff_wt_od / avgEff_od;
-      cout<<"Averages bin "<<nBins<<" (even): eps="<<avgEff_ev<<"\tm="<<avgMis_ev<<"\teps_c="<<avgEff_ct_ev<<"\teps_m="<<avgEff_wt_ev<<endl;
-      cout<<"Averages bin "<<nBins<<" (odd) : eps="<<avgEff_od<<"\tm="<<avgMis_od<<"\teps_c="<<avgEff_ct_od<<"\teps_m="<<avgEff_wt_od<<endl;
+      cout<<"Averages bin "<<i<<" (even): eps="<<avgEff_ev<<"\tm="<<avgMis_ev<<"\teps_c="<<avgEff_ct_ev<<"\teps_m="<<avgEff_wt_ev<<endl;
+      cout<<"Averages bin "<<i<<" (odd) : eps="<<avgEff_od<<"\tm="<<avgMis_od<<"\teps_c="<<avgEff_ct_od<<"\teps_m="<<avgEff_wt_od<<endl;
     }
 
   if (plot) {
@@ -409,7 +424,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 	zframe_od[i]->Draw();
 	// leg->Draw("same");
 
-	c[i]->SaveAs( ("dist_GEN_RECO_"+shortString[i]+".pdf").c_str() );
+	c[i]->SaveAs( ("plotDist_d/dist_GEN_RECO_"+shortString[i]+".pdf").c_str() );
       }
   }
 
