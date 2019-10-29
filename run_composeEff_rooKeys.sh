@@ -14,19 +14,21 @@ cd $WORKDIR
 bin=${1}
 indx=${2}
 par=${3}
-wid=${4}
-xbin=${5}
-ybin=${6}
-zbin=${7}
-ndiv=${8}
-totdiv=${9}
+wid0=${4}
+wid1=${5}
+wid2=${6}
+xbin=${7}
+ybin=${8}
+zbin=${9}
+ndiv=${10}
+totdiv=${11}
 
 cp $SAMPLEDIR/effDataset_b${bin}.root .
 cp $HOME/composeEff_rooKeys_parSub.cc .
 
-root -l -q -b 'composeEff_rooKeys_parSub.cc('${bin}','${indx}','${par}','${wid}','${xbin}','${ybin}','${zbin}','${ndiv}','${totdiv}')'
+root -l -q -b 'composeEff_rooKeys_parSub.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${ndiv}','${totdiv}')'
 
-cp KDEhist* $HOME/
+cp KDEhist* $HOME/tmp/
 rm composeEff_rooKeys_parSub.cc
 rm effDataset_b*
 rm KDEhist*
