@@ -18,7 +18,7 @@ TH3D* InvertHisto(TH3D* hin, string hname);
 //                [1] odd
 //                [-1] for each parity recursively
 
-void extractEffBin(int q2Bin, int parity, int effClass, float width00, float width01, float width02, float width10, float width11, float width12, float width20, float width21, float width22, float width30, float width31, float width32, float width40, float width41, float width42, int xbins, int ybins, int zbins)
+void extractEffBin(int q2Bin, int parity, float width00, float width01, float width02, float width10, float width11, float width12, float width20, float width21, float width22, float width30, float width31, float width32, float width40, float width41, float width42, int xbins, int ybins, int zbins)
 {
   string shortString = Form("b%ip%i",q2Bin,parity);
   cout<<"Conf: "<<shortString<<endl;
@@ -94,7 +94,7 @@ void extractEffBin(int q2Bin, int parity, int effClass, float width00, float wid
   if (doWT) effWHist->SetTitle(("eff-wt-hist_"+confString).c_str());
 
   // save histograms in file
-  TFile* fout = TFile::Open( Form((parity==0?"files/KDEeff_b%i_ev_class%i.root":"files/KDEeff_b%i_od_class%i.root"),q2Bin,effClass), "UPDATE" );
+  TFile* fout = TFile::Open( Form((parity==0?"files/KDEeff_b%i_ev.root":"files/KDEeff_b%i_od.root"),q2Bin), "UPDATE" );
   if (doCT) effCHist->Write(0,TObject::kWriteDelete);
   if (doWT) effWHist->Write(0,TObject::kWriteDelete);
   fout->Close();
@@ -124,16 +124,16 @@ TH3D* InvertHisto(TH3D* hin, string hname)
 
 }
 
-void extractEffBin1(int q2Bin, int parity, int effClass, float width00, float width01, float width02, float width10, float width11, float width12, float width20, float width21, float width22, float width30, float width31, float width32, float width40, float width41, float width42, int xbins, int ybins, int zbins)
+void extractEffBin1(int q2Bin, int parity, float width00, float width01, float width02, float width10, float width11, float width12, float width20, float width21, float width22, float width30, float width31, float width32, float width40, float width41, float width42, int xbins, int ybins, int zbins)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      extractEffBin(q2Bin, parity, effClass, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins);
+      extractEffBin(q2Bin, parity, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins);
   else
-    extractEffBin(q2Bin, parity, effClass, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins);
+    extractEffBin(q2Bin, parity, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins);
 }
 
-void extractEff(int q2Bin, int parity, int effClass,
+void extractEff(int q2Bin, int parity,
 		float width40, float width41, float width42,
 		float width30, float width31, float width32,
 		float width20, float width21, float width22,
@@ -145,8 +145,6 @@ void extractEff(int q2Bin, int parity, int effClass,
   if ( q2Bin<-1 || q2Bin>=nBins ) return;
 
   if ( parity<-1 || parity>1 ) return;
-
-  if ( effClass<0 ) return;
 
   if ( width00<=0 ) return;
   if ( width01<=0 ) return;
@@ -173,8 +171,8 @@ void extractEff(int q2Bin, int parity, int effClass,
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      extractEffBin1(q2Bin, parity, effClass, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins);
+      extractEffBin1(q2Bin, parity, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins);
   else
-    extractEffBin1(q2Bin, parity, effClass, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins);
+    extractEffBin1(q2Bin, parity, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins);
   
 }
