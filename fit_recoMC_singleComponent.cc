@@ -33,14 +33,14 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
   cout<<"Conf: "<<shortString<<endl;
 
   // Load variables and dataset
+  // importing the complementary dataset, to fit with statistically uncorrelated efficiency
   string filename_data = Form("effDataset_b%i.root",q2Bin);
   TFile* fin_data = TFile::Open( filename_data.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;
     return;
   }
-  // import the complementary dataset, to fit statistically uncorrelated values
-  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,1-parity));
+  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,1-parity)); //complementary statistics
   if ( !wsp || wsp->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename_data<<endl;
     return;
@@ -61,9 +61,9 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
     return;
   }
 
-  // import KDE efficiency histograms
-  string filename = "files/";
-  filename = filename + Form((parity==0?"KDEeff_b%i_ev.root":"KDEeff_b%i_od.root"),q2Bin);
+  // import KDE efficiency histograms and partial integral histograms
+  string filename = "files/KDEeff_b";
+  filename = filename + Form((parity==0?"%i_ev.root":"%i_od.root"),q2Bin);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -78,7 +78,7 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
   // create efficiency functions
   RooDataHist* effData = new RooDataHist(("effData_"+shortString).c_str(),"effData",vars,effHist);
   RooAbsReal* eff = new RooHistFunc(("eff_"+shortString).c_str(),"eff",vars,*effData,1);
-  // import precomputed integrals
+  // import precomputed integrals and fill a std::vector
   vector<double> intVec (0);
   string intHistString = "MCint_"+shortString;
   TH1D* intHist = (TH1D*)fin->Get(intHistString.c_str());
@@ -88,16 +88,20 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
     cout<<"Integral histogram "<<intHistString<<" not found in file: "<<filename<<endl<<"Abort"<<endl;
     return;
   } else if ( strcmp( intHist->GetTitle(), effHist->GetTitle() ) ) {
+    // if the eff_config tag is different between efficiency and precomputed-integral means that they are inconsistent
+    // (usually when efficiencies have been reproduced and overwritten, but the integrals are still referring to the old version)
     cout<<"Integral histogram "<<intHistString<<" is incoherent with efficiency "<<effString<<" in file: "<<filename<<endl;
     cout<<"Efficiency conf: "<<effHist->GetTitle()<<endl;
     cout<<"Integral conf: "<<intHist->GetTitle()<<endl;
-    cout<<"Using rooFit integration"<<endl;
-    intVec.push_back(0);
+    // cout<<"Using rooFit integration"<<endl;
+    // intVec.push_back(0);
+    cout<<"Abort"<<endl;
+    return;
   } else {
     for (int i=1; i<=intHist->GetNbinsX(); ++i) intVec.push_back(intHist->GetBinContent(i));
   }
 
-  // define angular parameters
+  // define angular parameters with ranges from positiveness requirements on the decay rate
   RooRealVar* Fl = new RooRealVar("Fl","F_{L}",0.5,0,1);
   RooRealVar* P1 = new RooRealVar("P1","P_{1}",0,-1,1);
   RooRealVar* P2 = new RooRealVar("P2","P_{2}",0,-0.5,0.5);
@@ -107,15 +111,22 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
   RooRealVar* P6p = new RooRealVar("P6p","P'_{6}",0,-1*sqrt(2),sqrt(2));
   RooRealVar* P8p = new RooRealVar("P8p","P'_{8}",0,-1*sqrt(2),sqrt(2));
 
+  // define angular PDF for signal and only one tag component, using the custom class
+  // efficiency function and integral values are passed as arguments
   RooAbsPdf* PDF_sig_ang_singleComponent = 0;
   if (tagFlag==1) PDF_sig_ang_singleComponent = new PdfRT(("PDF_sig_ang_singleComponent_"+shortString).c_str(),"PDF_sig_ang_singleComponent",
 							  *ctK,*ctL,*phi,*Fl,*P1,*P2,*P3,*P4p,*P5p,*P6p,*P8p,*eff,intVec);
   else            PDF_sig_ang_singleComponent = new PdfWT(("PDF_sig_ang_singleComponent_"+shortString).c_str(),"PDF_sig_ang_singleComponent",
 							  *ctK,*ctL,*phi,*Fl,*P1,*P2,*P3,*P4p,*P5p,*P6p,*P8p,*eff,intVec);
 
+  // create a variable to compute negative log-likelihood of the PDF on the dataset
+  // this will be computed with angular paramenters at three states:
+  // results of the fit to GEN sample, center of the parameter space (initial fit condition), and best-fit values
   RooAbsReal* nll = PDF_sig_ang_singleComponent->createNLL(*data);
   double nllGen = 0;
 
+  // import results of the fit to GEN sample
+  // if it is not found, nllGen is left at default value
   TFile* finGen = TFile::Open("fitResults/fitResult_genMC.root");
   if ( !finGen || finGen->IsZombie() ) {
     cout<<"Missing gen file: fitResults/fitResult_genMC.root"<<endl;
@@ -124,6 +135,7 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
     if ( !fitResultGen || fitResultGen->IsZombie() ) {
       cout<<"No "<<Form("fitResult_b%ip%i",q2Bin,parity)<<" in file: fitResults/fitResult_genMC.root"<<endl;
     } else {
+      // set parameters to the fitResult values
       Fl ->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("Fl"))->getValV());
       P1 ->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("P1"))->getValV());
       P2 ->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("P2"))->getValV());
@@ -132,11 +144,12 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
       P5p->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("P5p"))->getValV());
       P6p->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("P6p"))->getValV());
       P8p->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("P8p"))->getValV());
-
+      // compute NLL
       nllGen = nll->getVal();
     }
   }
 
+  // to start the fit, parameters are restored to the center of the parameter space
   Fl ->setVal(0.5);
   P1 ->setVal(0);
   P2 ->setVal(0);
@@ -146,22 +159,35 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
   P6p->setVal(0);
   P8p->setVal(0);
 
+  // fit initial NLL value
   double nllCenter = nll->getVal();
 
-  // Customise rooFit integrator
+  // Customise rooFit integrator (here used only to plot fit projections)
   // PDF_sig_ang_singleComponent->getIntegratorConfig()->methodND().setLabel("RooMCIntegrator");
 
+  // perform fit in two steps:
+  // first with strategy=0 and no MINOS, to get close to the likilihood maximum
   PDF_sig_ang_singleComponent->fitTo(*data,Minimizer("Minuit2","migrad"),Timer(true),NumCPU(1),Hesse(true),Strategy(0),Offset(true));
+  // second with full accuracy (strategy=2) and MINOS, to get the best result
   RooFitResult* fitResult = PDF_sig_ang_singleComponent->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(1),Hesse(true),Strategy(2),Minos(true),Offset(true));
+  // The two step fit seemed necessary to get convergence in all q2 bins
+  // if one observes that the convergence is obtained just running the second step, it is better to avoid the first step (to gain computing time)
+  // Offset(true) parameter make the FCN value to be defined at 0 at the begin of the minimization
+  // it is needed to get convergence in all q2 bins, and avoid the "machine precision reached" errors
+  // which are due to too high FCN absolute values compared to the minimisation steps
+
   fitResult->Print("v");
 
+  // Get NLL at best fit conditions and (if GEN fitResult was found) save the GEN-RECO deltaNLL value in the fitResult title
   double nllReco = nll->getVal();
   fitResult->SetTitle(Form("deltaNLL=%.1f",(nllGen==0?0.0:nllGen-nllReco)));
 
+  // Print NLL values and difference
   cout<<"NLL values: center="<<nllCenter<<" result="<<nllReco<<" gen="<<nllGen<<endl;
   if (nllGen!=0) cout<<"GEN-RECO deltaNLL="<<nllGen-nllReco<<endl;
 
   if (save) {
+    // Save fit results in file
     TFile* fout = new TFile("fitResults/fitResult_recoMC_singleComponent.root","UPDATE");
     fitResult->Write(("fitResult_"+shortString).c_str(),TObject::kWriteDelete);
     fout->Close();

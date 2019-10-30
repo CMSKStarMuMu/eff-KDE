@@ -27,6 +27,7 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int cnt_hit, in
   string shortString = Form("b%ip%it%i",q2Bin,parity,tagFlag);
   cout<<"Conf: "<<shortString<<endl;
 
+  // define angular variable (this is done again to avoid copying the heavy dataset files only to import them)
   RooRealVar* ctK = new RooRealVar("ctK","cos(#theta_{K})",-1,1);
   RooRealVar* ctL = new RooRealVar("ctL","cos(#theta_{L})",-1,1);
   RooRealVar* phi = new RooRealVar("phi","#phi",-TMath::Pi(),TMath::Pi());
@@ -44,12 +45,15 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int cnt_hit, in
     cout<<"Efficiency histogram not found in file: "<<filename<<endl;
     return;
   }
+  // get efficiency maximum, to optimise the volume where random poins are generated
+  // since all functions have values in the range [-1,1], points can be generated with random values in [0,maxEff]
   double maxEff = effHist->GetMaximum();
   // create efficiency functions
   RooDataHist* effData = new RooDataHist(("effData_"+shortString).c_str(),"effData",vars,effHist);
   RooAbsReal* eff = new RooHistFunc(("eff_"+shortString).c_str(),"eff",vars,*effData,1);
 
-  // define partial PDF components
+  // define set of partial deacy rate components
+  // the normalisation is chosen such that the function has values in the range [-1,1]
   RooFormulaVar* function [nFunc];
   function[0 ] = new RooFormulaVar(("function0" +shortString).c_str(),"function0" ,"1-ctK*ctK",vars);
   function[1 ] = new RooFormulaVar(("function1" +shortString).c_str(),"function1" ,"ctK*ctK",vars);
@@ -63,39 +67,61 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int cnt_hit, in
   function[9 ] = new RooFormulaVar(("function9" +shortString).c_str(),"function9" ,"(1-ctK*ctK)*ctL",vars);
   function[10] = new RooFormulaVar(("function10"+shortString).c_str(),"function10","(1-ctK*ctK)*(1-ctL*ctL)*sin(2*phi)",vars);
 
-  // define counters
-  double cnt_p [nFunc];
-  double cnt_m [nFunc];
+  // variables to count number of random points generated below each PDF curve
+  unsigned long long cnt_p [nFunc];
+  unsigned long long cnt_m [nFunc];
   for (int i=0; i<nFunc; ++i) cnt_p[i]=cnt_m[i]=0;
 
-  // start the generation
+  // set-up the generator and prepare needed variables
   TRandom3 randGen (seed);
-  double hVal, effVal, intVal, iPoint;
+  double hVal, effVal, intVal;
+  unsigned long long iPoint;
   int iFunc;
-  double piVal = TMath::Pi();
-  for (iPoint=0; cnt_p[1]<cnt_hit; iPoint=iPoint+1) {
+  double twoPiVal = 2*TMath::Pi(); // externally computed to save time
+
+  // start the generation
+  // continue until the counter of the function 1 reaches the desired value
+  // this ensures a more stable value of the integral's relative precision for different shapes of the efficiency
+  // (even when the integral is orders of magnitude lower than the volume in which points are generated)
+  // CAVEAT: in this way the computing time varies largely with the efficiency shape
+  for (iPoint=0; cnt_p[1]<cnt_hit; ++iPoint) {
+
+    // uniformly generate a random point in the 3D phase space
     ctK->setVal(2*randGen.Rndm()-1);
     ctL->setVal(2*randGen.Rndm()-1);
-    phi->setVal((2*randGen.Rndm()-1)*piVal);
-
-    hVal=randGen.Rndm()*maxEff;
+    phi->setVal((randGen.Rndm()-0.5)*twoPiVal);
+    // get the efficiency value in the random point
     effVal=eff->getVal();
+
+    // generate a random efficiency value, from 0 to maxEff
+    hVal=randGen.Rndm()*maxEff;
+    // if the generated value is higher than the local efficiency value
+    // non of the partial PDF can stay above, since all functions have values in the range [-1,1]
+    // this step saves a lot of time
     if (effVal<hVal) continue;
 
+    // count for each function
     for (iFunc=0; iFunc<nFunc; ++iFunc) {
+      // local value of partial PDF 
       intVal=effVal*function[iFunc]->getVal();
-      if (intVal>hVal) cnt_p[iFunc]=cnt_p[iFunc]+1;
-      else if (-1*intVal>hVal) cnt_m[iFunc]=cnt_m[iFunc]+1;
+      // count how many timesthe points is generated below the PDF
+      if (intVal>hVal) ++cnt_p[iFunc];
+      // PDF have negative regions and the integral in these regions is computed separately
+      // but using the same points generated to compute the integral in the positive regions
+      // the "negative-region" integral will be subtracted after merging the output of parallel submissions
+      else if (-1*intVal>hVal) ++cnt_m[iFunc];
     }
   }
 
-  // coumpute integral values and save all ingredients in histograms
+  // counter values and volume of the generation space are saved in histograms
+  // hvolume title is used to tag the configuration of the efficiency used
   TH1D* hvolume  = new TH1D(("hvolume" +shortString).c_str(),effHist->GetTitle(),nFunc,-0.5,nFunc-0.5);
   TH1D* hcnt_p   = new TH1D(("hcnt_p"  +shortString).c_str(),"hcnt_p"  ,nFunc,-0.5,nFunc-0.5);
   TH1D* hcnt_m   = new TH1D(("hcnt_m"  +shortString).c_str(),"hcnt_m"  ,nFunc,-0.5,nFunc-0.5);
   TH1D* hcnt_tot = new TH1D(("hcnt_tot"+shortString).c_str(),"hcnt_tot",nFunc,-0.5,nFunc-0.5);
-  double volume = maxEff*8*TMath::Pi();
+  double volume = maxEff*8*TMath::Pi(); // volume of the 4D generation space
 
+  // hvolume and hcnt_tot have redundant informations
   for (int i=0; i<nFunc; ++i) {
 
     hvolume ->SetBinContent(i+1,volume);
