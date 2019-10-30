@@ -438,12 +438,12 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 
 	// Fill legend (only one time)
 	if (!legFilled) {
-	  leg->AddEntry(xframe_ev[i]->findObject("plGenDen"),
-			("Generator-level distribution"+(rescFac1<1?Form(" (*%1.2f)",rescFac1):"")).c_str(),"lep");
-	  leg->AddEntry(xframe_ev[i]->findObject("plGenNum"),
-			("Post-GEN-filter distribution of special MC sample"+(rescFac2<1?Form(" (*%1.2f)",rescFac2):"")).c_str(),"lep");
-	  leg->AddEntry(xframe_ev[i]->findObject("plRecoDen"),
-			("Post-GEN-filter distribution of full MC sample"+(rescFac3<1?Form(" (*%1.2f)",rescFac3):"")).c_str(),"lep");
+	  string strRescFac1 = (rescFac1<1?Form(" (*%1.2f)",rescFac1):"");
+	  string strRescFac2 = (rescFac2<1?Form(" (*%1.2f)",rescFac2):"");
+	  string strRescFac3 = (rescFac3<1?Form(" (*%1.2f)",rescFac3):"");
+          leg->AddEntry(xframe_ev[i]->findObject("plGenDen"   ),("Generator-level distribution"+strRescFac1).c_str(),"lep");
+          leg->AddEntry(xframe_ev[i]->findObject("plGenNum"   ),("Post-GEN-filter distribution of special MC sample"+strRescFac2).c_str(),"lep");
+          leg->AddEntry(xframe_ev[i]->findObject("plRecoDen"  ),("Post-GEN-filter distribution of full MC sample"+strRescFac3).c_str(),"lep");
 	  leg->AddEntry(xframe_ev[i]->findObject("plRecoNum"  ),"Post-selection distribution","lep");
 	  leg->AddEntry(xframe_ev[i]->findObject("plCTrecoNum"),"Post-selection correct-tag distribution","lep");
 	  leg->AddEntry(xframe_ev[i]->findObject("plWTrecoNum"),"Post-selection wrong-tag distribution","lep");
