@@ -18,7 +18,7 @@ while read -a line; do
 
     # Compose efficiency descriptions using KDE histograms tagged with scale-factor configuration
     # The first set refers to wrong-tag recoNum, the others to the other terms
-    root -b -q 'extractEffMult.cc('${bin}','${par}','\
+    root -b -q 'extractEff.cc('${bin}','${par}','\
 ${wid3}','${wid4}','${wid5}','\
 ${wid0}','${wid1}','${wid2}','\
 ${wid0}','${wid1}','${wid2}','\
