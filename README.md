@@ -27,21 +27,31 @@ root -q -b 'createDataset.cc(7)'
 ## Produce KDE description of numerators and denominators
 This code is configured to submit parallel computation of the KDE, using HTCondor (available at CERN and accessible from lxplus machines).
 Feel free to adapt the code to run on other kind of infrastructure or, discouraged, to run it locally.
-Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L3-L4), and in [mergeParSub_rooKeys.cc](mergeParSub_rooKeys.cc).
-Here 50 jobs are submitted per bin, per parity, per efficiency term (5400 jobs with current q2 binning):
+Before running, you need to create a file `../confSF/KDE_SF.list`, containing the q2-bins to process and the corresponding KDE scale factors.
 ```sh
-mkdir logs_parSub
-condor_submit sub_composeEff_rooKeys.sub
+if [ ! -d ../confSF ]; then mkdir ../confSF; fi
+cat << EOF > ../confSF/KDE_SF.list
+0       0.40    1.00    1.00    0.91    1.09    2.18
+1       0.30    1.00    0.50    0.81    0.97    2.58
+2       0.40    0.80    0.30    0.83    0.83    1.32
+3       0.40    0.70    0.50    0.60    0.60    1.04
+5       0.40    1.00    0.50    0.71    0.57    0.85
+7       0.60    1.00    0.40    1.06    0.60    1.21
+EOF
+```
+Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L3-L5).
+Submit 4200 jobs by running:
+```sh
+source sub_composeEff_rooKeys.sh
 ```
 when all the jobs have finished (you can check with `condor_q`) you can merge them:
 ```sh
-mkdir files
-root -q -b 'mergeParSub_rooKeys.cc'
+source mergeParSub_rooKeys.sh
 ```
 
 ## Compose efficiency histograms
 Compose the numerators and denominators to create efficiency descriptions:
 ```sh
-root -q -b 'extractEff.cc'
+source extractEff.sh
 ```
-and find the efficiency histograms in the `KDEeff_b*_*.root` files.
+and find the efficiency histograms in the `files/KDEeff_b*_*.root` files.

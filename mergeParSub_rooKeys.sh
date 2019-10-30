@@ -6,6 +6,9 @@ xbin=50
 ybin=50
 zbin=50
 
+# Create directory for KDE and efficiency histograms
+if [ ! -d files ]; then mkdir files; fi
+
 while read -a line; do
     
     bin=${line[0]}

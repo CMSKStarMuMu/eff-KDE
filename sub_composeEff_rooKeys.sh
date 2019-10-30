@@ -9,6 +9,9 @@ xbin=50
 ybin=50
 zbin=50
 
+# Create directory for log files
+if [ ! -d logs_parSub ]; then mkdir logs_parSub; fi
+
 # Use external configuration file with list of bin numbers (to be coherent with the numbers in effDataset_b*.root files)
 # and corresponding scale factor configuration
 while read -a line; do
