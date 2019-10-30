@@ -91,8 +91,8 @@ void extractEffBin(int q2Bin, int parity, float width00, float width01, float wi
   string confString = Form("_KDEw_%1.1f-%1.1f-%1.1f_",width00,width01,width02);
   confString = confString+Form("%1.1f-%1.1f-%1.1f_",width10,width11,width12);
   confString = confString+Form("%1.1f-%1.1f-%1.1f_",width20,width21,width22);
-  if (doCT) effCHist->SetTitle(Form("eff-ct-hist_%s%1.1f-%1.1f-%1.1f_bins-%i-%i-%i",confString,width30,width31,width32,xbins,ybins,zbins));
-  if (doWT) effWHist->SetTitle(Form("eff-wt-hist_%s%1.1f-%1.1f-%1.1f_bins-%i-%i-%i",confString,width40,width41,width42,xbins,ybins,zbins));
+  if (doCT) effCHist->SetTitle(Form("eff-ct-hist_%s%1.1f-%1.1f-%1.1f_bins-%i-%i-%i",confString.c_str(),width30,width31,width32,xbins,ybins,zbins));
+  if (doWT) effWHist->SetTitle(Form("eff-wt-hist_%s%1.1f-%1.1f-%1.1f_bins-%i-%i-%i",confString.c_str(),width40,width41,width42,xbins,ybins,zbins));
 
   // save histograms in file
   // from this point on the names of files and objects will only contain information about bin number, parity, and tag condition
