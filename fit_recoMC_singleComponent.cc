@@ -199,7 +199,7 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
   string longString  = (tagFlag==1?"Fit to correctly tagged events":"Fit to wrongly tagged events");
   longString = longString + Form(parity==1?" (q2-bin %i even)":" (q2-bin %i odd)",q2Bin);
 
-  // plot fit plojections
+  // plot fit projections
   c[confIndex] = new TCanvas (("c_"+shortString).c_str(),("Fit to RECO-level MC - "+longString).c_str(),2000,700);
   TLegend* leg = new TLegend (0.25,0.8,0.9,0.9);
   RooPlot* xframe = ctK->frame(Title(longString.c_str()));

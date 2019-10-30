@@ -72,11 +72,7 @@ source mergeParSub_preComp_Integrals_MC.sh
 ## Fit generator-level distributions
 Compile and run with:
 ```sh
-mkdir fitResults
-mkdir plotFit_d
-make AngDict
-make fit_genMC
-./fit_genMC
+source fit_genMC.sh
 ```
 This produces a root file `fitResults/fitResult_genMC.root` containing the RooFitResult objects, and fit projection plots in `plotFit_d/fitResult_genMC_*.pdf`.
 
@@ -90,11 +86,7 @@ This produces a root file `fitResults/fitResult_recoMC_singleComponent.root` con
 ## Fit post-selection distributions
 Compile and run with:
 ```sh
-mkdir fitResults
-mkdir plotFit_d
-make AngDict
-make fit_recoMC_fullAngular
-./fit_recoMC_fullAngular
+source fit_recoMC_fullAngular.sh
 ```
 This produces a root file `fitResults/fitResult_recoMC_fullAngular.root` containing the RooFitResult objects, and fit projection plots in `plotFit_d/fitResult_recoMC_fullAngular_*.pdf`.
 

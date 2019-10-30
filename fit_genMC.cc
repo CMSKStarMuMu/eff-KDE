@@ -18,7 +18,6 @@ using namespace RooFit;
 using namespace std;
 
 static const int nBins = 9;
-float binBorders [nBins+1] = { 1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16, 19};
 
 TCanvas* c [2*nBins];
 
@@ -29,14 +28,14 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
   cout<<"Conf: "<<shortString<<endl;
 
   // Load variables and dataset
+  // import the "other parity" dataset, to stay coherent with fit_recoMC notation
   string filename_data = Form("effDataset_b%i.root",q2Bin);
   TFile* fin_data = TFile::Open( filename_data.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;
     return;
   }
-  // import the "other parity" dataset, to stay coherent with fit_recoMC notation
-  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,1-parity));
+  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,1-parity)); // inverted parity
   if ( !wsp || wsp->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename_data<<endl;
     return;
@@ -56,7 +55,7 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
     return;
   }
 
-  // define angular parameters
+  // define angular parameters with ranges from positiveness requirements on the decay rate
   RooRealVar* Fl = new RooRealVar("Fl","F_{L}",0.5,0,1);
   RooRealVar* P1 = new RooRealVar("P1","P_{1}",0,-1,1);
   RooRealVar* P2 = new RooRealVar("P2","P_{2}",0,-1,1);
@@ -66,10 +65,13 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
   RooRealVar* P6p = new RooRealVar("P6p","P'_{6}",0,-1*sqrt(2),sqrt(2));
   RooRealVar* P8p = new RooRealVar("P8p","P'_{8}",0,-1*sqrt(2),sqrt(2));
 
+  // define angular PDF for signal and generation-level distributions, using the custom class
   RooAbsPdf* PDF_sig_ang_decayRate = new DecayRate(("PDF_sig_ang_decayRate_"+shortString).c_str(),"PDF_sig_ang_decayRate",
 						   *ctK,*ctL,*phi,*Fl,*P1,*P2,*P3,*P4p,*P5p,*P6p,*P8p);
 
-  RooFitResult * fitResult = PDF_sig_ang_decayRate->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(2),Hesse(true),Strategy(2),Minos(false)); 
+  // perform fit
+  RooFitResult * fitResult = PDF_sig_ang_decayRate->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(2),Hesse(true),Strategy(2),Minos(true),Offset(true));
+
   fitResult->Print("v");
 
   if (save) {
