@@ -60,15 +60,13 @@ and find the efficiency histograms in the `files/KDEeff_b*_*.root` files.
 ## Run partial-integral numeric computation
 This code is configured to submit parallel computation of the KDE, using HTCondor (available at CERN and accessible from lxplus machines).
 Feel free to adapt the code to run on other kind of infrastructure or, discouraged, to run it locally.
-Adapt the paths to CMSSW area and working directory in [run_preComp_Integrals_MC.sh](run_preComp_Integrals_MC.sh#L3-L6).
+Adapt the paths to CMSSW area and working directory in [run_preComp_Integrals_MC.sh](run_preComp_Integrals_MC.sh#L3-L6), then submit the jobs with:
 ```sh
-mkdir logs_preComp
-make preComp_Integrals_MC
-condor_submit sub_preComp_Integrals_MC.sub
+source sub_preComp_Integrals_MC.sh
 ```
 when all the jobs have finished (you can check with `condor_q`) you can merge them:
 ```sh
-root -b -q 'mergeParSub_preComp_Integrals_MC.cc'
+source mergeParSub_preComp_Integrals_MC.sh
 ```
 
 ## Fit generator-level distributions
@@ -85,11 +83,7 @@ This produces a root file `fitResults/fitResult_genMC.root` containing the RooFi
 ## Fit single flavour-tagged components of post-selection distributions
 Compile and run with:
 ```sh
-mkdir fitResults
-mkdir plotFit_d
-make AngDict
-make fit_recoMC_singleComponent
-./fit_recoMC_singleComponent
+source fit_recoMC_singleComponent.sh
 ```
 This produces a root file `fitResults/fitResult_recoMC_singleComponent.root` containing the RooFitResult objects, and fit projection plots in `plotFit_d/fitResult_recoMC_singleComponent_*.pdf`.
 
