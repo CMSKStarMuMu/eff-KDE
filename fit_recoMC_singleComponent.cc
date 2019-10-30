@@ -24,8 +24,6 @@ using namespace std;
 
 static const int nBins = 9;
 
-float binBorders [nBins+1] = { 1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16, 19};
-
 TCanvas* c [4*nBins];
 
 void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot, bool save)
@@ -85,8 +83,10 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
   string intHistString = "MCint_"+shortString;
   TH1D* intHist = (TH1D*)fin->Get(intHistString.c_str());
   if ( !intHist || intHist->IsZombie() ) {
-    cout<<"Integral histogram "<<intHistString<<" not found in file: "<<filename<<endl<<"Using rooFit integration"<<endl;
-    intVec.push_back(0);
+    // cout<<"Integral histogram "<<intHistString<<" not found in file: "<<filename<<endl<<"Using rooFit integration"<<endl;
+    // intVec.push_back(0);
+    cout<<"Integral histogram "<<intHistString<<" not found in file: "<<filename<<endl<<"Abort"<<endl;
+    return;
   } else if ( strcmp( intHist->GetTitle(), effHist->GetTitle() ) ) {
     cout<<"Integral histogram "<<intHistString<<" is incoherent with efficiency "<<effString<<" in file: "<<filename<<endl;
     cout<<"Efficiency conf: "<<effHist->GetTitle()<<endl;
@@ -107,37 +107,59 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
   RooRealVar* P6p = new RooRealVar("P6p","P'_{6}",0,-1*sqrt(2),sqrt(2));
   RooRealVar* P8p = new RooRealVar("P8p","P'_{8}",0,-1*sqrt(2),sqrt(2));
 
-  // Customise initial values of parameters
-  // b3wt
-  // Fl->setVal( 0.60);
-  // P1->setVal(-0.16);
-  // P2->setVal(-0.39);
-  // P3->setVal(-0.01);
-  // P4p->setVal(-0.88);
-  // P5p->setVal( 0.75);
-  // P6p->setVal(-0.03);
-  // P8p->setVal(-0.06);
-  // b0wt
-  // Fl->setVal( 0.71);
-  // P1->setVal(-0.02);
-  // P2->setVal( 0.39);
-  // P3->setVal(-0.01);
-  // P4p->setVal( 0.10);
-  // P5p->setVal(-0.35);
-  // P6p->setVal( 0.04);
-  // P8p->setVal( 0.01);
-
   RooAbsPdf* PDF_sig_ang_singleComponent = 0;
   if (tagFlag==1) PDF_sig_ang_singleComponent = new PdfRT(("PDF_sig_ang_singleComponent_"+shortString).c_str(),"PDF_sig_ang_singleComponent",
 							  *ctK,*ctL,*phi,*Fl,*P1,*P2,*P3,*P4p,*P5p,*P6p,*P8p,*eff,intVec);
   else            PDF_sig_ang_singleComponent = new PdfWT(("PDF_sig_ang_singleComponent_"+shortString).c_str(),"PDF_sig_ang_singleComponent",
 							  *ctK,*ctL,*phi,*Fl,*P1,*P2,*P3,*P4p,*P5p,*P6p,*P8p,*eff,intVec);
 
+  RooAbsReal* nll = PDF_sig_ang_singleComponent->createNLL(*data);
+  double nllGen = 0;
+
+  TFile* finGen = TFile::Open("fitResults/fitResult_genMC.root");
+  if ( !finGen || finGen->IsZombie() ) {
+    cout<<"Missing gen file: fitResults/fitResult_genMC.root"<<endl;
+  } else {
+    RooFitResult* fitResultGen = (RooFitResult*)finGen->Get(Form("fitResult_b%ip%i",q2Bin,parity));
+    if ( !fitResultGen || fitResultGen->IsZombie() ) {
+      cout<<"No "<<Form("fitResult_b%ip%i",q2Bin,parity)<<" in file: fitResults/fitResult_genMC.root"<<endl;
+    } else {
+      Fl ->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("Fl"))->getValV());
+      P1 ->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("P1"))->getValV());
+      P2 ->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("P2"))->getValV());
+      P3 ->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("P3"))->getValV());
+      P4p->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("P4p"))->getValV());
+      P5p->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("P5p"))->getValV());
+      P6p->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("P6p"))->getValV());
+      P8p->setVal(((RooRealVar*)fitResultGen->floatParsFinal().find("P8p"))->getValV());
+
+      nllGen = nll->getVal();
+    }
+  }
+
+  Fl ->setVal(0.5);
+  P1 ->setVal(0);
+  P2 ->setVal(0);
+  P3 ->setVal(0);
+  P4p->setVal(0);
+  P5p->setVal(0);
+  P6p->setVal(0);
+  P8p->setVal(0);
+
+  double nllCenter = nll->getVal();
+
   // Customise rooFit integrator
   // PDF_sig_ang_singleComponent->getIntegratorConfig()->methodND().setLabel("RooMCIntegrator");
 
-  RooFitResult* fitResult = PDF_sig_ang_singleComponent->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(1),Hesse(true),Strategy(2),Minos(true)); 
+  PDF_sig_ang_singleComponent->fitTo(*data,Minimizer("Minuit2","migrad"),Timer(true),NumCPU(1),Hesse(true),Strategy(0),Offset(true));
+  RooFitResult* fitResult = PDF_sig_ang_singleComponent->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(1),Hesse(true),Strategy(2),Minos(true),Offset(true));
   fitResult->Print("v");
+
+  double nllReco = nll->getVal();
+  fitResult->SetTitle(Form("deltaNLL=%.1f",(nllGen==0?0.0:nllGen-nllReco)));
+
+  cout<<"NLL values: center="<<nllCenter<<" result="<<nllReco<<" gen="<<nllGen<<endl;
+  if (nllGen!=0) cout<<"GEN-RECO deltaNLL="<<nllGen-nllReco<<endl;
 
   if (save) {
     TFile* fout = new TFile("fitResults/fitResult_recoMC_singleComponent.root","UPDATE");

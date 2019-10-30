@@ -27,7 +27,7 @@ void mergeParSub_preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int
   cout<<"Conf: "<<shortString<<endl;
 
   // Open efficiency file to add integral histogram
-  string efffilename = Form((parity==0?"KDEeff_b%i_ev.root":"KDEeff_b%i_od.root"),q2Bin);
+  string efffilename = Form((parity==0?"files/KDEeff_b%i_ev.root":"files/KDEeff_b%i_od.root"),q2Bin);
   TFile* fout = new TFile( efffilename.c_str(), "UPDATE" );
   if ( !fout || !fout->IsOpen() ) {
     cout<<"File not found: "<<efffilename<<endl;
@@ -43,7 +43,7 @@ void mergeParSub_preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int
   string filename;
   string effTitleTag;
   for (int seed=minSeed; seed<=maxSeed; ++seed) {
-    filename = "PreIntMC_"+shortString+Form("_s%i.root",seed);
+    filename = "tmp/PreIntMC_"+shortString+Form("_s%i.root",seed);
     TFile* fin = TFile::Open( filename.c_str() );
     if ( !fin || !fin->IsOpen() ) {
       // cout<<"File not found: "<<filename<<endl;
@@ -69,6 +69,7 @@ void mergeParSub_preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int
     hcnt_tot->Add((TH1D*)fin->Get(("hcnt_tot"+shortString).c_str()));
   }
   double cnt_tot = hcnt_tot->GetBinContent(1);
+  cout<<"Tot = "<<cnt_tot<<endl;
 
   // Create and fill histo with integral values
   TH1D* integrals_MC = new TH1D(("MCint_"+shortString).c_str(),effTitleTag.c_str(),nFunc,-0.5,nFunc-0.5);
@@ -76,9 +77,9 @@ void mergeParSub_preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int
     integrals_MC->SetBinContent(i+1,volume*(hcnt_p->GetBinContent(i+1)-hcnt_m->GetBinContent(i+1))/cnt_tot);
     integrals_MC->SetBinError  (i+1,volume*sqrt(1.0*(hcnt_p->GetBinContent(i+1)+hcnt_m->GetBinContent(i+1))*(cnt_tot-hcnt_p->GetBinContent(i+1)-hcnt_m->GetBinContent(i+1))/cnt_tot)/cnt_tot);
 
-    cout<<i<<"\t"<<hcnt_p->GetBinContent(i+1)<<"\t"<<hcnt_m->GetBinContent(i+1)<<"\t"
-	<<volume*(hcnt_p->GetBinContent(i+1)-hcnt_m->GetBinContent(i+1))/cnt_tot<<"\t"
-	<<volume*sqrt(1.0*(hcnt_p->GetBinContent(i+1)+hcnt_m->GetBinContent(i+1))*(cnt_tot-hcnt_p->GetBinContent(i+1)-hcnt_m->GetBinContent(i+1))/cnt_tot)/cnt_tot<<endl;
+    // cout<<i<<"\t"<<hcnt_p->GetBinContent(i+1)<<"\t"<<hcnt_m->GetBinContent(i+1)<<"\t"
+    // 	<<volume*(hcnt_p->GetBinContent(i+1)-hcnt_m->GetBinContent(i+1))/cnt_tot<<"\t"
+    // 	<<volume*sqrt(1.0*(hcnt_p->GetBinContent(i+1)+hcnt_m->GetBinContent(i+1))*(cnt_tot-hcnt_p->GetBinContent(i+1)-hcnt_m->GetBinContent(i+1))/cnt_tot)/cnt_tot<<endl;
 
   }
 

@@ -64,16 +64,16 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int cnt_hit, in
   function[10] = new RooFormulaVar(("function10"+shortString).c_str(),"function10","(1-ctK*ctK)*(1-ctL*ctL)*sin(2*phi)",vars);
 
   // define counters
-  int cnt_p [nFunc];
-  int cnt_m [nFunc];
+  double cnt_p [nFunc];
+  double cnt_m [nFunc];
   for (int i=0; i<nFunc; ++i) cnt_p[i]=cnt_m[i]=0;
 
   // start the generation
   TRandom3 randGen (seed);
-  double hVal, effVal, intVal;
-  int iPoint, iFunc;
+  double hVal, effVal, intVal, iPoint;
+  int iFunc;
   double piVal = TMath::Pi();
-  for (iPoint=0; cnt_p[1]<cnt_hit; ++iPoint) {
+  for (iPoint=0; cnt_p[1]<cnt_hit; iPoint=iPoint+1) {
     ctK->setVal(2*randGen.Rndm()-1);
     ctL->setVal(2*randGen.Rndm()-1);
     phi->setVal((2*randGen.Rndm()-1)*piVal);
@@ -84,8 +84,8 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int cnt_hit, in
 
     for (iFunc=0; iFunc<nFunc; ++iFunc) {
       intVal=effVal*function[iFunc]->getVal();
-      if (intVal>hVal) ++cnt_p[iFunc];
-      else if (-1*intVal>hVal) ++cnt_m[iFunc];
+      if (intVal>hVal) cnt_p[iFunc]=cnt_p[iFunc]+1;
+      else if (-1*intVal>hVal) cnt_m[iFunc]=cnt_m[iFunc]+1;
     }
   }
 
