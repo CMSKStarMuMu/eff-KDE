@@ -11,7 +11,7 @@ using namespace std ;
 
 static const int nBins = 9;
 
-void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float width = 0.5, int xbins=50, int ybins = 0, int zbins = 0, int ndiv = 0, int totdiv = 1)
+void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCTK = 0.5, float widthCTL = 0.5, float widthPHI = 0.5, int xbins=50, int ybins = 0, int zbins = 0, int ndiv = 0, int totdiv = 1)
 {
   // effIndx format: [0] GEN no-filter
   //                 [1] GEN filtered
@@ -26,7 +26,9 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float width =
   if ( ybins<1 ) ybins = xbins;
   if ( zbins<1 ) zbins = xbins;
 
-  if ( width<=0 ) return;
+  if ( widthCTK<=0 ) return;
+  if ( widthCTL<=0 ) return;
+  if ( widthPHI<=0 ) return;
 
   if ( ndiv<0 || ndiv>=totdiv ) return;
 
@@ -73,6 +75,7 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float width =
     cout<<"Dataset "<<datasetString<<" not found in file: "<<filename<<endl;
     return;
   }
+  // full reconstructed sample is obtained appending wrong-tag and correct-tag events
   if ( effIndx==5 ) {
     RooDataSet* extradata = (RooDataSet*)wsp->data(Form((parity==0?"data_ctRECO_ev_b%i":"data_ctRECO_od_b%i"),q2Bin));
     if ( !extradata || extradata->IsZombie() ) {
@@ -81,23 +84,37 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float width =
     }
     totdata->append(*extradata);
   }
+  // Get full number of events in GEN denominator sample (with no FSR veto)
+  double normVal = 1;
+  if ( effIndx==0 ) {
+    TH1I* normHist = (TH1I*)fin->Get( Form("n_genDen_b%i",q2Bin) );
+    if ( !normHist || normHist->IsZombie() ) cout<<"Histogram n_genDen_b"<<q2Bin<<" not found in file: "<<filename<<"\nUsing the statistics of the sample for function normalisation"<<endl;
+    else normVal = normHist->GetBinContent(parity+1);
+  }
 
   // split dataset according to job number
   // caveat: in the "EventRange" option, the end of the range is not included
-  int totNev = totdata->numEntries();
+  double totNev = totdata->numEntries();
   cout<<"Partition "<<ndiv<<" of "<<totdiv<<": "
       <<(int)((ndiv*totNev)/totdiv)<<"->"
       <<((int)(((ndiv+1)*totNev)/totdiv))-1<<" of total "<<totNev<<endl;
   RooAbsData* data = totdata->reduce(EventRange((int)((ndiv*totNev)/totdiv),(int)(((ndiv+1)*totNev)/totdiv)));
 
-  // create the KDE description of numerator and denominator datasets
+  // create vector containing width scale factors, including a term to make the kernel width independent from the sample's statistics
+  // (the inverse of this factor is used in the RooNDKeysPdf class definition)
+  TVectorD rho (3);
+  rho[0] = widthCTK * pow(data->sumEntries()/10000,1./7.);
+  rho[1] = widthCTL * pow(data->sumEntries()/10000,1./7.);
+  rho[2] = widthPHI * pow(data->sumEntries()/10000,1./7.);
+
+  // create the KDE description
   TStopwatch t;
   t.Start();
-  RooNDKeysPdf* KDEfunc = new RooNDKeysPdf("KDEfunc","KDEfunc",RooArgList(*ctK,*ctL,*phi),*data,"m",width);
+  RooNDKeysPdf* KDEfunc = new RooNDKeysPdf("KDEfunc","KDEfunc",RooArgList(*ctK,*ctL,*phi),*data,rho,"m",3,false);
   t.Stop();
   t.Print();
 
-  // create numerator and denominator histograms
+  // sample the KDE function to save it in a file (this is the most time-consuming process)
   TStopwatch t1;
   t1.Start();
   TH3D* KDEhist = (TH3D*)KDEfunc->createHistogram( ("KDEhist_"+shortString).c_str(),
@@ -107,10 +124,13 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float width =
 						   Scaling(false) );
   t1.Stop();
   t1.Print();
-  KDEhist->Scale(data->sumEntries()/KDEhist->Integral());
+  // scale the output to have the same normalisation as the input dataset (or as the full sample, with no FSR veto, for GEN-denominator)
+  if ( effIndx==0 ) KDEhist->Scale(normVal/totdiv/KDEhist->Integral());
+  else KDEhist->Scale(data->sumEntries()/KDEhist->Integral());
 
   // save histogram to file
-  TFile* fout = TFile::Open(Form("KDEhist_%s_rooKeys_mw%.2f_%i_%i_%i_%i-frac-%i.root",shortString.c_str(),width,xbins,ybins,zbins,ndiv,totdiv),"RECREATE");
+  TFile* fout = TFile::Open(Form("KDEhist_%s_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i_%i-frac-%i.root",
+				 shortString.c_str(),widthCTK,widthCTL,widthPHI,xbins,ybins,zbins,ndiv,totdiv),"RECREATE");
   fout->cd();
   KDEhist->Write();
   fout->Close();

@@ -197,7 +197,7 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
       // plot in canvas
       csx[confIndex]->cd(5*j+i+1);
       // gPad->SetLeftMargin(0.18);
-      distSliceX[5*i+j]->GetYaxis()->SetTitleOffset(1.7);
+      distSliceX[5*i+j]->GetYaxis()->SetTitleOffset(1.4);
       distSliceX[5*i+j]->Draw();
       for (int iHist=0; iHist<KDEhists.size(); ++iHist) {
 	histSliceX[5*i+j].at(iHist)->SetLineWidth(2);
@@ -209,7 +209,7 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
 
       csy[confIndex]->cd(5*j+i+1);
       // gPad->SetLeftMargin(0.18);
-      distSliceY[5*i+j]->GetYaxis()->SetTitleOffset(1.7);
+      distSliceY[5*i+j]->GetYaxis()->SetTitleOffset(1.4);
       distSliceY[5*i+j]->Draw();
       for (int iHist=0; iHist<KDEhists.size(); ++iHist) {
 	(histSliceY[5*i+j])[iHist]->SetLineWidth(2);
@@ -221,7 +221,7 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
 
       csz[confIndex]->cd(5*j+i+1);
       // gPad->SetLeftMargin(0.18);
-      distSliceZ[5*i+j]->GetYaxis()->SetTitleOffset(1.7);
+      distSliceZ[5*i+j]->GetYaxis()->SetTitleOffset(1.4);
       distSliceZ[5*i+j]->Draw();
       for (int iHist=0; iHist<KDEhists.size(); ++iHist) {
 	(histSliceZ[5*i+j])[iHist]->SetLineWidth(2);
@@ -253,17 +253,63 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
   // Plot 1D projections
   cp1[confIndex] = new TCanvas(("cp1"+shortString).c_str(),(longString+" - 1D Projections").c_str(),2000,700) ;
   cp1[confIndex]->Divide(3,1);
-  TLegend legPr (0.1,0.1,0.55,0.25);
-  TH1D* distProj1X = (TH1D*)data->createHistogram( Form("distProj1X_%s",shortString.c_str()), *ctK, Binning(20,-1,1) );
-  TH1D* distProj1Y = (TH1D*)data->createHistogram( Form("distProj1Y_%s",shortString.c_str()), *ctL, Binning(20,-1,1) );
-  TH1D* distProj1Z = (TH1D*)data->createHistogram( Form("distProj1Z_%s",shortString.c_str()), *phi, Binning(20,-TMath::Pi(),TMath::Pi()) );
+  double x1leg = 0.11;
+  double x2leg = 0.11;
+  double x3leg = 0.11;
+  double y1leg = 0.1;
+  double y2leg = 0.1;
+  double y3leg = 0.1;
+  if (effIndx==1 || effIndx==2 || effIndx==3) {
+    x3leg = 0.45;
+    if (q2Bin<4) {
+      x1leg = 0.45;
+      y1leg = 0.78;
+      x2leg = 0.28;
+    } else
+      x2leg = 0.45;
+  }
+  if (effIndx==4) {
+    x3leg = 0.45;
+    if (q2Bin<4) {
+      x1leg = 0.28;
+      x2leg = 0.28;
+    } else {
+      x2leg = 0.45;
+      y2leg = 0.78;
+    }
+  }
+  TLegend leg1Pr (x1leg,y1leg,x1leg+0.45,y1leg+0.12);
+  TLegend leg2Pr (x2leg,y2leg,x2leg+0.45,y2leg+0.12);
+  TLegend leg3Pr (x3leg,y3leg,x3leg+0.45,y3leg+0.12);
+
+  TH1D* distProj1X = (TH1D*)data->createHistogram( Form("distProj1X_%s",shortString.c_str()), *ctK, Binning(50,-1,1) );
+  TH1D* distProj1Y = (TH1D*)data->createHistogram( Form("distProj1Y_%s",shortString.c_str()), *ctL, Binning(50,-1,1) );
+  TH1D* distProj1Z = (TH1D*)data->createHistogram( Form("distProj1Z_%s",shortString.c_str()), *phi, Binning(50,-TMath::Pi(),TMath::Pi()) );
   distProj1X->SetTitle( Form("%s;cos(#theta_{K});Events",longString.c_str()) );
   distProj1Y->SetTitle( Form("%s;cos(#theta_{L});Events",longString.c_str()) );
   distProj1Z->SetTitle( Form("%s;#phi;Events",longString.c_str()) );
-  legPr.AddEntry(distProj1X,"Event distribution","lep");
+  leg1Pr.AddEntry(distProj1X,"Event distribution","lep");
+  leg2Pr.AddEntry(distProj1X,"Event distribution","lep");
+  leg3Pr.AddEntry(distProj1X,"Event distribution","lep");
   vector <TH1D*> histProj1X;
   vector <TH1D*> histProj1Y;
   vector <TH1D*> histProj1Z;
+
+  // Compute 1D cumulative distributions of dataset, used for Kolmogorov-Smirnov test
+  auto lowXbinEdges = new double[KDEhists[0]->GetNbinsX()];
+  auto lowYbinEdges = new double[KDEhists[0]->GetNbinsY()];
+  auto lowZbinEdges = new double[KDEhists[0]->GetNbinsZ()];
+  KDEhists[0]->GetXaxis()->GetLowEdge(lowXbinEdges);
+  KDEhists[0]->GetYaxis()->GetLowEdge(lowYbinEdges);
+  KDEhists[0]->GetZaxis()->GetLowEdge(lowZbinEdges);
+  auto dataCumulX = new double[KDEhists[0]->GetNbinsX()];
+  auto dataCumulY = new double[KDEhists[0]->GetNbinsY()];
+  auto dataCumulZ = new double[KDEhists[0]->GetNbinsZ()];
+  double totalData = data->sumEntries();
+  for (int iBin=0; iBin<KDEhists[0]->GetNbinsX(); ++iBin) dataCumulX[iBin] = data->sumEntries(Form("ctK<%f",lowXbinEdges[iBin])) / totalData;
+  for (int iBin=0; iBin<KDEhists[0]->GetNbinsY(); ++iBin) dataCumulY[iBin] = data->sumEntries(Form("ctL<%f",lowYbinEdges[iBin])) / totalData;
+  for (int iBin=0; iBin<KDEhists[0]->GetNbinsZ(); ++iBin) dataCumulZ[iBin] = data->sumEntries(Form("phi<%f",lowZbinEdges[iBin])) / totalData;
+
   for (int iHist=0; iHist<KDEhists.size(); ++iHist) {
     if ( iHist >= KDEconfs.size() ) {
       cout<<"ERROR: histo vector and name vector have different sizes"<<endl;
@@ -276,10 +322,34 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
     histProj1X.back()->Scale( 1.0 * histProj1X.back()->GetNbinsX() / distProj1X->GetNbinsX() );
     histProj1Y.back()->Scale( 1.0 * histProj1Y.back()->GetNbinsX() / distProj1Y->GetNbinsX() );
     histProj1Z.back()->Scale( 1.0 * histProj1Z.back()->GetNbinsX() / distProj1Z->GetNbinsX() );
-    legPr.AddEntry(histProj1X.back(),Form("KDE %s",KDEconfs[iHist].Data()),"l");
+
+    // Compute Kolmogorov-Smirnov test on 1D projections to quantitatively compare performances
+    auto partIntX = histProj1X.back()->GetIntegral();
+    auto partIntY = histProj1Y.back()->GetIntegral();
+    auto partIntZ = histProj1Z.back()->GetIntegral();
+    double xKSmax = 0;
+    double yKSmax = 0;
+    double zKSmax = 0;
+    double diff;
+    for (int iBin=1; iBin<histProj1X.back()->GetNbinsX(); ++iBin) {
+      diff = fabs( partIntX[iBin] - dataCumulX[iBin] );
+      if ( xKSmax<diff ) xKSmax = diff;
+    }
+    for (int iBin=1; iBin<histProj1Y.back()->GetNbinsX(); ++iBin) {
+      diff = fabs( partIntY[iBin] - dataCumulY[iBin] );
+      if ( yKSmax<diff ) yKSmax = diff;
+    }
+    for (int iBin=1; iBin<histProj1Z.back()->GetNbinsX(); ++iBin) {
+      diff = fabs( partIntZ[iBin] - dataCumulZ[iBin] );
+      if ( zKSmax<diff ) zKSmax = diff;
+    }
+    leg1Pr.AddEntry(histProj1X.back(),Form("KDE %s - KS=%1.2f",KDEconfs[iHist].Data(),xKSmax*sqrt(data->numEntries())),"l");
+    leg2Pr.AddEntry(histProj1X.back(),Form("KDE %s - KS=%1.2f",KDEconfs[iHist].Data(),yKSmax*sqrt(data->numEntries())),"l");
+    leg3Pr.AddEntry(histProj1X.back(),Form("KDE %s - KS=%1.2f",KDEconfs[iHist].Data(),zKSmax*sqrt(data->numEntries())),"l");
   }
+
   cp1[confIndex]->cd(1);
-  // gPad->SetLeftMargin(0.18);
+  gPad->SetLeftMargin(0.11);
   distProj1X->GetYaxis()->SetTitleOffset(1.7);
   distProj1X->SetMinimum(0);
   distProj1X->Draw();
@@ -289,9 +359,9 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
     histProj1X[iHist]->Draw("sameLHIST");
   }
   distProj1X->Draw("same");
-  legPr.Draw("same");
+  leg1Pr.Draw("same");
   cp1[confIndex]->cd(2);
-  // gPad->SetLeftMargin(0.18);
+  gPad->SetLeftMargin(0.11);
   distProj1Y->GetYaxis()->SetTitleOffset(1.7);
   distProj1Y->SetMinimum(0);
   distProj1Y->Draw();
@@ -301,9 +371,9 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
     histProj1Y[iHist]->Draw("sameLHIST");
   }
   distProj1Y->Draw("same");
-  legPr.Draw("same");
+  leg2Pr.Draw("same");
   cp1[confIndex]->cd(3);
-  // gPad->SetLeftMargin(0.18);
+  gPad->SetLeftMargin(0.11);
   distProj1Z->GetYaxis()->SetTitleOffset(1.7);
   distProj1Z->SetMinimum(0);
   distProj1Z->Draw();
@@ -313,7 +383,7 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
     histProj1Z[iHist]->Draw("sameLHIST");
   }
   distProj1Z->Draw("same");
-  legPr.Draw("same");
+  leg3Pr.Draw("same");
   cp1[confIndex]->SaveAs( (confString+"_Proj1D.pdf").c_str() );
     
   // Plot 2D projections
@@ -331,9 +401,9 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
     histProj2XY->SetName( Form("histProj2XY_%s_%s",shortString.c_str(),KDEconfs[iHist].Data()) );
     histProj2XZ->SetName( Form("histProj2XZ_%s_%s",shortString.c_str(),KDEconfs[iHist].Data()) );
     histProj2YZ->SetName( Form("histProj2YZ_%s_%s",shortString.c_str(),KDEconfs[iHist].Data()) );
-    histProj2XY->SetTitle( Form("%s %s;cos(#theta_{L});cos(#theta_{K});Events",longString.c_str(),KDEconfs[iHist].Data()) );
-    histProj2XZ->SetTitle( Form("%s %s;#phi;cos(#theta_{K});;Events",longString.c_str(),KDEconfs[iHist].Data()) );
-    histProj2YZ->SetTitle( Form("%s %s;#phi;cos(#theta_{L});Events",longString.c_str(),KDEconfs[iHist].Data()) );
+    histProj2XY->SetTitle( Form("%s %s;cos(#theta_{L});cos(#theta_{K});",longString.c_str(),KDEconfs[iHist].Data()) );
+    histProj2XZ->SetTitle( Form("%s %s;#phi;cos(#theta_{K});",longString.c_str(),KDEconfs[iHist].Data()) );
+    histProj2YZ->SetTitle( Form("%s %s;#phi;cos(#theta_{L});",longString.c_str(),KDEconfs[iHist].Data()) );
     histProj2XY->GetXaxis()->SetTitleOffset(1.4);
     histProj2XY->GetYaxis()->SetTitleOffset(2);
     histProj2XZ->GetXaxis()->SetTitleOffset(1.4);

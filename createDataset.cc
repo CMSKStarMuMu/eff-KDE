@@ -4,6 +4,10 @@ using namespace std;
 static const int nBins = 9;
 float binBorders [nBins+1] = { 1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16, 19};
 
+double PDGB0Mass = 5.27958;
+double PDGJpsiMass = 3.096916;
+double PDGPsiPrimeMass = 3.686109;
+
 TCanvas* c [nBins];
 
 void createDataset(int year, int q2Bin = -1, bool plot = false)
@@ -18,12 +22,14 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 
   if ( year<6 || year>8 ) return;
 
+  // define angular variables and variable for PU-reweighting
   RooRealVar ctK ("ctK","cos(#theta_{K})",-1,1);
   RooRealVar ctL ("ctL","cos(#theta_{L})",-1,1);
   RooRealVar phi ("phi","#phi",-TMath::Pi(),TMath::Pi());
   RooArgSet vars (ctK, ctL, phi);
   RooRealVar wei ("weight","weight",1);
 
+  // flags to mark which q2 bins should be filled
   bool runBin [nBins];
   string shortString [nBins];
   string longString  [nBins];
@@ -43,7 +49,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   if ( year==6 ) {
     // 2016
     t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/NtupleMay20/2016GEN_MC_LMNR.root/ntuple");
-    t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/NtupleMay20/2016MC_LMNR.root/ntuple");
+    t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/ntuple_01_10_2019/2016MC_LMNR.root/ntuple");
   } else if ( year==7 ) {
     // 2017
     t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/2017GEN_MC_LMNR.root/ntuple");
@@ -58,6 +64,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   int numEntries = t_num->GetEntries();
   int counter;
 
+  // Import branches from ntuples:
   // angular variables
   double genCosThetaK, genCosThetaL, genPhi;
   double recoCosThetaK, recoCosThetaL, recoPhi;
@@ -88,6 +95,10 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   t_den->SetBranchAddress( "genQ2"   , &genDimuMass2 );
   t_num->SetBranchAddress( "mumuMass", &recoDimuMass );
 
+  // B0 mass variable
+  double recoB0Mass;
+  t_num->SetBranchAddress( "tagged_mass", &recoB0Mass );
+
   // B0-kinematic variables
   // double genB0pT, genB0eta;
   // double recoB0pT, recoB0eta;
@@ -115,7 +126,11 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   t_den->SetBranchAddress( "weight", &PUweight );
   t_num->SetBranchAddress( "weight", &PUweight );
 
-  // Define datasets
+  // final state radiation flag
+  double genSignHasFSR;
+  t_gen->SetBranchAddress( "genSignHasFSR", &genSignHasFSR );
+
+  // Define datasets for five efficiency terms
   RooDataSet* data_genDen_ev [nBins];
   RooDataSet* data_genDen_od [nBins];
   RooDataSet* data_genNum_ev [nBins];
@@ -149,6 +164,14 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 					   RooArgSet(ctK,ctL,phi,wei), "weight" );
     }
 
+  // Define counter of total genDen events (w/o FSR veto) for correct efficiency normalisation
+  // saved as a two-bin TH1I object
+  TH1I* n_genDen [nBins];
+  for (int i=0; i<nBins; ++i)
+    if (runBin[i])
+      n_genDen [i] = new TH1I( ("n_genDen_"+shortString[i]).c_str(), ("n_genDen_"+shortString[i]).c_str(),
+			       2, -0.5, 1.5);
+
   // Prepare GEN-level datasets
   cout<<"Starting GEN datasets filling..."<<endl;
   counter=0;
@@ -174,9 +197,13 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     ctL.setVal(genCosThetaL);
     phi.setVal(genPhi);
     // fill genDen dataset
-    if (((int)eventN_Dou)%2==0) data_genDen_ev[xBin]->add(vars);
-    else data_genDen_od[xBin]->add(vars);
-    // fill genNum dataset
+    n_genDen[xBin]->Fill(((int)eventN_Dou)%2);
+    if ( genSignHasFSR<0.5 ) {
+      if (((int)eventN_Dou)%2==0) data_genDen_ev[xBin]->add(vars);
+      else data_genDen_od[xBin]->add(vars);
+    }
+    // apply same selection as in GEN-filter of recoDen MC sample
+    // and fill genNum dataset
     if ( fabs(genmupEta)<2.5 && fabs(genmumEta)<2.5 &&
 	 fabs(genkstTrkpEta)<2.5 && fabs(genkstTrkmEta)<2.5 &&
 	 genmupPt>2.5 && genmumPt>2.5 &&
@@ -185,6 +212,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       else data_genNum_od[xBin]->add(vars);
     }
   }
+
   // Prepare denominator dataset
   cout<<"Starting denominator dataset filling..."<<endl;
   counter=0;
@@ -218,6 +246,15 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   counter=0;
   for (int iCand=0; iCand<numEntries; ++iCand) {
     t_num->GetEntry(iCand);
+    // anti-radiation cut
+    if ( recoDimuMass < PDGJpsiMass ) { // below Jpsi
+      if ( fabs( recoB0Mass - PDGB0Mass - recoDimuMass + PDGJpsiMass ) < 0.18 ) continue;
+    } else if ( recoDimuMass > PDGPsiPrimeMass ) { // above PsiPrime
+      if ( fabs( recoB0Mass - PDGB0Mass - recoDimuMass + PDGPsiPrimeMass ) < 0.08 ) continue;
+    } else { // between the resonances
+      if ( fabs( recoB0Mass - PDGB0Mass - recoDimuMass + PDGJpsiMass ) < 0.08 ) continue;
+      if ( fabs( recoB0Mass - PDGB0Mass - recoDimuMass + PDGPsiPrimeMass ) < 0.09 ) continue;
+    }      
     // find q2 bin of current candidate
     xBin=-1;
     for (int i=0; i<nBins; ++i)
@@ -237,20 +274,35 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     ctK.setVal(recoCosThetaK);
     ctL.setVal(recoCosThetaL);
     phi.setVal(recoPhi);
-    if (genSignal != tagB0+1) {
+    if (genSignal != tagB0+1) { // correctly tagged events
       if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,PUweight);
       else data_ctRECO_od[xBin]->add(vars,PUweight);
-    } else {
+    } else { // wrongly tagged events
       if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,PUweight);
       else data_wtRECO_od[xBin]->add(vars,PUweight);
     }
   }
   cout<<"Dataset prepared"<<endl;
 
-  // Save datasets
+  // Save datasets in workspaces
   RooWorkspace *ws_ev [nBins];
   RooWorkspace *ws_od [nBins];
   for (int i=0; i<nBins; ++i) if (runBin[i]) {
+      // Skip the creation of a file when the correct-tag efficiency cannot be computed (empty numerators)
+      // which usually means that either you are using a resonant MC, which does not fill signal q2 bins,
+      // or using a bin too fine, or out of range
+      // If correct-tag numerator is filled and wrong-tag is not, a warning is returned
+      if ( data_genNum_ev[i]->numEntries()==0 || data_genNum_od[i]->numEntries()==0 ) {
+	cout<<"Error: genNum is empty in q2 bin "<<i<<endl;
+	continue;
+      }
+      if ( data_ctRECO_ev[i]->numEntries()==0 || data_ctRECO_od[i]->numEntries()==0 ) {
+	cout<<"Error: ctRECO is empty in q2 bin "<<i<<endl;
+	continue;
+      }
+      if ( data_wtRECO_ev[i]->numEntries()==0 || data_wtRECO_od[i]->numEntries()==0 ) {
+	cout<<"Warning: wtRECO is empty in q2 bin "<<i<<endl;
+      }
       ws_ev[i] = new RooWorkspace(("ws_"+shortString[i]+"p0").c_str(),"Workspace with single-bin even datasets");
       ws_od[i] = new RooWorkspace(("ws_"+shortString[i]+"p1").c_str(),"Workspace with single-bin odd datasets");
       ws_ev[i]->import( *data_genDen_ev[i] );
@@ -266,10 +318,11 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       TFile* fout = new TFile( ( "effDataset_"+shortString[i]+".root" ).c_str(), "RECREATE" );
       ws_ev[i]->Write();
       ws_od[i]->Write();
+      n_genDen[i]->Write();
       fout->Close();
     }
 
-  // compute and print average efficiency
+  // compute and print average efficiency (merged and individual tag configurations) and mistag fraction
   for (int i=0; i<nBins; ++i) if (runBin[i]) {
       double den_ev = data_genNum_ev[i]->sumEntries() / data_genDen_ev[i]->sumEntries() / data_den_ev[i]->sumEntries();
       double den_od = data_genNum_od[i]->sumEntries() / data_genDen_od[i]->sumEntries() / data_den_od[i]->sumEntries();
@@ -281,13 +334,14 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       double avgEff_od = avgEff_ct_od + avgEff_wt_od;
       double avgMis_ev = avgEff_wt_ev / avgEff_ev;
       double avgMis_od = avgEff_wt_od / avgEff_od;
-      cout<<"Averages bin "<<nBins<<" (even): eps="<<avgEff_ev<<"\tm="<<avgMis_ev<<"\teps_c="<<avgEff_ct_ev<<"\teps_m="<<avgEff_wt_ev<<endl;
-      cout<<"Averages bin "<<nBins<<" (odd) : eps="<<avgEff_od<<"\tm="<<avgMis_od<<"\teps_c="<<avgEff_ct_od<<"\teps_m="<<avgEff_wt_od<<endl;
+      cout<<"Averages bin "<<i<<" (even): eps="<<avgEff_ev<<"\tm="<<avgMis_ev<<"\teps_c="<<avgEff_ct_ev<<"\teps_m="<<avgEff_wt_ev<<endl;
+      cout<<"Averages bin "<<i<<" (odd) : eps="<<avgEff_od<<"\tm="<<avgMis_od<<"\teps_c="<<avgEff_ct_od<<"\teps_m="<<avgEff_wt_od<<endl;
     }
 
+  // Plot 1D distributions of datasets
   if (plot) {
 
-    // Plot 1D distributions of datasets
+    // to keep all distributions visible in the same plot, the ones with higher stats (tipically denominators) need to be rescaled
     double rescFac1 = 1.0/12;
     double rescFac2 = 1.0;
     double rescFac3 = 1.0/25;
@@ -307,11 +361,13 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     RooDataSet* data_RECO_od [nBins];
 
     for (int i=0; i<nBins; ++i) if (runBin[i]) {
+	// Create dataset containing both correct-tag and wrong-tag events
 	data_RECO_ev [i] = new RooDataSet( ("data_RECO_ev_"+shortString[i]).c_str(), "Reconstructed candidates after selections (even)", data_ctRECO_ev[i], vars );
 	data_RECO_od [i] = new RooDataSet( ("data_RECO_od_"+shortString[i]).c_str(), "Reconstructed candidates after selections (odd)" , data_ctRECO_od[i], vars );
 	data_RECO_ev[i]->append(*(data_wtRECO_ev[i]));
 	data_RECO_od[i]->append(*(data_wtRECO_od[i]));
 
+	// create frames (one for each bin/parity/variable, but all the six efficiency terms are plotted together)
 	c [i] = new TCanvas(("c_"+shortString[i]).c_str(),("Num and Den 1D projections - "+longString[i]).c_str(),2000,1400);
 	xframe_ev [i] = ctK.frame(Title((longString[i]+" cos(#theta_{K}) distributions (even)").c_str()));
 	yframe_ev [i] = ctL.frame(Title((longString[i]+" cos(#theta_{L}) distributions (even)").c_str()));
@@ -320,21 +376,22 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 	yframe_od [i] = ctL.frame(Title((longString[i]+" cos(#theta_{L}) distributions (odd)").c_str()));
 	zframe_od [i] = phi.frame(Title((longString[i]+" #phi distributions (odd)").c_str()));
 
-	// if (!legFilled) data[i]->plotOn(xframe[i],Rescale(rescFac),MarkerColor(kRed+1),LineColor(kRed+1),Binning(30),Name("plDenDist"));
-	// else            data[i]->plotOn(xframe[i],Rescale(rescFac),MarkerColor(kRed+1),LineColor(kRed+1),Binning(30));
-	// data[i]->plotOn(yframe[i],Rescale(rescFac),MarkerColor(kRed+1),LineColor(kRed+1),Binning(30));
-	// data[i]->plotOn(zframe[i],Rescale(rescFac),MarkerColor(kRed+1),LineColor(kRed+1),Binning(30));
-	// if (!legFilled) numData[i]->plotOn(xframe[i],Binning(30),Name("plNumDist"));
-	// else            numData[i]->plotOn(xframe[i],Binning(30));
-	// numData[i]->plotOn(yframe[i],Binning(30));
-	// numData[i]->plotOn(zframe[i],Binning(30));
-
-	data_genDen_ev[i]->plotOn(xframe_ev[i],MarkerColor(kRed+1)   ,LineColor(kRed+1)   ,Binning(40),Rescale(rescFac1));
-	data_genNum_ev[i]->plotOn(xframe_ev[i],MarkerColor(kBlue)    ,LineColor(kBlue)    ,Binning(40),Rescale(rescFac2));
-	data_den_ev   [i]->plotOn(xframe_ev[i],MarkerColor(kGreen+2) ,LineColor(kGreen+2) ,Binning(40),Rescale(rescFac3));
-	data_ctRECO_ev[i]->plotOn(xframe_ev[i],MarkerColor(kMagenta) ,LineColor(kMagenta) ,Binning(40));
-	data_wtRECO_ev[i]->plotOn(xframe_ev[i],MarkerColor(kViolet-3),LineColor(kViolet-3),Binning(40));
-	data_RECO_ev  [i]->plotOn(xframe_ev[i],MarkerColor(kBlack)   ,LineColor(kBlack)   ,Binning(40));
+	// plot datasets on frames
+	if (!legFilled) { // the first time assign names to tag them in the legend
+	  data_genDen_ev[i]->plotOn(xframe_ev[i],MarkerColor(kRed+1)   ,LineColor(kRed+1)   ,Binning(40),Rescale(rescFac1),Name("plGenDen"));
+	  data_genNum_ev[i]->plotOn(xframe_ev[i],MarkerColor(kBlue)    ,LineColor(kBlue)    ,Binning(40),Rescale(rescFac2),Name("plGenNum"));
+	  data_den_ev   [i]->plotOn(xframe_ev[i],MarkerColor(kGreen+2) ,LineColor(kGreen+2) ,Binning(40),Rescale(rescFac3),Name("plRecoDen"));
+	  data_ctRECO_ev[i]->plotOn(xframe_ev[i],MarkerColor(kMagenta) ,LineColor(kMagenta) ,Binning(40),Name("plCTrecoNum"));
+	  data_wtRECO_ev[i]->plotOn(xframe_ev[i],MarkerColor(kViolet-3),LineColor(kViolet-3),Binning(40),Name("plWTrecoNum"));
+	  data_RECO_ev  [i]->plotOn(xframe_ev[i],MarkerColor(kBlack)   ,LineColor(kBlack)   ,Binning(40),Name("plRecoNum"));
+	} else {
+	  data_genDen_ev[i]->plotOn(xframe_ev[i],MarkerColor(kRed+1)   ,LineColor(kRed+1)   ,Binning(40),Rescale(rescFac1));
+	  data_genNum_ev[i]->plotOn(xframe_ev[i],MarkerColor(kBlue)    ,LineColor(kBlue)    ,Binning(40),Rescale(rescFac2));
+	  data_den_ev   [i]->plotOn(xframe_ev[i],MarkerColor(kGreen+2) ,LineColor(kGreen+2) ,Binning(40),Rescale(rescFac3));
+	  data_ctRECO_ev[i]->plotOn(xframe_ev[i],MarkerColor(kMagenta) ,LineColor(kMagenta) ,Binning(40));
+	  data_wtRECO_ev[i]->plotOn(xframe_ev[i],MarkerColor(kViolet-3),LineColor(kViolet-3),Binning(40));
+	  data_RECO_ev  [i]->plotOn(xframe_ev[i],MarkerColor(kBlack)   ,LineColor(kBlack)   ,Binning(40));
+	}
 	data_genDen_od[i]->plotOn(xframe_od[i],MarkerColor(kRed+1)   ,LineColor(kRed+1)   ,Binning(40),Rescale(rescFac1));
 	data_genNum_od[i]->plotOn(xframe_od[i],MarkerColor(kBlue)    ,LineColor(kBlue)    ,Binning(40),Rescale(rescFac2));
 	data_den_od   [i]->plotOn(xframe_od[i],MarkerColor(kGreen+2) ,LineColor(kGreen+2) ,Binning(40),Rescale(rescFac3));
@@ -378,38 +435,49 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 	xframe_od[i]->SetMaximum(xframe_od[i]->GetMaximum()*rescFac1);
 	yframe_od[i]->SetMaximum(yframe_od[i]->GetMaximum()*rescFac1);
 	zframe_od[i]->SetMaximum(zframe_od[i]->GetMaximum()*rescFac1);
-	// if (!legFilled) {
-	//   leg->AddEntry(xframe[i]->findObject("plDenDist"),Form("Generator-level distributions (*%1.2f)",rescFac),"lep");
-	//   leg->AddEntry(xframe[i]->findObject("plNumDist"),"Post-selection RECO distributions","lep");
-	//   legFilled = true;
-	// }
+
+	// Fill legend (only one time)
+	if (!legFilled) {
+	  string strRescFac1 = (rescFac1<1?Form(" (*%1.2f)",rescFac1):"");
+	  string strRescFac2 = (rescFac2<1?Form(" (*%1.2f)",rescFac2):"");
+	  string strRescFac3 = (rescFac3<1?Form(" (*%1.2f)",rescFac3):"");
+          leg->AddEntry(xframe_ev[i]->findObject("plGenDen"   ),("Generator-level distribution"+strRescFac1).c_str(),"lep");
+          leg->AddEntry(xframe_ev[i]->findObject("plGenNum"   ),("Post-GEN-filter distribution of special MC sample"+strRescFac2).c_str(),"lep");
+          leg->AddEntry(xframe_ev[i]->findObject("plRecoDen"  ),("Post-GEN-filter distribution of full MC sample"+strRescFac3).c_str(),"lep");
+	  leg->AddEntry(xframe_ev[i]->findObject("plRecoNum"  ),"Post-selection distribution","lep");
+	  leg->AddEntry(xframe_ev[i]->findObject("plCTrecoNum"),"Post-selection correct-tag distribution","lep");
+	  leg->AddEntry(xframe_ev[i]->findObject("plWTrecoNum"),"Post-selection wrong-tag distribution","lep");
+	  legFilled = true;
+	}
+
+	// Plot even distributions in the top row and odd ones in the bottom row
 	c[i]->Divide(3,2);
 	c[i]->cd(1);
 	gPad->SetLeftMargin(0.17); 
 	xframe_ev[i]->Draw();
-	// leg->Draw("same");
+	leg->Draw("same");
 	c[i]->cd(2);
 	gPad->SetLeftMargin(0.17); 
 	yframe_ev[i]->Draw();
-	// leg->Draw("same");
+	leg->Draw("same");
 	c[i]->cd(3);
 	gPad->SetLeftMargin(0.17); 
 	zframe_ev[i]->Draw();
-	// leg->Draw("same");
+	leg->Draw("same");
 	c[i]->cd(4);
 	gPad->SetLeftMargin(0.17); 
 	xframe_od[i]->Draw();
-	// leg->Draw("same");
+	leg->Draw("same");
 	c[i]->cd(5);
 	gPad->SetLeftMargin(0.17); 
 	yframe_od[i]->Draw();
-	// leg->Draw("same");
+	leg->Draw("same");
 	c[i]->cd(6);
 	gPad->SetLeftMargin(0.17); 
 	zframe_od[i]->Draw();
-	// leg->Draw("same");
+	leg->Draw("same");
 
-	c[i]->SaveAs( ("dist_GEN_RECO_"+shortString[i]+".pdf").c_str() );
+	c[i]->SaveAs( ("plotDist_d/dist_GEN_RECO_"+shortString[i]+".pdf").c_str() );
       }
   }
 
