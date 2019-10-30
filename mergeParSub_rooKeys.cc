@@ -7,15 +7,11 @@
 using namespace RooFit ;
 using namespace std ;
 
-bool safeFilling = false;
+// Use this flag to avoid writing a KDE histogram when there are failed parallel jobs
+// (the efficiency would be correct in any case and could be used in a fit, but the result is reproducible only revoving exactly the same file(s))
+bool safeFilling = true;
 
 static const int nBins = 9;
-
-TCanvas* csx [12*nBins];
-TCanvas* csy [12*nBins];
-TCanvas* csz [12*nBins];
-TCanvas* cp1 [12*nBins];
-TCanvas* cp2 [12*nBins];
 
 // q2-bin format: [0-8] for one bin
 //                [-1] for each bin recursively
@@ -35,28 +31,10 @@ void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float widthCTK, 
   string shortString = Form("b%ie%ip%i",q2Bin,effIndx,parity);
   cout<<"Conf: "<<shortString<<endl;
 
-  string datasetString = "data_";
-  switch (effIndx) {
-  case 0:  datasetString = datasetString+"genDen"; break;
-  case 1:  datasetString = datasetString+"genNum"; break;
-  case 2:  datasetString = datasetString+"den"   ; break;
-  case 3:  datasetString = datasetString+"ctRECO"; break;
-  default: datasetString = datasetString+"wtRECO";
-  }
-  datasetString = datasetString + Form((parity==0?"_ev_b%i":"_od_b%i"),q2Bin);
-
-  string longString = Form(parity==0?" distribution - q2 bin %i (even)":" distribution - q2 bin %i (odd)",q2Bin);
-  switch (effIndx) {
-  case 0: longString = "GEN denominator"     +longString; break;
-  case 1: longString = "GEN numerator"       +longString; break;
-  case 2: longString = "Full denominator"    +longString; break;
-  case 3: longString = "Selected correct-tag"+longString; break;
-  case 4: longString = "Selected wrong-tag"  +longString; break;
-  case 5: longString = "Selected"            +longString;
-  }
-
+  // string containing the path and begin of the filename of output from parallel jobs
   string confString = Form("tmp/KDEhist_%s_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i",shortString.c_str(),widthCTK,widthCTL,widthPHI,xbins,ybins,zbins);
 
+  // full histogram to fill
   TH3D* KDEhist = new TH3D(Form("KDEhist_%s",shortString.c_str()),Form("KDEhist_%s",shortString.c_str()),xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
   KDEhist->Sumw2();
 
@@ -64,36 +42,48 @@ void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float widthCTK, 
   string inFileName;
   int goodHistCnt = 0;
   for (int ndiv=0; ndiv<totdiv; ++ndiv) {
+    // add final part of filename and open file
     inFileName = confString+Form("_%i-frac-%i.root",ndiv,totdiv);
     TFile* fin = TFile::Open( inFileName.c_str() );
     if ( !fin || !fin->IsOpen() ) {
       cout<<"File not found: "<<inFileName<<endl;
       continue;
     }
+    // extract and check output histogram from parallel job
     TH3D* partHist = (TH3D*)fin->Get(("KDEhist_"+shortString+"__ctK_ctL_phi").c_str());
     if ( !partHist || partHist->IsZombie() ) {
       cout<<"Histogram not found in file: "<<inFileName<<endl;
       continue;
     }
+    // add it to the full histogram
     KDEhist->Add(partHist);
+    // count partial histogram successfully merged
     ++goodHistCnt;
     delete partHist;
     fin->Close();
     delete fin;
   }
   if ( goodHistCnt!=totdiv ) {
+    // if not all the partial histograms are found, give a warning and correct the normalisation
+    // (or make the macro fail, in case the flag is activated)
     cout<<"Warning! Not all partial histograms found: "<<goodHistCnt<<" of "<<totdiv<<endl;
     if (safeFilling) return;
+    KDEhist->Scale(1.0*totdiv/goodHistCnt);
   }
 
-  // check histogram
+  // check histogram against empty or negative bin contents, which would make the fit fail
+  // (this is not expected from KDE description and should never happen,
+  // since the tails of gaussian kernels are always at values greater than zero)
   double minVal = KDEhist->GetMinimum();
   if ( minVal<=0 ) {
     cout<<"Histogram has empty bins, this is bad. Abort!"<<endl;
     return;
   }
 
-  // save histogram in file
+  // save histograms in files
+  // to facilitate plotting same terms with different configurations (SF and sampling bins) for comparisons, thay are saved in the same file
+  // to reduce the number of files produced to ~10/20, different terms of the same efficiency are saved in the same file
+  // (this also allows a single extractEff call to access a single file)
   TFile* fout = TFile::Open( Form((parity==0?"files/KDEhist_b%i_ev.root":"files/KDEhist_b%i_od.root"),q2Bin), "UPDATE" );
   KDEhist->Write( Form("hist_indx%i_w0-%1.2f_w1-%1.2f_w2-%1.2f_%i_%i_%i",effIndx,widthCTK,widthCTL,widthPHI,xbins,ybins,zbins), TObject::kWriteDelete );
   fout->Close();
