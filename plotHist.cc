@@ -57,7 +57,7 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
   string confString = "plotHist_d/KDEhist_"+shortString;
 
   // Load variables and dataset
-  string filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/datasets/PUweight/effDataset_b%i.root",q2Bin);
+  string filename = Form("effDataset_b%i.root",q2Bin);
   TFile* fin_data = TFile::Open( filename.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
