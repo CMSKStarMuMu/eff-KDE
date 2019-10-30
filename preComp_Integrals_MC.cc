@@ -21,7 +21,7 @@ using namespace std;
 static const int nBins = 9;
 static const int nFunc = 11;
 
-void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int cnt_hit, int seed)
+void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, unsigned cnt_hit, int seed)
 {
 
   string shortString = Form("b%ip%it%i",q2Bin,parity,tagFlag);
@@ -146,7 +146,7 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int cnt_hit, in
 
 }
 
-void preComp_Integrals_MCBin2(int q2Bin, int parity, int tagFlag, int cnt_hit, int seed)
+void preComp_Integrals_MCBin2(int q2Bin, int parity, int tagFlag, unsigned cnt_hit, int seed)
 {
   if ( tagFlag==-1 )
     for (tagFlag=0; tagFlag<2; ++tagFlag)
@@ -155,7 +155,7 @@ void preComp_Integrals_MCBin2(int q2Bin, int parity, int tagFlag, int cnt_hit, i
     preComp_Integrals_MCBin(q2Bin, parity, tagFlag, cnt_hit, seed);
 }
 
-void preComp_Integrals_MCBin1(int q2Bin, int parity, int tagFlag, int cnt_hit, int seed)
+void preComp_Integrals_MCBin1(int q2Bin, int parity, int tagFlag, unsigned cnt_hit, int seed)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
@@ -178,8 +178,8 @@ int main(int argc, char** argv)
   int q2Bin   = -1;
   int parity  = -1; 
   int tagFlag = -1;
-  int cnt_hit = 1e6;
   int seed    = 1;
+  unsigned cnt_hit = 1e6;
 
   if ( argc >= 2 ) q2Bin   = atoi(argv[1]);
   if ( argc >= 3 ) parity  = atoi(argv[2]);
