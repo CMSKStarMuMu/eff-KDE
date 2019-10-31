@@ -10,7 +10,7 @@ while read -a line; do
     
     bin=${line[0]}
     
-    for indx in {0..4}; do
+    for indx in {0..0}; do
 
 	# Plot KDE histograms
 	root -b -q 'plotHist.cc('${bin}','${indx}','${par}')' \

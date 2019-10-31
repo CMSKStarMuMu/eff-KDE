@@ -55,7 +55,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
     cout<<"File not found: "<<filename_data<<endl;
     return;
   }
-  // import the both datasets
+  // import both datasets (correlated and uncorrelated statistics)
   RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,1-parity));
   if ( !wsp || wsp->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename_data<<endl;
@@ -86,6 +86,15 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   RooDataSet* data_den_corr    = (RooDataSet*)wsp_corr->data(("data_den"   +datasetString).c_str());
   RooDataSet* data_ctRECO_corr = (RooDataSet*)wsp_corr->data(("data_ctRECO"+datasetString).c_str());
   RooDataSet* data_wtRECO_corr = (RooDataSet*)wsp_corr->data(("data_wtRECO"+datasetString).c_str());
+  // import number of total genDen statistics, before FSR-veto
+  double normVal = 1;
+  double normVal_corr = 1;
+  TH1I* normHist = (TH1I*)fin_data->Get( Form("n_genDen_b%i",q2Bin) );
+  if ( !normHist || normHist->IsZombie() ) cout<<"Histogram n_genDen_b"<<q2Bin<<" not found in file: "<<filename_data<<"\nThe normalisation of the genDen histograms will not be corrected to pre-FSR-veto values\nand the efficiency histograms and functions will have different scaling"<<endl;
+  else {
+    normVal      = 1.0 * normHist->GetBinContent(2-parity) / data_genDen     ->sumEntries(); // opposite parity wrt efficiency
+    normVal_corr = 1.0 * normHist->GetBinContent(parity+1) / data_genDen_corr->sumEntries(); // coherent parity
+  }
   
   // import KDE efficiency histograms
   string filename = Form((parity==0?"files/KDEeff_b%i_ev.root":"files/KDEeff_b%i_od.root"),q2Bin);
@@ -265,6 +274,14 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
 	wtRECODistZ_corr = (TH1D*)data_wtRECO_corr->reduce(RooArgSet(*phi),cutZ.c_str())
 	  ->createHistogram( Form("distZ_wtRECO_corr_%i_%i_%s",i,j,shortString.c_str()), *phi, Binning(distBins,-TMath::Pi(),TMath::Pi()) );
       }
+      // Scale genDen slices (currently with FSR-veto applied)
+      // to match the total statistics of genDen (needed to obtain a correct absolute value in efficiency histograms and comparable with the efficiency function)
+      genDenDistX->Scale(normVal);
+      genDenDistY->Scale(normVal);
+      genDenDistZ->Scale(normVal);
+      genDenDistX_corr->Scale(normVal_corr);
+      genDenDistY_corr->Scale(normVal_corr);
+      genDenDistZ_corr->Scale(normVal_corr);
       // composing binned efficiencies from sliced distributions
       TH1D* factDistX = (TH1D*)genNumDistX->Clone(Form("factDistX_%i_%i_%s",i,j,shortString.c_str()));
       factDistX->Divide(genDenDistX);
