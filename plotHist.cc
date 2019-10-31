@@ -88,7 +88,14 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
     }
     data->append(*extradata);
   }
- 
+  // import number of total genDen statistics, before FSR-veto
+  double normVal = 1;
+  if ( effIndx==0 ) {
+    TH1I* normHist = (TH1I*)fin_data->Get( Form("n_genDen_b%i",q2Bin) );
+    if ( !normHist || normHist->IsZombie() ) cout<<"Histogram n_genDen_b"<<q2Bin<<" not found in file: "<<filename<<"\nThe normalisation of the genDen histograms will not be corrected to pre-FSR-veto values\nand the histograms and functions will have different scaling"<<endl;
+    else normVal = 1.0 * normHist->GetBinContent(parity+1) / data->sumEntries();
+  }
+
   // import KDE histograms
   vector<TH3D*> KDEhists;
   vector<TString> KDEconfs;
@@ -157,6 +164,11 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
       distSliceX[5*i+j]->SetTitle( Form("%s - slice ctL=%1.2f phi=%1.2f;cos(#theta_{K});Events",longString.c_str(),centA,centB*TMath::Pi()) );
       distSliceY[5*i+j]->SetTitle( Form("%s - slice ctK=%1.2f phi=%1.2f;cos(#theta_{L});Events",longString.c_str(),centA,centB*TMath::Pi()) );
       distSliceZ[5*i+j]->SetTitle( Form("%s - slice ctK=%1.2f ctL=%1.2f;#phi;Events"           ,longString.c_str(),centA,centB) );
+      if ( effIndx==0 ) {
+	distSliceX[5*i+j]->Scale(normVal);
+	distSliceY[5*i+j]->Scale(normVal);
+	distSliceZ[5*i+j]->Scale(normVal);
+      }
       if (i+j==0) legSl.AddEntry(distSliceX[0],"Event distribution","lep");
 	
       // producing 1D slices of KDE descriptions
@@ -288,9 +300,14 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
   distProj1X->SetTitle( Form("%s;cos(#theta_{K});Events",longString.c_str()) );
   distProj1Y->SetTitle( Form("%s;cos(#theta_{L});Events",longString.c_str()) );
   distProj1Z->SetTitle( Form("%s;#phi;Events",longString.c_str()) );
+  if ( effIndx==0 ) {
+    distProj1X->Scale(normVal);
+    distProj1Y->Scale(normVal);
+    distProj1Z->Scale(normVal);
+  }
   leg1Pr.AddEntry(distProj1X,"Event distribution","lep");
-  leg2Pr.AddEntry(distProj1X,"Event distribution","lep");
-  leg3Pr.AddEntry(distProj1X,"Event distribution","lep");
+  leg2Pr.AddEntry(distProj1Y,"Event distribution","lep");
+  leg3Pr.AddEntry(distProj1Z,"Event distribution","lep");
   vector <TH1D*> histProj1X;
   vector <TH1D*> histProj1Y;
   vector <TH1D*> histProj1Z;
@@ -344,8 +361,8 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
       if ( zKSmax<diff ) zKSmax = diff;
     }
     leg1Pr.AddEntry(histProj1X.back(),Form("KDE %s - KS=%1.2f",KDEconfs[iHist].Data(),xKSmax*sqrt(data->numEntries())),"l");
-    leg2Pr.AddEntry(histProj1X.back(),Form("KDE %s - KS=%1.2f",KDEconfs[iHist].Data(),yKSmax*sqrt(data->numEntries())),"l");
-    leg3Pr.AddEntry(histProj1X.back(),Form("KDE %s - KS=%1.2f",KDEconfs[iHist].Data(),zKSmax*sqrt(data->numEntries())),"l");
+    leg2Pr.AddEntry(histProj1Y.back(),Form("KDE %s - KS=%1.2f",KDEconfs[iHist].Data(),yKSmax*sqrt(data->numEntries())),"l");
+    leg3Pr.AddEntry(histProj1Z.back(),Form("KDE %s - KS=%1.2f",KDEconfs[iHist].Data(),zKSmax*sqrt(data->numEntries())),"l");
   }
 
   cp1[confIndex]->cd(1);
