@@ -23,7 +23,8 @@ while read -a line; do
     
     # Submit jobs for genDen, genNum, recoDen, and correct-tag recoNum
     # which use the same scale-sactor configuration
-    for indx in {0..3}; do
+    for indx in {0..0}; do
+#     for indx in {0..3}; do
 	
 	# Number of parallel jobs for each KDE description
 	njobs=50
@@ -46,8 +47,10 @@ totdiv      = ${njobs}
 Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT(xbin) \$INT(ybin) \$INT(zbin) \$INT(ndiv) \$INT(totdiv)
 Log         = logs_parSub/sub_\$(ClusterId).log
 Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
-Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
-+JobFlavour = workday
+Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).err
++AccountingGroup = "group_u_CMST3.all"
++JobFlavour = "testmatch"
+
 Queue ${njobs}
 EOF
 
@@ -82,8 +85,9 @@ totdiv      = ${njobs}
 Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT(xbin) \$INT(ybin) \$INT(zbin) \$INT(ndiv) \$INT(totdiv)
 Log         = logs_parSub/sub_\$(ClusterId).log
 Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
-Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
-+JobFlavour = workday
+Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).err
++AccountingGroup = "group_u_CMST3.all"
++JobFlavour = "workday"
 Queue ${njobs}
 EOF
     

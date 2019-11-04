@@ -22,6 +22,7 @@ while read -a line; do
 	if [ ${indx} -eq 2 ]; then njobs=500; fi
 
 	# Merge output files from parallel jobs
+	echo 'root -b -q mergeParSub_rooKeys.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${njobs}')'
 	root -b -q 'mergeParSub_rooKeys.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${njobs}')'
 	
     done
@@ -33,6 +34,7 @@ while read -a line; do
     njobs=50
     
     # Merge output files from parallel jobs
+    echo 'root -b -q mergeParSub_rooKeys.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${njobs}')'
     root -b -q 'mergeParSub_rooKeys.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${njobs}')'
     
 done < ../confSF/KDE_SF.list

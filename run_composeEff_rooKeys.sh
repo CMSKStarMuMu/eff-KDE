@@ -1,8 +1,8 @@
 #!/bin/bash
 
-export HOME=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-parSub
-export CMSSWDIR=/eos/user/a/aboletti/BdToKstarMuMu/CMSSW_10_4_0/src
-export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/datasets/PUweight
+export HOME=/afs/cern.ch/work/f/fiorendi/private/effKDE/eff-KDE
+export CMSSWDIR=/afs/cern.ch/work/f/fiorendi/private/effKDE/CMSSW_10_4_0/src
+export SAMPLEDIR=/eos/cms/store/user/fiorendi/p5prime/effKDE/2016/lmnr/
 export WORKDIR=$PWD
 
 cd $CMSSWDIR
@@ -23,6 +23,8 @@ zbin=${9}
 ndiv=${10}
 totdiv=${11}
 
+echo 'now submitting for bin ' ${bin}
+
 if [ ! -r $SAMPLEDIR/effDataset_b${bin}.root ]; then
     echo $SAMPLEDIR/effDataset_b${bin}.root not found
     exit 1
@@ -35,6 +37,7 @@ fi
 cp $SAMPLEDIR/effDataset_b${bin}.root .
 cp $HOME/composeEff_rooKeys_parSub.cc .
 
+echo 'root -l -q -b composeEff_rooKeys_parSub.cc($bin,$indx,$par,$wid0,$wid1,$wid2,$xbin,$ybin,$zbin,$ndiv,$totdiv)'
 root -l -q -b 'composeEff_rooKeys_parSub.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${ndiv}','${totdiv}')'
 
 if [ ! -d $HOME/tmp ]; then mkdir $HOME/tmp; fi
