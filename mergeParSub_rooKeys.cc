@@ -9,7 +9,7 @@ using namespace std ;
 
 // Use this flag to avoid writing a KDE histogram when there are failed parallel jobs
 // (the efficiency would be correct in any case and could be used in a fit, but the result is reproducible only revoving exactly the same file(s))
-bool safeFilling = true;
+bool safeFilling = false;
 
 static const int nBins = 9;
 
