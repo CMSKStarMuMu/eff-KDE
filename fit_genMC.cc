@@ -29,7 +29,7 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
 
   // Load variables and dataset
   // import the "other parity" dataset, to stay coherent with fit_recoMC notation
-  string filename_data = Form("effDataset_b%i.root",q2Bin);
+  string filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/2016/lmnr/effDataset_b%i.root",q2Bin);
   TFile* fin_data = TFile::Open( filename_data.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;
@@ -70,7 +70,8 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
 						   *ctK,*ctL,*phi,*Fl,*P1,*P2,*P3,*P4p,*P5p,*P6p,*P8p);
 
   // perform fit
-  RooFitResult * fitResult = PDF_sig_ang_decayRate->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(2),Hesse(true),Strategy(2),Minos(true),Offset(true));
+  RooFitResult * fitResult = PDF_sig_ang_decayRate->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(2),Hesse(true),Strategy(0),Minos(false),Offset(true));
+  fitResult = PDF_sig_ang_decayRate->fitTo(*data,Minimizer("Minuit2","migrad"),Save(true),Timer(true),NumCPU(2),Hesse(true),Strategy(2),Minos(true),Offset(true));
 
   fitResult->Print("v");
 

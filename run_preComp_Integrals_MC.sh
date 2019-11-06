@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/eff-KDE
-export CMSSWDIR=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/CMSSW_10_4_0/src
+export HOME=/afs/cern.ch/work/f/fiorendi/private/effKDE/eff-KDE
+export CMSSWDIR=/afs/cern.ch/work/f/fiorendi/private/effKDE/CMSSW_10_4_0/src
 # export HOME=/eos/user/a/aboletti/BdToKstarMuMu/efficiency
 # export CMSSWDIR=/eos/user/a/aboletti/BdToKstarMuMu/CMSSW_10_4_0/src
 export WORKDIR=$PWD

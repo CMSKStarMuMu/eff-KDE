@@ -24,7 +24,8 @@ seed        = \$(ProcId) + 1
 Arguments   = \$INT(bin) \$INT(par) \$INT(tag) \$INT(cnt_hit) \$INT(seed)
 Log         = logs_preComp/sub_\$(ClusterId).log
 Output      = logs_preComp/preComp_Integrals_MC_\$INT(bin)_\$INT(par)_\$INT(tag)_\$INT(cnt_hit)_\$INT(seed).out
-Error       = logs_preComp/preComp_Integrals_MC_\$INT(bin)_\$INT(par)_\$INT(tag)_\$INT(cnt_hit)_\$INT(seed).out
+Error       = logs_preComp/preComp_Integrals_MC_\$INT(bin)_\$INT(par)_\$INT(tag)_\$INT(cnt_hit)_\$INT(seed).err
++JobFlavour = "tomorrow"
 Queue 50
 EOF
         echo "Submit par: "${par}" tag:"${tag}" bin:"${bin}
