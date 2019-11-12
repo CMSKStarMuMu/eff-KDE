@@ -16,7 +16,7 @@ while [ ${tag} -ge 0 ]; do
     while read -a line; do
 	bin=${line[0]}
 	
-	./fit_recoMC_singleComponent ${bin} ${par} ${tag} 0 1 \
+	./fit_recoMC_singleComponent ${bin} ${par} ${tag} 1 1 \
 	    &> logs_fit/fit_recoMC_singleComponent_${bin}_${par}_${tag}.out &
 
     done < ../confSF/KDE_SF.list
