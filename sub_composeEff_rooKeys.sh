@@ -47,7 +47,7 @@ Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT
 Log         = logs_parSub/sub_\$(ClusterId).log
 Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
 Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
-+JobFlavour = workday
++JobFlavour = "workday"
 Queue ${njobs}
 EOF
 
@@ -83,7 +83,7 @@ Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT
 Log         = logs_parSub/sub_\$(ClusterId).log
 Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
 Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
-+JobFlavour = workday
++JobFlavour = "workday"
 Queue ${njobs}
 EOF
     
