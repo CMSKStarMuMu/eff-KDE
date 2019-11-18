@@ -59,28 +59,23 @@ void setGraphProperties(TGraphAsymmErrors* Gr, int icolor, string year, int ParI
   Gr -> SetMarkerColor(colorlist[icolor] + addc);
   Gr -> SetName(Form("Gr%s%i_%s" , type.c_str(), ParIndx, year.c_str()) );
   Gr -> SetLineWidth(2);
-
-  string str = "Diff";
-  if (type.find(str) != std::string::npos){
-    Gr->SetTitle( "" );
-    Gr->GetYaxis()->SetTitle( "(RECO - GEN)" );
-    Gr->GetYaxis()->SetNdivisions(505);
-    Gr->GetYaxis()->SetTitleSize(15);
-    Gr->GetYaxis()->SetTitleFont(43);
-    Gr->GetYaxis()->SetTitleOffset(1.85);
-    Gr->GetYaxis()->SetLabelFont(43);
-    Gr->GetYaxis()->SetLabelSize(15);
-    Gr->GetXaxis()->SetTitle( "q^{2} (GeV^{2})" );
-    Gr->GetXaxis()->SetTitleSize(20);
-    Gr->GetXaxis()->SetTitleFont(43);
-    Gr->GetXaxis()->SetTitleOffset(3.);
-    Gr->GetXaxis()->SetLabelFont(43);
-    Gr->GetXaxis()->SetLabelSize(15);
-    Gr->GetYaxis()->SetRangeUser(-1*diffMax,diffMax);
-  }
-
 }
 
+void setAxisProperties(TH1F* auxE2){
+  auxE2->SetStats(kFALSE);
+  auxE2->SetLineColor(1);
+  auxE2->GetXaxis()->SetTitle("q^{2} (GeV^{2})");
+  auxE2->GetXaxis()->SetTitleSize(0.12);
+  auxE2->GetXaxis()->SetTitleOffset(0.95);
+  auxE2->GetXaxis()->SetLabelSize( 0.10);
+  auxE2->GetXaxis()->SetTickLength(0.1);
+  auxE2->GetYaxis()->SetTitle("(RECO - GEN)");
+  auxE2->GetYaxis()->SetTitleSize(0.10);
+  auxE2->GetYaxis()->SetTitleOffset(0.45);
+  auxE2->GetYaxis()->SetRangeUser(-1*diffMax,diffMax);
+  auxE2->GetYaxis()->SetLabelSize(0.09);
+  auxE2->GetYaxis()->SetNdivisions(505);
+}
 
 void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool plotRECO, std::vector<string> years)
 {
@@ -234,12 +229,6 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
   GrGen->GetYaxis()->SetTitleOffset(1.55);
 
   GrGen->GetYaxis()->SetRangeUser(ParMin[ParIndx],ParMax[ParIndx]);
-// 
-//   GrDiff->SetLineColor(kGreen+2);
-//   GrDiffCT->SetLineColor(kBlue);
-//   GrDiffWT->SetLineColor(kRed+1);
-// 
-
   GrGen->SetLineWidth(2);
 
   // Grey bands for resonant regions
@@ -285,12 +274,18 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
      
   GrGen->Draw("AP");
   for (unsigned int iy = 0; iy < years.size() ; iy++) {
-    GrCT[iy] -> Draw("P");    
-    GrWT[iy] -> Draw("P");    
-    Gr[iy]   -> Draw("P");    
-    if (plotCT)   leg->AddEntry(GrCT[iy] , Form("Sim Fit to correctly tagged events, %s", years[iy].c_str()), "lep");
-    if (plotWT)   leg->AddEntry(GrWT[iy] , Form("Sim Fit to wrongly tagged events, %s",   years[iy].c_str()), "lep");
-    if (plotRECO) leg->AddEntry(Gr[iy],    Form("Fit to reconstructed events, %s",        years[iy].c_str()), "lep");
+    if (plotCT)  {
+      GrCT[iy] -> Draw("P");    
+      leg->AddEntry(GrCT[iy] , Form("Sim Fit to correctly tagged events, %s", years[iy].c_str()), "lep");
+    }  
+    if (plotWT) {
+      GrWT[iy] -> Draw("P");    
+      leg->AddEntry(GrWT[iy] , Form("Sim Fit to wrongly tagged events, %s", years[iy].c_str()), "lep");
+    }  
+    if (plotRECO){
+      Gr[iy]   -> Draw("P");    
+      leg->AddEntry(Gr[iy],    Form("Fit to reconstructed events, %s", years[iy].c_str()), "lep");
+    }  
   }
   
   resCover->Draw("e2");
@@ -305,27 +300,31 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
                              ParMax[ParIndx], 
                              510, 
                              "");
-// //   TGaxis *axis = new TGaxis( 0, ((int)(ParMin[ParIndx]*10))/10.0+0.1, 0, ParMax[ParIndx], ((int)(ParMin[ParIndx]*10))/10.0+0.1, ParMax[ParIndx], 510, "");
   axis->SetName(Form("leg%i",ParIndx));
   axis->SetLabelFont(43);
   axis->SetLabelSize(15);
   axis->Draw();
 
+
+  // plot difference wrt GEN results
   c[ParIndx]->cd();
   TPad *pad2 = new TPad(Form("pad2_%i",ParIndx), "pad2", 0, 0.05, 1, 0.3);
   pad2->SetTopMargin(0);
-  pad2->SetBottomMargin(0.2);
+  pad2->SetBottomMargin(0.25);
   pad2->Draw();
   pad2->cd();
 
-  GrDiffWT[0] -> Draw("AP");    
+  // first create axis
+  TH1F* auxE2 = new TH1F("auxE2", "", nBins, GrGen->GetXaxis()->GetXmin(), GrGen->GetXaxis()->GetXmax());
+  setAxisProperties(auxE2);
+  auxE2->Draw();
+
   for (unsigned int iy = 0; iy < years.size() ; iy++) {
-    GrDiffCT[iy] -> Draw("P");    
-    GrDiffWT[iy] -> Draw("P");    
-    GrDiff[iy]   -> Draw("P");    
+    if (plotCT)  GrDiffCT[iy] -> Draw("P");    
+    if (plotWT)  GrDiffWT[iy] -> Draw("P");    
+    if (plotRECO)  GrDiff[iy]   -> Draw("P");    
   }
   line->Draw();
-
   resDiffCover->Draw("e2");
 
   string confString = "plotSimFit_d/fitResult_";
