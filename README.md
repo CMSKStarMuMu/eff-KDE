@@ -25,7 +25,9 @@ Then produce files with all the needed datasets (example for 2017 ntuples):
 root -q -b 'createDataset.cc(7)'
 ```
 
-## Produce KDE description of numerators and denominators
+## Produce efficiency description
+
+### Produce KDE description of numerators and denominators
 This code is configured to submit parallel computation of the KDE, using HTCondor (available at CERN and accessible from lxplus machines).
 Feel free to adapt the code to run on other kind of infrastructure or, discouraged, to run it locally.
 Before running, you need to create a file `../confSF/KDE_SF.list`, containing the q2-bins to process and the corresponding KDE scale factors.
@@ -50,14 +52,15 @@ when all the jobs have finished (you can check with `condor_q`) you can merge th
 source mergeParSub_rooKeys.sh
 ```
 
-## Compose efficiency histograms
+### Compose efficiency histograms
 Compose the numerators and denominators to create efficiency descriptions:
 ```sh
 source extractEff.sh
 ```
 and find the efficiency histograms in the `files/KDEeff_b*_*.root` files.
 
-## Run partial-integral numeric computation
+## Perform closure test by fitting with PDF*eff
+### Run partial-integral numeric computation
 This code is configured to submit parallel computation of the KDE, using HTCondor (available at CERN and accessible from lxplus machines).
 Feel free to adapt the code to run on other kind of infrastructure or, discouraged, to run it locally.
 Adapt the paths to CMSSW area and working directory in [run_preComp_Integrals_MC.sh](run_preComp_Integrals_MC.sh#L3-L6), then submit the jobs with:
@@ -69,30 +72,46 @@ when all the jobs have finished (you can check with `condor_q`) you can merge th
 source mergeParSub_preComp_Integrals_MC.sh
 ```
 
-## Fit generator-level distributions
+### Fit generator-level distributions
 Compile and run with:
 ```sh
 source fit_genMC.sh
 ```
 This produces a root file `fitResults/fitResult_genMC.root` containing the RooFitResult objects, and fit projection plots in `plotFit_d/fitResult_genMC_*.pdf`.
 
-## Fit single flavour-tagged components of post-selection distributions
+
+### Fit to single dataset
+#### Fit single flavour-tagged components of post-selection distributions
 Compile and run with:
 ```sh
 source fit_recoMC_singleComponent.sh
 ```
 This produces a root file `fitResults/fitResult_recoMC_singleComponent.root` containing the RooFitResult objects, and fit projection plots in `plotFit_d/fitResult_recoMC_singleComponent_*.pdf`.
 
-## Fit post-selection distributions
+#### Fit post-selection distributions
 Compile and run with:
 ```sh
 source fit_recoMC_fullAngular.sh
 ```
 This produces a root file `fitResults/fitResult_recoMC_fullAngular.root` containing the RooFitResult objects, and fit projection plots in `plotFit_d/fitResult_recoMC_fullAngular_*.pdf`.
 
-## Plot and compare fit results
+#### Plot and compare fit results
 ```sh
 root -b -q 'plotFitResults.cc(0)' # for fit with even efficiency on odd dataset
 root -b -q 'plotFitResults.cc(1)' # for fit with odd efficiency on even dataset
 ```
 This produces one plot for each parameter in `plotFit_d/fitResult_*.pdf`
+
+### Workflow to perform simultaneous fit to multiple datasets
+Compile and run with:
+```sh
+source simfit_recoMC_singleComponent.sh
+```
+where you have set the datasets to be considered. 
+This produces a root file `simFitResults/fitResult_recoMC_singleComponentXXXX.root` containing the RooFitResult objects, where XXXX describes the considered datasets.
+Fit projection plots are created in `plotSimFit_d/fitResult_recoMC_singleComponent_*.pdf`.
+
+#### Plot and compare fit results
+```sh
+root -b -q 'plotSimFitResults.cc(1)' # for fit with odd efficiency on even dataset
+```
