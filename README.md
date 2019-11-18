@@ -5,11 +5,11 @@ and perform maximum likelihood fits with them
 # Quick run
 Use this list of commands to produce a result as quickly as possible
 
-**Table of contents**
-[Setup working area](#setup)
-[Create datasets](#createDatasets)
-[Create efficiency](#createEff)
-[Fit to signal MC](#fitMC)
+**Table of contents**  
+[Setup working area](#setup)  
+[Create datasets](#createDatasets)  
+[Create efficiency](#createEff)  
+[Fit to signal MC](#fitMC)  
 
 <a name="setup"/>
 
