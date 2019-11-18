@@ -5,6 +5,14 @@ and perform maximum likelihood fits with them
 # Quick run
 Use this list of commands to produce a result as quickly as possible
 
+**Table of contents**
+[Setup working area](#setup)
+[Create datasets](#createDatasets)
+[Create efficiency](#createEff)
+[Fit to signal MC](#fitMC)
+
+<a name="setup"/>
+
 ## Setup working area
 Make sure to be in an area with ROOT v6.12 (or later) available. The code could work with previous versions, but it is not guaranteed.
 If you are on CERN lxplus machines, you can achieve it by running:
@@ -18,12 +26,16 @@ Clone this branch in the working directory:
 git clone -b working-fitWorkflow git@github.com:CMSKStarMuMu/eff-KDE.git
 cd eff-KDE
 ```
+<a name="createDatasets"/>
+
 ## Create datasets
 If needed, change the [location of the ntuples](createDataset.cc#L42-L55), which need to be produced with the code in the [B0KstMuMuNtuple repository](https://github.com/CMSKStarMuMu/B0KstMuMuNtuple).
 Then produce files with all the needed datasets (example for 2017 ntuples):
 ```sh
 root -q -b 'createDataset.cc(7)'
 ```
+
+<a name="createEff"/>
 
 ## Produce efficiency description
 
@@ -58,6 +70,9 @@ Compose the numerators and denominators to create efficiency descriptions:
 source extractEff.sh
 ```
 and find the efficiency histograms in the `files/KDEeff_b*_*.root` files.
+
+
+<a name="fitMC"/>
 
 ## Perform closure test by fitting with PDF*eff
 ### Run partial-integral numeric computation
