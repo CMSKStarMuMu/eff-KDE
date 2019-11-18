@@ -10,7 +10,6 @@ code to plot results from the Simultaneous fit of multiple years and compare the
 
 
 static const int nBins = 8; // was 8
-// float binBorders [nBins+1] = { 1, 2};
 float binBorders [nBins+1] = { 1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16};
 // static const int nBins = 9;
 // float binBorders [nBins+1] = { 1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16, 19};
@@ -18,8 +17,6 @@ float binBorders [nBins+1] = { 1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16};
 static const int nPars = 8;
 string ParName  [nPars] = { "Fl", "P1", "P2", "P3", "P4p", "P5p", "P6p", "P8p" };
 string ParTitle [nPars] = { "F_{L}", "P_{1}", "P_{2}", "P_{3}", "P'_{4}", "P'_{5}", "P'_{6}", "P'_{8}" };
-// double ParMin [nPars] = {0.4, -0.1, -0.2,-0.2, -0.5, -0.1, -0.1, -0.5};
-// double ParMax [nPars] = {0.6,  0.1,  0.2, 0.2,  0.5,  0.1,  0.1,  0.5};
 double ParMin [nPars] = {0,-1,-0.5,-0.5,-sqrt(2),-sqrt(2),-sqrt(2),-sqrt(2)};
 double ParMax [nPars] = {1,1,0.5,0.5,sqrt(2),sqrt(2),sqrt(2),sqrt(2)};
 float diffMax = 0.0999;
@@ -79,7 +76,6 @@ void setAxisProperties(TH1F* auxE2){
 
 void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool plotRECO, std::vector<string> years)
 {
-
 
   double q2Val [nBins];
   double q2ErrH [nBins];
@@ -292,14 +288,10 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
   leg->Draw();
 
   GrGen->GetYaxis()->SetLabelSize(0.);
-  TGaxis *axis = new TGaxis( 0, 
-                             ParMin[ParIndx],
-                             0, 
-                             ParMax[ParIndx], 
-                             ParMin[ParIndx], 
-                             ParMax[ParIndx], 
-                             510, 
-                             "");
+  TGaxis *axis = new TGaxis( 0              , ParMin[ParIndx],
+                             0              , ParMax[ParIndx], 
+                             ParMin[ParIndx],ParMax[ParIndx], 
+                             510, "");
   axis->SetName(Form("leg%i",ParIndx));
   axis->SetLabelFont(43);
   axis->SetLabelSize(15);
@@ -315,7 +307,7 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
   pad2->cd();
 
   // first create axis
-  TH1F* auxE2 = new TH1F("auxE2", "", nBins, GrGen->GetXaxis()->GetXmin(), GrGen->GetXaxis()->GetXmax());
+  TH1F* auxE2 = new TH1F(Form("auxE2%i",ParIndx), "", nBins, GrGen->GetXaxis()->GetXmin(), GrGen->GetXaxis()->GetXmax());
   setAxisProperties(auxE2);
   auxE2->Draw();
 
@@ -331,7 +323,7 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
   if (plotCT) confString = confString + "ctRes_";
   if (plotWT) confString = confString + "wtRes_";
   if (plotRECO) confString = confString + "recoRes_";
-  c[ParIndx]->SaveAs( (confString+ParName[ParIndx]+".pdf").c_str() );
+  c[ParIndx]->SaveAs( (confString + ParName[ParIndx] + "_" + years.back().c_str() + ".pdf").c_str() );
 
 }
 
