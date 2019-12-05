@@ -8,6 +8,7 @@ par=1
 xbin=50
 ybin=50
 zbin=50
+year=2016
 
 # Create directory for log files
 if [ ! -d logs_parSub ]; then mkdir logs_parSub; fi
@@ -23,8 +24,7 @@ while read -a line; do
     
     # Submit jobs for genDen, genNum, recoDen, and correct-tag recoNum
     # which use the same scale-sactor configuration
-    for indx in {0..0}; do
-#     for indx in {0..3}; do
+    for indx in {0..3}; do
 	
 	# Number of parallel jobs for each KDE description
 	njobs=50
@@ -44,10 +44,11 @@ ybin        = ${ybin}
 zbin        = ${zbin}
 ndiv        = \$(ProcId)
 totdiv      = ${njobs}
-Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT(xbin) \$INT(ybin) \$INT(zbin) \$INT(ndiv) \$INT(totdiv)
+year        = ${year}
+Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT(xbin) \$INT(ybin) \$INT(zbin) \$INT(ndiv) \$INT(totdiv) \$INT(year)
 Log         = logs_parSub/sub_\$(ClusterId).log
-Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
-Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).err
+Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).out
+Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).err
 +AccountingGroup = "group_u_CMST3.all"
 +JobFlavour = "testmatch"
 
@@ -82,10 +83,11 @@ ybin        = ${ybin}
 zbin        = ${zbin}
 ndiv        = \$(ProcId)
 totdiv      = ${njobs}
-Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT(xbin) \$INT(ybin) \$INT(zbin) \$INT(ndiv) \$INT(totdiv)
+year        = ${year}
+Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT(xbin) \$INT(ybin) \$INT(zbin) \$INT(ndiv) \$INT(totdiv) \$INT(year)
 Log         = logs_parSub/sub_\$(ClusterId).log
-Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
-Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).err
+Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).out
+Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).err
 +AccountingGroup = "group_u_CMST3.all"
 +JobFlavour = "workday"
 Queue ${njobs}

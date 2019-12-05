@@ -5,6 +5,7 @@ par=1
 xbin=50
 ybin=50
 zbin=50
+year=2016
 
 # Create directory for KDE and efficiency histograms
 if [ ! -d files ]; then mkdir files; fi
@@ -22,8 +23,8 @@ while read -a line; do
 	if [ ${indx} -eq 2 ]; then njobs=500; fi
 
 	# Merge output files from parallel jobs
-	echo 'root -b -q mergeParSub_rooKeys.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${njobs}')'
-	root -b -q 'mergeParSub_rooKeys.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${njobs}')'
+	echo 'root -b -q mergeParSub_rooKeys.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${njobs}','${year}')'
+	root -b -q 'mergeParSub_rooKeys.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${njobs}','${year}')'
 	
     done
 
@@ -34,7 +35,7 @@ while read -a line; do
     njobs=50
     
     # Merge output files from parallel jobs
-    echo 'root -b -q mergeParSub_rooKeys.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${njobs}')'
-    root -b -q 'mergeParSub_rooKeys.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${njobs}')'
+    echo 'root -b -q mergeParSub_rooKeys.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${njobs}','${year}')'
+    root -b -q 'mergeParSub_rooKeys.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${njobs}','${year}')'
     
 done < ../confSF/KDE_SF.list

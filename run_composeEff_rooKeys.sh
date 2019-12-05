@@ -22,6 +22,7 @@ ybin=${8}
 zbin=${9}
 ndiv=${10}
 totdiv=${11}
+year=${12}
 
 echo 'now submitting for bin ' ${bin}
 
@@ -34,11 +35,11 @@ if [ ! -r $HOME/composeEff_rooKeys_parSub.cc ]; then
     exit 1
 fi
 
-cp $SAMPLEDIR/effDataset_b${bin}.root .
+cp $SAMPLEDIR/effDataset_b${bin}_${year}.root .
 cp $HOME/composeEff_rooKeys_parSub.cc .
 
-echo 'root -l -q -b composeEff_rooKeys_parSub.cc($bin,$indx,$par,$wid0,$wid1,$wid2,$xbin,$ybin,$zbin,$ndiv,$totdiv)'
-root -l -q -b 'composeEff_rooKeys_parSub.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${ndiv}','${totdiv}')'
+echo 'root -l -q -b composeEff_rooKeys_parSub.cc($bin,$indx,$par,$wid0,$wid1,$wid2,$xbin,$ybin,$zbin,$ndiv,$totdiv,$year)'
+root -l -q -b 'composeEff_rooKeys_parSub.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${ndiv}','${totdiv}','${year}')'
 
 if [ ! -d $HOME/tmp ]; then mkdir $HOME/tmp; fi
 cp KDEhist* $HOME/tmp/
