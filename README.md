@@ -32,11 +32,11 @@ Before running, you need to create a file `../confSF/KDE_SF.list`, containing th
 if [ ! -d ../confSF ]; then mkdir ../confSF; fi
 cat << EOF > ../confSF/KDE_SF.list
 0       0.50    1.00    1.00    0.50    1.00    1.00
-1       0.30    1.00    0.70    0.30    1.00    0.70
+1       0.30    1.00    0.70    0.30    0.80    0.30
 2       0.40    0.80    0.50    0.40    0.80    0.50
-3       0.60    1.00    0.80    0.60    1.00    0.80
-5       0.40    1.00    0.50    0.40    1.00    0.50
-7       0.60    1.00    0.60    0.60    1.00    0.60
+3       0.60    1.00    0.80    0.40    1.00    0.50
+5       0.40    1.00    0.50    0.40    1.20    1.10
+7       0.60    1.00    0.60    0.40    0.60    0.40
 EOF
 ```
 Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L3-L5).
