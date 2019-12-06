@@ -1,6 +1,7 @@
 #!/bin/bash
 
 par=1
+year=2016
 
 # Create directories
 if [ ! -d logs_plot ]; then mkdir logs_plot; fi
@@ -13,8 +14,8 @@ while read -a line; do
     for indx in {0..0}; do
 
 	# Plot KDE histograms
-	root -b -q 'plotHist.cc('${bin}','${indx}','${par}')' \
-	    &> logs_plot/plotHist_${bin}_${indx}_${par}.out &
+	root -b -q 'plotHist.cc('${bin}','${indx}','${par}','${year}')' \
+	    &> logs_plot/plotHist_${bin}_${indx}_${par}_${year}.out &
 	
     done
 
