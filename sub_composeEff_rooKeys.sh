@@ -49,9 +49,8 @@ Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT
 Log         = logs_parSub/sub_\$(ClusterId).log
 Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).out
 Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).err
-+AccountingGroup = "group_u_CMST3.all"
+## +AccountingGroup = "group_u_CMST3.all" ## only for sara
 +JobFlavour = "testmatch"
-
 Queue ${njobs}
 EOF
 
@@ -88,7 +87,7 @@ Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT
 Log         = logs_parSub/sub_\$(ClusterId).log
 Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).out
 Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).err
-+AccountingGroup = "group_u_CMST3.all"
+## +AccountingGroup = "group_u_CMST3.all"
 +JobFlavour = "workday"
 Queue ${njobs}
 EOF
