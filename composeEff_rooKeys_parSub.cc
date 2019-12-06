@@ -11,7 +11,7 @@ using namespace std ;
 
 static const int nBins = 9;
 
-void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCTK = 0.5, float widthCTL = 0.5, float widthPHI = 0.5, int xbins=50, int ybins = 0, int zbins = 0, int ndiv = 0, int totdiv = 1)
+void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCTK = 0.5, float widthCTL = 0.5, float widthPHI = 0.5, int xbins=50, int ybins = 0, int zbins = 0, int ndiv = 0, int totdiv = 1, int year=2016)
 {
   // effIndx format: [0] GEN no-filter
   //                 [1] GEN filtered
@@ -52,7 +52,7 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   datasetString = datasetString + Form((parity==0?"_ev_b%i":"_od_b%i"),q2Bin);
 
   // Load variables and dataset
-  string filename = Form("effDataset_b%i.root",q2Bin);
+  string filename = Form("effDataset_b%i_%i.root",q2Bin,year);
   TFile* fin = TFile::Open( filename.c_str() );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -129,8 +129,8 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   else KDEhist->Scale(data->sumEntries()/KDEhist->Integral());
 
   // save histogram to file
-  TFile* fout = TFile::Open(Form("KDEhist_%s_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i_%i-frac-%i.root",
-				 shortString.c_str(),widthCTK,widthCTL,widthPHI,xbins,ybins,zbins,ndiv,totdiv),"RECREATE");
+  TFile* fout = TFile::Open(Form("KDEhist_%s_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i_%i-frac-%i_%i.root",
+				 shortString.c_str(),widthCTK,widthCTL,widthPHI,xbins,ybins,zbins,ndiv,totdiv,year),"RECREATE");
   fout->cd();
   KDEhist->Write();
   fout->Close();
