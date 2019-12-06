@@ -54,7 +54,7 @@ EOF
         if [ "${USER}" == "fiorendi" ]; then
             echo '+AccountingGroup = "group_u_CMST3.all"'>>temp_sub_composeEff_rooKeys_oneBin.sub
         fi
-        echo 'Queue ${njobs}'>>prova.sub
+        echo 'Queue ${njobs}'>>temp_sub_composeEff_rooKeys_oneBin.sub
 
         # Submission and file removal
         condor_submit temp_sub_composeEff_rooKeys_oneBin.sub
@@ -94,7 +94,7 @@ EOF
     if [ "${USER}" == "fiorendi" ]; then
         echo '+AccountingGroup = "group_u_CMST3.all"'>>temp_sub_composeEff_rooKeys_oneBin.sub
     fi
-    echo 'Queue ${njobs}'>>prova.sub
+    echo 'Queue ${njobs}'>>temp_sub_composeEff_rooKeys_oneBin.sub
 
     # Submission and file removal
     condor_submit temp_sub_composeEff_rooKeys_oneBin.sub
