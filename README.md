@@ -39,7 +39,7 @@ cat << EOF > ../confSF/KDE_SF.list
 7       0.60    1.00    0.60    0.40    0.60    0.40
 EOF
 ```
-Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L3-L5).
+Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L16-L19).
 Submit 4200 jobs by running:
 ```sh
 source sub_composeEff_rooKeys.sh
