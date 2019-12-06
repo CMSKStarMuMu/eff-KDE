@@ -2,7 +2,6 @@
 
 export HOME=/afs/cern.ch/work/f/fiorendi/private/effKDE/eff-KDE
 export CMSSWDIR=/afs/cern.ch/work/f/fiorendi/private/effKDE/CMSSW_10_4_0/src
-export SAMPLEDIR=/eos/cms/store/user/fiorendi/p5prime/effKDE/2016/lmnr/
 export WORKDIR=$PWD
 
 cd $CMSSWDIR
@@ -23,6 +22,8 @@ zbin=${9}
 ndiv=${10}
 totdiv=${11}
 year=${12}
+
+export SAMPLEDIR=/eos/cms/store/user/fiorendi/p5prime/effKDE/${year}/lmnr/
 
 echo 'now submitting for bin ' ${bin}
 
