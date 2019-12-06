@@ -13,11 +13,22 @@ ndiv=${10}
 totdiv=${11}
 year=${12}
 
-export HOME=/afs/cern.ch/work/f/fiorendi/private/effKDE/eff-KDE
-export CMSSWDIR=/afs/cern.ch/work/f/fiorendi/private/effKDE/CMSSW_10_4_0/src
-export WORKDIR=$PWD
-export SAMPLEDIR=/eos/cms/store/user/fiorendi/p5prime/effKDE/${year}/lmnr/
+if [ "${USER}" == "fiorendi" ]; then
+    export HOME=/afs/cern.ch/work/f/fiorendi/private/effKDE/eff-KDE
+    export CMSSWDIR=/afs/cern.ch/work/f/fiorendi/private/effKDE/CMSSW_10_4_0/src
+    export SAMPLEDIR=/eos/cms/store/user/fiorendi/p5prime/effKDE/${year}/lmnr/
+elif [ "${USER}" == "aboletti" ]; then
+    export HOME=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-parSub
+    export CMSSWDIR=/eos/user/a/aboletti/BdToKstarMuMu/CMSSW_10_4_0/src
+    export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/datasets/PUweight
+else
+    echo no user found
+fi
 
+echo setting HOME to $HOME 
+echo setting CMSSWDIR to $CMSSWDIR
+
+export WORKDIR=$PWD
 cd $CMSSWDIR
 source  /cvmfs/cms.cern.ch/cmsset_default.sh
 eval `scram runtime -sh`
