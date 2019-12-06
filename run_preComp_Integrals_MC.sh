@@ -1,11 +1,19 @@
 #!/bin/bash
 
-export HOME=/afs/cern.ch/work/f/fiorendi/private/effKDE/eff-KDE
-export CMSSWDIR=/afs/cern.ch/work/f/fiorendi/private/effKDE/CMSSW_10_4_0/src
-# export HOME=/eos/user/a/aboletti/BdToKstarMuMu/efficiency
-# export CMSSWDIR=/eos/user/a/aboletti/BdToKstarMuMu/CMSSW_10_4_0/src
-export WORKDIR=$PWD
+if [ "${USER}" == "fiorendi" ]; then
+    export HOME=/afs/cern.ch/work/f/fiorendi/private/effKDE/eff-KDE
+    export CMSSWDIR=/afs/cern.ch/work/f/fiorendi/private/effKDE/CMSSW_10_4_0/src
+elif [ "${USER}" == "aboletti" ]; then
+    export HOME=/eos/user/a/aboletti/BdToKstarMuMu/efficiency
+    export CMSSWDIR=/eos/user/a/aboletti/BdToKstarMuMu/CMSSW_10_4_0/src
+else
+    echo no user found
+fi
 
+echo setting HOME to $HOME 
+echo setting CMSSWDIR to $CMSSWDIR
+
+export WORKDIR=$PWD
 cd $CMSSWDIR
 source  /cvmfs/cms.cern.ch/cmsset_default.sh
 eval `scram runtime -sh`
