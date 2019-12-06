@@ -5,6 +5,7 @@ par=1
 xbin=50
 ybin=50
 zbin=50
+year=2016
 
 while read -a line; do
 
@@ -24,6 +25,7 @@ ${wid0}','${wid1}','${wid2}','\
 ${wid0}','${wid1}','${wid2}','\
 ${wid0}','${wid1}','${wid2}','\
 ${wid0}','${wid1}','${wid2}','\
-${xbin}','${ybin}','${zbin}')'
+${xbin}','${ybin}','${zbin}','\
+${year}')'
 
 done < ../confSF/KDE_SF.list

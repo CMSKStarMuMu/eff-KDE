@@ -18,7 +18,7 @@ TH3D* InvertHisto(TH3D* hin, string hname);
 //                [1] odd
 //                [-1] for each parity recursively
 
-void extractEffBin(int q2Bin, int parity, float width00, float width01, float width02, float width10, float width11, float width12, float width20, float width21, float width22, float width30, float width31, float width32, float width40, float width41, float width42, int xbins, int ybins, int zbins)
+void extractEffBin(int q2Bin, int parity, float width00, float width01, float width02, float width10, float width11, float width12, float width20, float width21, float width22, float width30, float width31, float width32, float width40, float width41, float width42, int xbins, int ybins, int zbins, int year)
 {
   string shortString = Form("b%ip%i",q2Bin,parity);
   cout<<"Conf: "<<shortString<<endl;
@@ -35,7 +35,7 @@ void extractEffBin(int q2Bin, int parity, float width00, float width01, float wi
   histoName[3] = Form("hist_indx3_w0-%1.2f_w1-%1.2f_w2-%1.2f_%i_%i_%i",width30,width31,width32,xbins,ybins,zbins);
   histoName[4] = Form("hist_indx4_w0-%1.2f_w1-%1.2f_w2-%1.2f_%i_%i_%i",width40,width41,width42,xbins,ybins,zbins);
 
-  string inFileName = Form((parity==0?"files/KDEhist_b%i_ev.root":"files/KDEhist_b%i_od.root"),q2Bin);
+  string inFileName = Form((parity==0?"files/KDEhist_b%i_ev_%i.root":"files/KDEhist_b%i_od_%i.root"),q2Bin,year);
   TFile* fin = TFile::Open( inFileName.c_str() );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<inFileName<<endl;
@@ -97,7 +97,7 @@ void extractEffBin(int q2Bin, int parity, float width00, float width01, float wi
   // save histograms in file
   // from this point on the names of files and objects will only contain information about bin number, parity, and tag condition
   // in this way, there in the rest of the code there is no need to specify the KDE configuration any time it is run
-  TFile* fout = TFile::Open( Form((parity==0?"files/KDEeff_b%i_ev.root":"files/KDEeff_b%i_od.root"),q2Bin), "UPDATE" );
+  TFile* fout = TFile::Open( Form((parity==0?"files/KDEeff_b%i_ev_%i.root":"files/KDEeff_b%i_od_%i.root"),q2Bin,year), "UPDATE" );
   if (doCT) effCHist->Write(0,TObject::kWriteDelete);
   if (doWT) effWHist->Write(0,TObject::kWriteDelete);
   fout->Close();
@@ -127,13 +127,13 @@ TH3D* InvertHisto(TH3D* hin, string hname)
 
 }
 
-void extractEffBin1(int q2Bin, int parity, float width00, float width01, float width02, float width10, float width11, float width12, float width20, float width21, float width22, float width30, float width31, float width32, float width40, float width41, float width42, int xbins, int ybins, int zbins)
+void extractEffBin1(int q2Bin, int parity, float width00, float width01, float width02, float width10, float width11, float width12, float width20, float width21, float width22, float width30, float width31, float width32, float width40, float width41, float width42, int xbins, int ybins, int zbins, int year)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      extractEffBin(q2Bin, parity, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins);
+      extractEffBin(q2Bin, parity, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins, year);
   else
-    extractEffBin(q2Bin, parity, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins);
+    extractEffBin(q2Bin, parity, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins, year);
 }
 
 void extractEff(int q2Bin, int parity,
@@ -142,7 +142,7 @@ void extractEff(int q2Bin, int parity,
 		float width20, float width21, float width22,
 		float width10, float width11, float width12,
 		float width00, float width01, float width02,
-		int xbins=50, int ybins = 0, int zbins = 0)
+		int xbins=50, int ybins = 0, int zbins = 0, int year=2016)
 {
 
   if ( q2Bin<-1 || q2Bin>=nBins ) return;
@@ -174,8 +174,8 @@ void extractEff(int q2Bin, int parity,
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      extractEffBin1(q2Bin, parity, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins);
+      extractEffBin1(q2Bin, parity, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins, year);
   else
-    extractEffBin1(q2Bin, parity, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins);
+    extractEffBin1(q2Bin, parity, width00, width01, width02, width10, width11, width12, width20, width21, width22, width30, width31, width32, width40, width41, width42, xbins, ybins, zbins, year);
   
 }
