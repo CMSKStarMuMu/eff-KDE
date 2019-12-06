@@ -26,7 +26,7 @@ cd $WORKDIR
 
 echo 'now submitting for bin ' ${bin}
 
-if [ ! -r $SAMPLEDIR/effDataset_b${bin}${year}.root ]; then
+if [ ! -r $SAMPLEDIR/effDataset_b${bin}_${year}.root ]; then
     echo $SAMPLEDIR/effDataset_b${bin}_${year}.root not found
     exit 1
 fi
