@@ -23,6 +23,7 @@ elif [ "${USER}" == "aboletti" ]; then
     export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/datasets/PUweight
 else
     echo no user found
+    exit 1
 fi
 
 echo setting HOME to $HOME 
