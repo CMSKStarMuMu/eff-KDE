@@ -46,12 +46,11 @@ void mergeParSub_preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int
   for (int seed=minSeed; seed<=maxSeed; ++seed) {
 
     // open output file from parallel jobs
-    filename = "tmp/PreIntMC_"+shortString+Form("_s%i.root",seed);
+    filename = "tmp/PreIntMC_"+shortString+Form("_s%i_%i.root",seed,year);
     TFile* fin = TFile::Open( filename.c_str() );
     if ( !fin || !fin->IsOpen() ) {
       continue;
     }
-
     // get from the first file the volume value and the eff_config tag
     // and check that other files have the same values
     TH1D* hvol = (TH1D*)fin->Get(("hvolume"+shortString).c_str());
