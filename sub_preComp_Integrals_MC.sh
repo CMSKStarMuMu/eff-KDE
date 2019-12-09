@@ -2,7 +2,7 @@
 
 par=1
 tag=1
-year=2017
+year=2016
 
 # Create directory for log files
 if [ ! -d logs_preComp ]; then mkdir logs_preComp; fi
@@ -27,10 +27,15 @@ Arguments   = \$INT(bin) \$INT(par) \$INT(tag) \$INT(cnt_hit) \$INT(seed) \$INT(
 Log         = logs_preComp/sub_\$(ClusterId).log
 Output      = logs_preComp/preComp_Integrals_MC_\$INT(bin)_\$INT(par)_\$INT(tag)_\$INT(cnt_hit)_\$INT(seed)_\$INT(year).out
 Error       = logs_preComp/preComp_Integrals_MC_\$INT(bin)_\$INT(par)_\$INT(tag)_\$INT(cnt_hit)_\$INT(seed)_\$INT(year).err
-+AccountingGroup = "group_u_CMST3.all"
 +JobFlavour = "tomorrow"
-Queue 50
 EOF
+
+        if [ "${USER}" == "fiorendi" ]; then
+            echo '+AccountingGroup = "group_u_CMST3.all"'>>temp_sub_preComp_Integrals_MC.sub
+        fi
+
+        echo 'Queue 50'>>temp_sub_preComp_Integrals_MC.sub
+
         echo "Submit par: "${par}" tag:"${tag}" bin:"${bin} " year:"${year}
 	condor_submit temp_sub_preComp_Integrals_MC.sub
 	rm temp_sub_preComp_Integrals_MC.sub
