@@ -21,18 +21,16 @@ using namespace std;
 
 static const int nBins = 9;
 
-TCanvas* csxC [2*nBins];
-TCanvas* csyC [2*nBins];
-TCanvas* cszC [2*nBins];
+TCanvas* csC [3][2*nBins];
+TCanvas* csW [3][2*nBins];
+
 TCanvas* cp1C [2*nBins];
 TCanvas* cp2C [2*nBins];
 TCanvas* cctC [2*nBins];
-TCanvas* csxW [2*nBins];
-TCanvas* csyW [2*nBins];
-TCanvas* cszW [2*nBins];
 TCanvas* cp1W [2*nBins];
 TCanvas* cp2W [2*nBins];
 TCanvas* cctW [2*nBins];
+
 
 TH1D* Invert1Dhist(TH1D* hin, string hname);
 
@@ -41,12 +39,25 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
   string shortString = Form("b%ip%i",q2Bin,parity);
   cout<<"Conf: "<<shortString<<endl;
 
+  string confString = "plotEff_d/effKDE_test_"+shortString;
+  gStyle->SetOptStat(0);
+
   bool doCT = true;
   bool doWT = true;
 
   int confIndex = nBins*parity + q2Bin;
 
   int distBins = 10;
+
+  const char *varCoord[3];
+  varCoord[0] = "X";
+  varCoord[1] = "Y";
+  varCoord[2] = "Z";
+
+  const char *varNames[3];
+  varNames[0] = "ctK";
+  varNames[1] = "ctL";
+  varNames[2] = "phi";
 
   // Load variables and dataset
   string filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/effDataset_b%i_%i.root",year,q2Bin,year);
@@ -74,6 +85,10 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
     return;
   }
   RooArgList vars (* ctK,* ctL,* phi);
+  std::vector<RooRealVar*> vars_vec;
+  vars_vec.push_back(ctK);
+  vars_vec.push_back(ctL);
+  vars_vec.push_back(phi);
   string datasetString = Form((parity==1?"_ev_b%i":"_od_b%i"),q2Bin);
   RooDataSet* data_genDen = (RooDataSet*)wsp->data(("data_genDen"+datasetString).c_str());
   RooDataSet* data_genNum = (RooDataSet*)wsp->data(("data_genNum"+datasetString).c_str());
@@ -86,7 +101,9 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
   RooDataSet* data_den_corr    = (RooDataSet*)wsp_corr->data(("data_den"   +datasetString).c_str());
   RooDataSet* data_ctRECO_corr = (RooDataSet*)wsp_corr->data(("data_ctRECO"+datasetString).c_str());
   RooDataSet* data_wtRECO_corr = (RooDataSet*)wsp_corr->data(("data_wtRECO"+datasetString).c_str());
+ 
   // import number of total genDen statistics, before FSR-veto
+  // normVal = num GEN events tot / num GEN events w/o FSR ( > 1)
   double normVal = 1;
   double normVal_corr = 1;
   TH1I* normHist = (TH1I*)fin_data->Get( Form("n_genDen_b%i",q2Bin) );
@@ -97,7 +114,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
   }
   
   // import KDE efficiency histograms
-  string filename = Form((parity==0?"files/KDEeff_b%i_ev_%i.root":"files/KDEeff_b%i_od_%i.root"),q2Bin, year);
+  string filename = Form((parity==0?"files/KDEeff_b%i_ev_%i_recoFrac.root":"files/KDEeff_b%i_od_%i_recoFrac.root"),q2Bin, year);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -121,6 +138,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
   RooAbsReal* effW = 0;
   if (doCT) {
     effCData = new RooDataHist("effCData","effCData",vars,effCHist);
+    // sara: interpolation order set to 1 -> is it ok? enough?
     effC = new RooHistFunc("effC","effC",vars,*effCData,1);
   }
   if (doWT) {
@@ -128,45 +146,25 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
     effW = new RooHistFunc("effW","effW",vars,*effWData,1);
   }
 
-  string confString = "plotEff_d/effKDE_test_"+shortString;
-
-  gStyle->SetOptStat(0);
 
   // Plot 1D slices of the efficiency function and binned efficiency
+  for (int ivar=0; ivar<3; ivar++){
   if (doCT) {
-    csxC[confIndex] = new TCanvas(("csxC"+shortString).c_str(),(shortString+"_effC_ctK").c_str(),1500,1500) ;
-    csyC[confIndex] = new TCanvas(("csyC"+shortString).c_str(),(shortString+"_effC_ctL").c_str(),1500,1500) ;
-    cszC[confIndex] = new TCanvas(("cszC"+shortString).c_str(),(shortString+"_effC_phi").c_str(),1500,1500) ;
-    csxC[confIndex]->Divide(5,5);
-    csyC[confIndex]->Divide(5,5);
-    cszC[confIndex]->Divide(5,5);
-  }
+      csC[ivar][confIndex] = new TCanvas((Form("cs%sC",varCoord[ivar])+shortString).c_str(),(shortString+Form("_effC_%s",varNames[ivar])).c_str(),1500,1500) ;
+      csC[ivar][confIndex]->Divide(5,5);
+    }
   if (doWT) {
-    csxW[confIndex] = new TCanvas(("csxW"+shortString).c_str(),(shortString+"_effW_ctK").c_str(),1500,1500) ;
-    csyW[confIndex] = new TCanvas(("csyW"+shortString).c_str(),(shortString+"_effW_ctL").c_str(),1500,1500) ;
-    cszW[confIndex] = new TCanvas(("cszW"+shortString).c_str(),(shortString+"_effW_phi").c_str(),1500,1500) ;
-    csxW[confIndex]->Divide(5,5);
-    csyW[confIndex]->Divide(5,5);
-    cszW[confIndex]->Divide(5,5);
+      csW[ivar][confIndex] = new TCanvas((Form("cs%sW",varCoord[ivar])+shortString).c_str(),(shortString+Form("_effW_%s",varNames[ivar])).c_str(),1500,1500) ;
+      csW[ivar][confIndex]->Divide(5,5);
+    }
   }
-  vector <TH1D*> effCSliceX;
-  vector <TH1D*> effCSliceY;
-  vector <TH1D*> effCSliceZ;
-  vector <TH1D*> effWSliceX;
-  vector <TH1D*> effWSliceY;
-  vector <TH1D*> effWSliceZ;
-  vector <TH1D*> effCSliceX_corr;
-  vector <TH1D*> effCSliceY_corr;
-  vector <TH1D*> effCSliceZ_corr;
-  vector <TH1D*> effWSliceX_corr;
-  vector <TH1D*> effWSliceY_corr;
-  vector <TH1D*> effWSliceZ_corr;
-  vector <RooPlot*> fsxC;
-  vector <RooPlot*> fsxW;
-  vector <RooPlot*> fsyC;
-  vector <RooPlot*> fsyW;
-  vector <RooPlot*> fszC;
-  vector <RooPlot*> fszW;
+
+  vector <vector <TH1D*>>    effCSlice(3, std::vector<TH1D*>(0));
+  vector <vector <TH1D*>>    effWSlice(3, std::vector<TH1D*>(0));
+  vector <vector <TH1D*>>    effCSlice_corr(3, std::vector<TH1D*>(0));
+  vector <vector <TH1D*>>    effWSlice_corr(3, std::vector<TH1D*>(0));
+  vector <vector <RooPlot*>> fsC(3,std::vector<RooPlot*>(0) );
+  vector <vector <RooPlot*>> fsW(3,std::vector<RooPlot*>(0) );
 
   // TLegend* leg = new TLegend (0.35,0.8,0.9,0.9);
 
@@ -174,230 +172,190 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
   double border = 0.04;
 
   // variables to be filled with global efficiency maximum
-  double maxEffCX = 0;
-  double maxEffWX = 0;
-  double maxEffCY = 0;
-  double maxEffWY = 0;
-  double maxEffCZ = 0;
-  double maxEffWZ = 0;
+  double maxEffC[3] = {0,0,0};
+  double maxEffW[3] = {0,0,0};
 
   // loop over slice grid
   for (int i=0; i<5; ++i) for (int j=0; j<5; ++j) {
 
+      std::vector<string> ctCuts, wtCuts;
       // central values and borders of the slices in the hidden variables
       double centA = -0.8 + 1.6*i/4;
       double centB = -0.8 + 1.6*j/4;
-      string cutX = Form("fabs(ctL-(%1.1f))<%1.3f && fabs((phi/%1.6f)-(%1.1f))<%1.3f",centA,border,TMath::Pi(),centB,border);
-      string cutY = Form("fabs(ctK-(%1.1f))<%1.3f && fabs((phi/%1.6f)-(%1.1f))<%1.3f",centA,border,TMath::Pi(),centB,border);
-      string cutZ = Form("fabs(ctK-(%1.1f))<%1.3f && fabs(ctL-(%1.1f))<%1.3f",centA,border,centB,border);
-      // cout<<cutX<<endl<<cutY<<endl<<cutZ<<endl;
+      ctCuts.push_back( Form("fabs(ctL-(%1.1f))<%1.3f && fabs((phi/%1.6f)-(%1.1f))<%1.3f",centA,border,TMath::Pi(),centB,border)); // cutX
+      ctCuts.push_back( Form("fabs(ctK-(%1.1f))<%1.3f && fabs((phi/%1.6f)-(%1.1f))<%1.3f",centA,border,TMath::Pi(),centB,border));  //cutY
+      ctCuts.push_back( Form("fabs(ctK-(%1.1f))<%1.3f && fabs(ctL-(%1.1f))<%1.3f",centA,border,centB,border));  // cytZ
+
+      double centAwt = 0.8 - 1.6*i/4;
+      double centBwt = 0.8 - 1.6*j/4;
+      wtCuts.push_back( Form("fabs(ctL-(%1.1f))<%1.3f && fabs((phi/%1.6f)-(%1.1f))<%1.3f",centAwt,border,TMath::Pi(),centBwt,border));
+      wtCuts.push_back( Form("fabs(ctK-(%1.1f))<%1.3f && fabs((phi/%1.6f)-(%1.1f))<%1.3f",centAwt,border,TMath::Pi(),centBwt,border));
+      wtCuts.push_back( Form("fabs(ctK-(%1.1f))<%1.3f && fabs(ctL-(%1.1f))<%1.3f"        ,centAwt,border,centBwt,border));
 
       // slicing distributions
-      TH1D* genDenDistX = (TH1D*)data_genDen->reduce(RooArgSet(*ctK),cutX.c_str())
-	->createHistogram( Form("distX_genDen_%i_%i_%s",i,j,shortString.c_str()), *ctK, Binning(distBins,-1,1) );
-      TH1D* genNumDistX = (TH1D*)data_genNum->reduce(RooArgSet(*ctK),cutX.c_str())
-	->createHistogram( Form("distX_genNum_%i_%i_%s",i,j,shortString.c_str()), *ctK, Binning(distBins,-1,1) );
-      TH1D* denDistX    = (TH1D*)data_den   ->reduce(RooArgSet(*ctK),cutX.c_str())
-	->createHistogram( Form("distX_den_%i_%i_%s"   ,i,j,shortString.c_str()), *ctK, Binning(distBins,-1,1) );
-      TH1D* genDenDistY = (TH1D*)data_genDen->reduce(RooArgSet(*ctL),cutY.c_str())
-	->createHistogram( Form("distY_genDen_%i_%i_%s",i,j,shortString.c_str()), *ctL, Binning(distBins,-1,1) );
-      TH1D* genNumDistY = (TH1D*)data_genNum->reduce(RooArgSet(*ctL),cutY.c_str())
-	->createHistogram( Form("distY_genNum_%i_%i_%s",i,j,shortString.c_str()), *ctL, Binning(distBins,-1,1) );
-      TH1D* denDistY    = (TH1D*)data_den   ->reduce(RooArgSet(*ctL),cutY.c_str())
-	->createHistogram( Form("distY_den_%i_%i_%s"   ,i,j,shortString.c_str()), *ctL, Binning(distBins,-1,1) );
-      TH1D* genDenDistZ = (TH1D*)data_genDen->reduce(RooArgSet(*phi),cutZ.c_str())
-	->createHistogram( Form("distZ_genDen_%i_%i_%s",i,j,shortString.c_str()), *phi, Binning(distBins,-TMath::Pi(),TMath::Pi()) );
-      TH1D* genNumDistZ = (TH1D*)data_genNum->reduce(RooArgSet(*phi),cutZ.c_str())
-	->createHistogram( Form("distZ_genNum_%i_%i_%s",i,j,shortString.c_str()), *phi, Binning(distBins,-TMath::Pi(),TMath::Pi()) );
-      TH1D* denDistZ    = (TH1D*)data_den   ->reduce(RooArgSet(*phi),cutZ.c_str())
-	->createHistogram( Form("distZ_den_%i_%i_%s"   ,i,j,shortString.c_str()), *phi, Binning(distBins,-TMath::Pi(),TMath::Pi()) );
-      TH1D* ctRECODistX = 0;
-      TH1D* wtRECODistX = 0;
-      TH1D* ctRECODistY = 0;
-      TH1D* wtRECODistY = 0;
-      TH1D* ctRECODistZ = 0;
-      TH1D* wtRECODistZ = 0;
-      if (doCT) {
-	ctRECODistX = (TH1D*)data_ctRECO->reduce(RooArgSet(*ctK),cutX.c_str())
-	  ->createHistogram( Form("distX_ctRECO_%i_%i_%s",i,j,shortString.c_str()), *ctK, Binning(distBins,-1,1) );
-	ctRECODistY = (TH1D*)data_ctRECO->reduce(RooArgSet(*ctL),cutY.c_str())
-	  ->createHistogram( Form("distY_ctRECO_%i_%i_%s",i,j,shortString.c_str()), *ctL, Binning(distBins,-1,1) );
-	ctRECODistZ = (TH1D*)data_ctRECO->reduce(RooArgSet(*phi),cutZ.c_str())
-	  ->createHistogram( Form("distZ_ctRECO_%i_%i_%s",i,j,shortString.c_str()), *phi, Binning(distBins,-TMath::Pi(),TMath::Pi()) );
+      TH1D* ctGENDenDist[3] = {0,0,0};
+      TH1D* ctGENNumDist[3] = {0,0,0};
+      TH1D* ctDenDist[3]    = {0,0,0};
+      TH1D* ctRECODist[3]   = {0,0,0};
+
+      TH1D* wtGENDenDist[3] = {0,0,0};
+      TH1D* wtGENNumDist[3] = {0,0,0};
+      TH1D* wtDenDist[3]    = {0,0,0};
+      TH1D* wtRECODist[3]   = {0,0,0};
+
+      // slicing distributions for the correlated dataset
+      TH1D* ctGENDenDist_corr[3] = {0,0,0};
+      TH1D* ctGENNumDist_corr[3] = {0,0,0};
+      TH1D* ctDenDist_corr[3]    = {0,0,0};
+      TH1D* ctRECODist_corr[3]   = {0,0,0};
+
+      TH1D* wtGENDenDist_corr[3] = {0,0,0};
+      TH1D* wtGENNumDist_corr[3] = {0,0,0};
+      TH1D* wtDenDist_corr[3]    = {0,0,0};
+      TH1D* wtRECODist_corr[3]   = {0,0,0};
+      
+      RooCmdArg bins = RooFit::Binning(distBins,-1,1);
+      
+      for (int ivar=0; ivar < 3; ivar++){
+        if (ivar == 2) bins = RooFit::Binning(distBins, -TMath::Pi(), TMath::Pi());
+        if(doCT){
+          ctGENDenDist[ivar] = (TH1D*) data_genDen->reduce(RooArgSet(vars[ivar]), ctCuts[ivar].c_str()) 
+            -> createHistogram( Form("dist%s_ctGenDen_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()), *vars_vec[ivar], bins);
+          ctGENNumDist[ivar] = (TH1D*) data_genNum->reduce(RooArgSet(vars[ivar]), ctCuts[ivar].c_str())
+	    -> createHistogram( Form("dist%s_ctGenNum_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()), *vars_vec[ivar], bins);
+          ctDenDist[ivar]    = (TH1D*) data_den   ->reduce(RooArgSet(vars[ivar]), ctCuts[ivar].c_str())
+	    ->createHistogram( Form("dist%s_ctDen_%i_%i_%s"   ,varCoord[ivar],i,j,shortString.c_str()),  *vars_vec[ivar], bins);
+   	  ctRECODist[ivar]   = (TH1D*) data_ctRECO->reduce(RooArgSet(vars[ivar]), ctCuts[ivar].c_str())
+	    ->createHistogram( Form("dist%s_ctRECO_%i_%i_%s"   ,varCoord[ivar],i,j,shortString.c_str()), *vars_vec[ivar], bins);
+
+          // correlated dataset
+          ctGENDenDist_corr[ivar] = (TH1D*) data_genDen_corr->reduce(RooArgSet(vars[ivar]), ctCuts[ivar].c_str()) 
+            -> createHistogram( Form("dist%s_ctGenDen_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()), *vars_vec[ivar], bins);
+          ctGENNumDist_corr[ivar] = (TH1D*) data_genNum_corr->reduce(RooArgSet(vars[ivar]), ctCuts[ivar].c_str())
+	    -> createHistogram( Form("dist%s_ctGenNum_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()), *vars_vec[ivar], bins);
+          ctDenDist_corr[ivar]    = (TH1D*) data_den_corr   ->reduce(RooArgSet(vars[ivar]), ctCuts[ivar].c_str())
+	    ->createHistogram( Form("dist%s_ctDen_corr_%i_%i_%s"   ,varCoord[ivar],i,j,shortString.c_str()),  *vars_vec[ivar], bins);
+   	  ctRECODist_corr[ivar]   = (TH1D*) data_ctRECO_corr->reduce(RooArgSet(vars[ivar]), ctCuts[ivar].c_str())
+	    ->createHistogram( Form("dist%s_ctRECO_corr_%i_%i_%s"   ,varCoord[ivar],i,j,shortString.c_str()),  *vars_vec[ivar], bins);
+
+          // Scale genDen slices (currently with FSR-veto applied)
+          // to match the total statistics of genDen (needed to obtain a correct absolute value in efficiency histograms and comparable with the efficiency function)
+          ctGENDenDist[ivar]     ->Scale(normVal);
+          ctGENDenDist_corr[ivar]->Scale(normVal_corr);
+        }
+
+        if (doWT) {
+          wtGENDenDist[ivar] = (TH1D*) data_genDen->reduce(RooArgSet(vars[ivar]), wtCuts[ivar].c_str()) 
+            -> createHistogram( Form("dist%s_wtGenDen_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()), *vars_vec[ivar], bins);
+          wtGENNumDist[ivar] = (TH1D*) data_genNum->reduce(RooArgSet(vars[ivar]), wtCuts[ivar].c_str())
+	    -> createHistogram( Form("dist%s_wtGenNum_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()), *vars_vec[ivar], bins);
+          wtDenDist[ivar]    = (TH1D*) data_den   ->reduce(RooArgSet(vars[ivar]), wtCuts[ivar].c_str())
+	    ->createHistogram( Form("dist%s_wtDen_%i_%i_%s"   ,varCoord[ivar],i,j,shortString.c_str()),  *vars_vec[ivar], bins);
+          // wt reco distribution uses cut with non-inverted sign
+   	  wtRECODist[ivar]   = (TH1D*) data_wtRECO->reduce(RooArgSet(vars[ivar]), ctCuts[ivar].c_str())
+	    ->createHistogram( Form("dist%s_wtRECO_%i_%i_%s"   ,varCoord[ivar],i,j,shortString.c_str()), *vars_vec[ivar], bins);
+
+          // correlated dataset
+          wtGENDenDist_corr[ivar] = (TH1D*) data_genDen_corr->reduce(RooArgSet(vars[ivar]), wtCuts[ivar].c_str()) 
+            -> createHistogram( Form("dist%s_wtGenDen_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()), *vars_vec[ivar], bins);
+          wtGENNumDist_corr[ivar] = (TH1D*) data_genNum_corr->reduce(RooArgSet(vars[ivar]), wtCuts[ivar].c_str())
+	    -> createHistogram( Form("dist%s_wtGenNum_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()), *vars_vec[ivar], bins);
+          wtDenDist_corr[ivar]    = (TH1D*) data_den_corr   ->reduce(RooArgSet(vars[ivar]), wtCuts[ivar].c_str())
+	    ->createHistogram( Form("dist%s_wtDen_corr_%i_%i_%s"   ,varCoord[ivar],i,j,shortString.c_str()),  *vars_vec[ivar], bins);
+          // wt reco distribution uses cut with non-inverted sign
+   	  wtRECODist_corr[ivar]   = (TH1D*) data_wtRECO_corr->reduce(RooArgSet(vars[ivar]), ctCuts[ivar].c_str())
+	    ->createHistogram( Form("dist%s_wtRECO_corr_%i_%i_%s"   ,varCoord[ivar],i,j,shortString.c_str()), *vars_vec[ivar], bins);
+
+          // Scale genDen slices (currently with FSR-veto applied)
+          wtGENDenDist[ivar]     ->Scale(normVal);
+          wtGENDenDist_corr[ivar]->Scale(normVal_corr);
+        }
       }
-      if (doWT) {
-	wtRECODistX = (TH1D*)data_wtRECO->reduce(RooArgSet(*ctK),cutX.c_str())
-	  ->createHistogram( Form("distX_wtRECO_%i_%i_%s",i,j,shortString.c_str()), *ctK, Binning(distBins,-1,1) );
-	wtRECODistY = (TH1D*)data_wtRECO->reduce(RooArgSet(*ctL),cutY.c_str())
-	  ->createHistogram( Form("distY_wtRECO_%i_%i_%s",i,j,shortString.c_str()), *ctL, Binning(distBins,-1,1) );
-	wtRECODistZ = (TH1D*)data_wtRECO->reduce(RooArgSet(*phi),cutZ.c_str())
-	  ->createHistogram( Form("distZ_wtRECO_%i_%i_%s",i,j,shortString.c_str()), *phi, Binning(distBins,-TMath::Pi(),TMath::Pi()) );
-      }
-      // slicing correlated distributions
-      TH1D* genDenDistX_corr = (TH1D*)data_genDen_corr->reduce(RooArgSet(*ctK),cutX.c_str())
-	->createHistogram( Form("distX_genDen_corr_%i_%i_%s",i,j,shortString.c_str()), *ctK, Binning(distBins,-1,1) );
-      TH1D* genNumDistX_corr = (TH1D*)data_genNum_corr->reduce(RooArgSet(*ctK),cutX.c_str())
-	->createHistogram( Form("distX_genNum_corr_%i_%i_%s",i,j,shortString.c_str()), *ctK, Binning(distBins,-1,1) );
-      TH1D* denDistX_corr    = (TH1D*)data_den_corr   ->reduce(RooArgSet(*ctK),cutX.c_str())
-	->createHistogram( Form("distX_den_corr_%i_%i_%s"   ,i,j,shortString.c_str()), *ctK, Binning(distBins,-1,1) );
-      TH1D* genDenDistY_corr = (TH1D*)data_genDen_corr->reduce(RooArgSet(*ctL),cutY.c_str())
-	->createHistogram( Form("distY_genDen_corr_%i_%i_%s",i,j,shortString.c_str()), *ctL, Binning(distBins,-1,1) );
-      TH1D* genNumDistY_corr = (TH1D*)data_genNum_corr->reduce(RooArgSet(*ctL),cutY.c_str())
-	->createHistogram( Form("distY_genNum_corr_%i_%i_%s",i,j,shortString.c_str()), *ctL, Binning(distBins,-1,1) );
-      TH1D* denDistY_corr    = (TH1D*)data_den_corr   ->reduce(RooArgSet(*ctL),cutY.c_str())
-	->createHistogram( Form("distY_den_corr_%i_%i_%s"   ,i,j,shortString.c_str()), *ctL, Binning(distBins,-1,1) );
-      TH1D* genDenDistZ_corr = (TH1D*)data_genDen_corr->reduce(RooArgSet(*phi),cutZ.c_str())
-	->createHistogram( Form("distZ_genDen_corr_%i_%i_%s",i,j,shortString.c_str()), *phi, Binning(distBins,-TMath::Pi(),TMath::Pi()) );
-      TH1D* genNumDistZ_corr = (TH1D*)data_genNum_corr->reduce(RooArgSet(*phi),cutZ.c_str())
-	->createHistogram( Form("distZ_genNum_corr_%i_%i_%s",i,j,shortString.c_str()), *phi, Binning(distBins,-TMath::Pi(),TMath::Pi()) );
-      TH1D* denDistZ_corr    = (TH1D*)data_den_corr   ->reduce(RooArgSet(*phi),cutZ.c_str())
-	->createHistogram( Form("distZ_den_corr_%i_%i_%s"   ,i,j,shortString.c_str()), *phi, Binning(distBins,-TMath::Pi(),TMath::Pi()) );
-      TH1D* ctRECODistX_corr = 0;
-      TH1D* wtRECODistX_corr = 0;
-      TH1D* ctRECODistY_corr = 0;
-      TH1D* wtRECODistY_corr = 0;
-      TH1D* ctRECODistZ_corr = 0;
-      TH1D* wtRECODistZ_corr = 0;
-      if (doCT) {
-	ctRECODistX_corr = (TH1D*)data_ctRECO_corr->reduce(RooArgSet(*ctK),cutX.c_str())
-	  ->createHistogram( Form("distX_ctRECO_corr_%i_%i_%s",i,j,shortString.c_str()), *ctK, Binning(distBins,-1,1) );
-	ctRECODistY_corr = (TH1D*)data_ctRECO_corr->reduce(RooArgSet(*ctL),cutY.c_str())
-	  ->createHistogram( Form("distY_ctRECO_corr_%i_%i_%s",i,j,shortString.c_str()), *ctL, Binning(distBins,-1,1) );
-	ctRECODistZ_corr = (TH1D*)data_ctRECO_corr->reduce(RooArgSet(*phi),cutZ.c_str())
-	  ->createHistogram( Form("distZ_ctRECO_corr_%i_%i_%s",i,j,shortString.c_str()), *phi, Binning(distBins,-TMath::Pi(),TMath::Pi()) );
-      }
-      if (doWT) {
-	wtRECODistX_corr = (TH1D*)data_wtRECO_corr->reduce(RooArgSet(*ctK),cutX.c_str())
-	  ->createHistogram( Form("distX_wtRECO_corr_%i_%i_%s",i,j,shortString.c_str()), *ctK, Binning(distBins,-1,1) );
-	wtRECODistY_corr = (TH1D*)data_wtRECO_corr->reduce(RooArgSet(*ctL),cutY.c_str())
-	  ->createHistogram( Form("distY_wtRECO_corr_%i_%i_%s",i,j,shortString.c_str()), *ctL, Binning(distBins,-1,1) );
-	wtRECODistZ_corr = (TH1D*)data_wtRECO_corr->reduce(RooArgSet(*phi),cutZ.c_str())
-	  ->createHistogram( Form("distZ_wtRECO_corr_%i_%i_%s",i,j,shortString.c_str()), *phi, Binning(distBins,-TMath::Pi(),TMath::Pi()) );
-      }
-      // Scale genDen slices (currently with FSR-veto applied)
-      // to match the total statistics of genDen (needed to obtain a correct absolute value in efficiency histograms and comparable with the efficiency function)
-      genDenDistX->Scale(normVal);
-      genDenDistY->Scale(normVal);
-      genDenDistZ->Scale(normVal);
-      genDenDistX_corr->Scale(normVal_corr);
-      genDenDistY_corr->Scale(normVal_corr);
-      genDenDistZ_corr->Scale(normVal_corr);
+      
+      TH1D* effCDist[3] = {0,0,0};
+      TH1D* effWDist[3] = {0,0,0};
+      TH1D* effCDist_corr[3] = {0,0,0};
+      TH1D* effWDist_corr[3] = {0,0,0};
+      
       // composing binned efficiencies from sliced distributions
-      TH1D* factDistX = (TH1D*)genNumDistX->Clone(Form("factDistX_%i_%i_%s",i,j,shortString.c_str()));
-      factDistX->Divide(genDenDistX);
-      factDistX->Divide(denDistX);
-      TH1D* effCDistX = (TH1D*)factDistX->Clone(Form("effCDistX_%i_%i_%s",i,j,shortString.c_str()));
-      if (doCT) effCDistX->Multiply(ctRECODistX);
-      TH1D* effWDistX = Invert1Dhist(factDistX,Form("effWDistX_%i_%i_%s",i,j,shortString.c_str()));
-      if (doWT) effWDistX->Multiply(wtRECODistX);
-      TH1D* factDistY = (TH1D*)genNumDistY->Clone(Form("factDistY_%i_%i_%s",i,j,shortString.c_str()));
-      factDistY->Divide(genDenDistY);
-      factDistY->Divide(denDistY);
-      TH1D* effCDistY = (TH1D*)factDistY->Clone(Form("effCDistY_%i_%i_%s",i,j,shortString.c_str()));
-      if (doCT) effCDistY->Multiply(ctRECODistY);
-      TH1D* effWDistY = Invert1Dhist(factDistY,Form("effWDistY_%i_%i_%s",i,j,shortString.c_str()));
-      if (doWT) effWDistY->Multiply(wtRECODistY);
-      TH1D* factDistZ = (TH1D*)genNumDistZ->Clone(Form("factDistZ_%i_%i_%s",i,j,shortString.c_str()));
-      factDistZ->Divide(genDenDistZ);
-      factDistZ->Divide(denDistZ);
-      TH1D* effCDistZ = (TH1D*)factDistZ->Clone(Form("effCDistZ_%i_%i_%s",i,j,shortString.c_str()));
-      if (doCT) effCDistZ->Multiply(ctRECODistZ);
-      TH1D* effWDistZ = Invert1Dhist(factDistZ,Form("effWDistZ_%i_%i_%s",i,j,shortString.c_str()));
-      if (doWT) effWDistZ->Multiply(wtRECODistZ);
-      // composing binned efficiencies from sliced distributions of correlated dataset
-      TH1D* factDistX_corr = (TH1D*)genNumDistX_corr->Clone(Form("factDistX_corr_%i_%i_%s",i,j,shortString.c_str()));
-      factDistX_corr->Divide(genDenDistX_corr);
-      factDistX_corr->Divide(denDistX_corr);
-      TH1D* effCDistX_corr = (TH1D*)factDistX_corr->Clone(Form("effCDistX_corr_%i_%i_%s",i,j,shortString.c_str()));
-      if (doCT) effCDistX_corr->Multiply(ctRECODistX_corr);
-      TH1D* effWDistX_corr = Invert1Dhist(factDistX_corr,Form("effWDistX_corr_%i_%i_%s",i,j,shortString.c_str()));
-      if (doWT) effWDistX_corr->Multiply(wtRECODistX_corr);
-      TH1D* factDistY_corr = (TH1D*)genNumDistY_corr->Clone(Form("factDistY_corr_%i_%i_%s",i,j,shortString.c_str()));
-      factDistY_corr->Divide(genDenDistY_corr);
-      factDistY_corr->Divide(denDistY_corr);
-      TH1D* effCDistY_corr = (TH1D*)factDistY_corr->Clone(Form("effCDistY_corr_%i_%i_%s",i,j,shortString.c_str()));
-      if (doCT) effCDistY_corr->Multiply(ctRECODistY_corr);
-      TH1D* effWDistY_corr = Invert1Dhist(factDistY_corr,Form("effWDistY_corr_%i_%i_%s",i,j,shortString.c_str()));
-      if (doWT) effWDistY_corr->Multiply(wtRECODistY_corr);
-      TH1D* factDistZ_corr = (TH1D*)genNumDistZ_corr->Clone(Form("factDistZ_corr_%i_%i_%s",i,j,shortString.c_str()));
-      factDistZ_corr->Divide(genDenDistZ_corr);
-      factDistZ_corr->Divide(denDistZ_corr);
-      TH1D* effCDistZ_corr = (TH1D*)factDistZ_corr->Clone(Form("effCDistZ_corr_%i_%i_%s",i,j,shortString.c_str()));
-      if (doCT) effCDistZ_corr->Multiply(ctRECODistZ_corr);
-      TH1D* effWDistZ_corr = Invert1Dhist(factDistZ_corr,Form("effWDistZ_corr_%i_%i_%s",i,j,shortString.c_str()));
-      if (doWT) effWDistZ_corr->Multiply(wtRECODistZ_corr);
-      if (doCT) {
-	// set titles
-	effCDistX->SetTitle( Form("Correct-tag efficiency (q2-bin %i, %s) slice ctL=%1.2f phi=%1.2f;cos(#theta_{K});Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
-	effCDistY->SetTitle( Form("Correct-tag efficiency (q2-bin %i, %s) slice ctK=%1.2f phi=%1.2f;cos(#theta_{L});Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
-	effCDistZ->SetTitle( Form("Correct-tag efficiency (q2-bin %i, %s) slice ctK=%1.2f ctL=%1.2f;#phi;Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB) );
-	// set minimum value
-	effCDistX->SetMinimum(0);
-	effCDistY->SetMinimum(0);
-	effCDistZ->SetMinimum(0);
-	// set color
-	effCDistX_corr->SetLineColor(418);
-	effCDistY_corr->SetLineColor(418);
-	effCDistZ_corr->SetLineColor(418);
-	// fill vector of slices
-	effCSliceX.push_back( effCDistX );
-	effCSliceY.push_back( effCDistY );
-	effCSliceZ.push_back( effCDistZ );
-	effCSliceX_corr.push_back( effCDistX_corr );
-	effCSliceY_corr.push_back( effCDistY_corr );
-	effCSliceZ_corr.push_back( effCDistZ_corr );
-      }
-      if (doWT) {
-	effWDistX->SetTitle( Form("Wrong-tag efficiency (q2-bin %i, %s) slice ctL=%1.2f phi=%1.2f;cos(#theta_{K});Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
-	effWDistY->SetTitle( Form("Wrong-tag efficiency (q2-bin %i, %s) slice ctK=%1.2f phi=%1.2f;cos(#theta_{L});Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
-	effWDistZ->SetTitle( Form("Wrong-tag efficiency (q2-bin %i, %s) slice ctK=%1.2f ctL=%1.2f;#phi;Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB) );
-	// set minimum value
-	effWDistX->SetMinimum(0);
-	effWDistY->SetMinimum(0);
-	effWDistZ->SetMinimum(0);
-	// set color
-	effWDistX_corr->SetLineColor(418);
-	effWDistY_corr->SetLineColor(418);
-	effWDistZ_corr->SetLineColor(418);
-	// fill vector of slices
-	effWSliceX.push_back( effWDistX );
-	effWSliceY.push_back( effWDistY );
-	effWSliceZ.push_back( effWDistZ );
-	effWSliceX_corr.push_back( effWDistX_corr );
-	effWSliceY_corr.push_back( effWDistY_corr );
-	effWSliceZ_corr.push_back( effWDistZ_corr );
+      for (int ivar=0; ivar< 3; ivar++){
+        TH1D* ctDist = (TH1D*)ctGENNumDist[ivar]->Clone(Form("ctDist%s_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+        ctDist->Divide(ctGENDenDist[ivar]);
+        ctDist->Divide(ctDenDist[ivar]);
+        effCDist[ivar] = (TH1D*)ctDist->Clone(Form("effCDist%s_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+        if (doCT) effCDist[ivar]->Multiply(ctRECODist[ivar]);
+      
+        TH1D* wtDist = (TH1D*)wtGENNumDist[ivar]->Clone(Form("wtDist%s_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+        wtDist->Divide(wtGENDenDist[ivar]);
+        wtDist->Divide(wtDenDist[ivar]);
+        effWDist[ivar] = Invert1Dhist(wtDist,Form("effWDist%s_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+        if (doWT) effWDist[ivar]->Multiply(wtRECODist[ivar]);
+
+
+        TH1D* ctDist_corr = (TH1D*)ctGENNumDist_corr[ivar]->Clone(Form("ctDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+        ctDist->Divide(ctGENDenDist_corr[ivar]);
+        ctDist_corr->Divide(ctDenDist_corr[ivar]);
+        effCDist_corr[ivar] = (TH1D*)ctDist_corr->Clone(Form("effCDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+        if (doCT) effCDist_corr[ivar]->Multiply(ctRECODist_corr[ivar]);
+
+        TH1D* wtDist_corr = (TH1D*)wtGENNumDist_corr[ivar]->Clone(Form("wtDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+//      // sara!! plot only the second fraction
+//       wtDist->Divide(wtGENDenDist_corr[ivar]);
+        wtDist_corr->Divide(wtGENNumDist_corr[ivar]);
+        wtDist_corr->Divide(wtDenDist_corr[ivar]);
+        effWDist_corr[ivar] = Invert1Dhist(wtDist_corr,Form("effWDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+        if (doWT) effWDist_corr[ivar]->Multiply(wtRECODist_corr[ivar]);
       }
 
+      // set histo properties
+      if (doCT) {
+	// set titles (to be improved)
+	effCDist[0]->SetTitle( Form("Correct-tag efficiency (q2-bin %i, %s) slice ctL=%1.2f phi=%1.2f;cos(#theta_{K});Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
+	effCDist[1]->SetTitle( Form("Correct-tag efficiency (q2-bin %i, %s) slice ctK=%1.2f phi=%1.2f;cos(#theta_{L});Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
+	effCDist[2]->SetTitle( Form("Correct-tag efficiency (q2-bin %i, %s) slice ctK=%1.2f ctL=%1.2f;#phi;Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB) );
+      }
+      if (doWT) {
+	effWDist[0]->SetTitle( Form("Wrong-tag efficiency (q2-bin %i, %s) slice ctL=%1.2f phi=%1.2f;cos(#theta_{K});Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
+	effWDist[1]->SetTitle( Form("Wrong-tag efficiency (q2-bin %i, %s) slice ctK=%1.2f phi=%1.2f;cos(#theta_{L});Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
+	effWDist[2]->SetTitle( Form("Wrong-tag efficiency (q2-bin %i, %s) slice ctK=%1.2f ctL=%1.2f;#phi;Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB) );
+      }
+
+      for (int ivar = 0; ivar < 3; ivar++){
+        if (doCT) {
+  	  effCDist[ivar]->SetMinimum(0);
+          effCDist_corr[ivar]->SetLineColor(418);
+  	  effCSlice[ivar].push_back( effCDist[ivar] );
+  	  effCSlice_corr[ivar].push_back( effCDist_corr[ivar] );
+        }
+        if (doWT) {
+  	  effWDist[ivar]->SetMinimum(0);
+  	  effWDist_corr[ivar]->SetLineColor(418);
+  	  effWSlice[ivar].push_back( effWDist[ivar] );
+  	  effWSlice_corr[ivar].push_back( effWDist_corr[ivar] );
+  	}
+      }
+
+
       // producing 1D slices of efficiency description 
-      ctL->setVal(centA);
-      phi->setVal(centB*TMath::Pi());
-      if (doCT) {
-	fsxC.push_back( ctK->frame( Name( Form("fsxC_%i_%i_%s",i,j,shortString.c_str()) ) ) );
-	effC->plotOn( fsxC.back(), LineColor(kRed), Name(Form("effCX_%i_%i_%s",i,j,shortString.c_str()))) ;
-      }
-      if (doWT) {
-	fsxW.push_back( ctK->frame( Name( Form("fsxW_%i_%i_%s",i,j,shortString.c_str()) ) ) );
-	effW->plotOn( fsxW.back(), LineColor(kRed), Name(Form("effWX_%i_%i_%s",i,j,shortString.c_str()))) ;
-      }
-      ctK->setVal(centA);
-      phi->setVal(centB*TMath::Pi());
-      if (doCT) {
-	fsyC.push_back( ctL->frame( Name( Form("fsyC_%i_%i_%s",i,j,shortString.c_str()) ) ) );
-	effC->plotOn( fsyC.back(), LineColor(kRed), Name(Form("effCY_%i_%i_%s",i,j,shortString.c_str()))) ;
-      }
-      if (doWT) {
-	fsyW.push_back( ctL->frame( Name( Form("fsyW_%i_%i_%s",i,j,shortString.c_str()) ) ) );
-	effW->plotOn( fsyW.back(), LineColor(kRed), Name(Form("effWY_%i_%i_%s",i,j,shortString.c_str()))) ;
-      }
-      ctK->setVal(centA);
-      ctL->setVal(centB);
-      if (doCT) {
-	fszC.push_back( phi->frame( Name( Form("fszC_%i_%i_%s",i,j,shortString.c_str()) ) ) );
-	effC->plotOn( fszC.back(), LineColor(kRed), Name(Form("effCZ_%i_%i_%s",i,j,shortString.c_str()))) ;
-      }
-      if (doWT) {
-	fszW.push_back( phi->frame( Name( Form("fszW_%i_%i_%s",i,j,shortString.c_str()) ) ) );
-	effW->plotOn( fszW.back(), LineColor(kRed), Name(Form("effWZ_%i_%i_%s",i,j,shortString.c_str()))) ;
+      for (int ivar = 0; ivar < 3; ivar++){
+        if (ivar==0){ 
+          ctL->setVal(centA);
+          phi->setVal(centB*TMath::Pi());
+        } else if (ivar==1){ 
+          ctK->setVal(centA);
+          phi->setVal(centB*TMath::Pi());
+        } else if (ivar==2){ 
+          ctK->setVal(centA); 
+          ctL->setVal(centB);
+        }
+        if (doCT) {
+  	  fsC[ivar].push_back( vars_vec[ivar]->frame( Name( Form("fs%sC_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()) ) ) );
+  	  effC->plotOn( fsC[ivar].back(), LineColor(kRed), Name(Form("effC%s_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()))) ;
+        }
+        if (doWT) {
+  	  fsW[ivar].push_back( vars_vec[ivar]->frame( Name( Form("fs%sW_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()) ) ) );
+  	  effW->plotOn( fsW[ivar].back(), LineColor(kRed), Name(Form("effW%s_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()))) ;
+        }
       }
 
       // if (i+j==0) {
@@ -406,102 +364,50 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
       // }
       // leg->Draw("same");
 
-      if (doCT) {
-	// plot ctK slices
-	csxC[confIndex]->cd(5*j+i+1);
-	gPad->SetLeftMargin(0.18);
-	effCSliceX.back()->GetYaxis()->SetTitleOffset(1.7);
-	effCSliceX.back()->Draw();
-	fsxC.back()->Draw("same");
-	effCSliceX.back()->Draw("same");
-	effCSliceX_corr.back()->Draw("same");
-	// plot ctL slices
-	csyC[confIndex]->cd(5*j+i+1);
-	gPad->SetLeftMargin(0.18);
-	effCSliceY.back()->GetYaxis()->SetTitleOffset(1.7);
-	effCSliceY.back()->Draw();
-	fsyC.back()->Draw("same");
-	effCSliceY.back()->Draw("same");
-	effCSliceY_corr.back()->Draw("same");
-	// plot phi slices
-	cszC[confIndex]->cd(5*j+i+1);
-	gPad->SetLeftMargin(0.18);
-	effCSliceZ.back()->GetYaxis()->SetTitleOffset(1.7);
-	effCSliceZ.back()->Draw();
-	fszC.back()->Draw("same");
-	effCSliceZ.back()->Draw("same");
-	effCSliceZ_corr.back()->Draw("same");
-      }
+      for (int ivar=0; ivar< 3; ivar++){
+        if (doCT) {
+	  csC[ivar][confIndex]->cd(5*j+i+1);
+	  gPad->SetLeftMargin(0.18);
+	  effCSlice[ivar].back()->GetYaxis()->SetTitleOffset(1.7);
+          effCSlice[ivar].back()->Draw();
+          fsC[ivar].back()->Draw("same");
+          effCSlice[ivar].back()->Draw("same");
+          effCSlice_corr[ivar].back()->Draw("same");
 
-      if (doWT) {
-	// plot ctK slices
-	csxW[confIndex]->cd(5*j+i+1);
-	gPad->SetLeftMargin(0.18);
-	effWSliceX.back()->GetYaxis()->SetTitleOffset(1.7);
-	effWSliceX.back()->Draw();
-	fsxW.back()->Draw("same");
-	effWSliceX.back()->Draw("same");
-	effWSliceX_corr.back()->Draw("same");
-	// plot ctL slices
-	csyW[confIndex]->cd(5*j+i+1);
-	gPad->SetLeftMargin(0.18);
-	effWSliceY.back()->GetYaxis()->SetTitleOffset(1.7);
-	effWSliceY.back()->Draw();
-	fsyW.back()->Draw("same");
-	effWSliceY.back()->Draw("same");
-	effWSliceY_corr.back()->Draw("same");
-	// plot phi slices
-	cszW[confIndex]->cd(5*j+i+1);
-	gPad->SetLeftMargin(0.18);
-	effWSliceZ.back()->GetYaxis()->SetTitleOffset(1.7);
-	effWSliceZ.back()->Draw();
-	fszW.back()->Draw("same");
-	effWSliceZ.back()->Draw("same");
-	effWSliceZ_corr.back()->Draw("same");
-      }
+          // checking maximum values
+          if ( maxEffC[ivar]<effCSlice[ivar].back()     ->GetMaximum() ) maxEffC[ivar] = effCSlice[ivar].back()->GetMaximum();
+          if ( maxEffC[ivar]<effCSlice_corr[ivar].back()->GetMaximum() ) maxEffC[ivar] = effCSlice_corr[ivar].back()->GetMaximum();
+        }
+        if (doWT) {
+	  csW[ivar][confIndex]->cd(5*j+i+1);
+	  gPad->SetLeftMargin(0.18);
+	  effWSlice[ivar].back()->GetYaxis()->SetTitleOffset(1.7);
+          effWSlice[ivar].back()->Draw();
+          fsW[ivar].back()->Draw("same");
+          effWSlice[ivar].back()->Draw("same");
+          effWSlice_corr[ivar].back()->Draw("same");
 
-      // checking maximum values
-      if (doCT) {
-	if ( maxEffCX<effCSliceX.back()->GetMaximum() ) maxEffCX = effCSliceX.back()->GetMaximum();
-	if ( maxEffCY<effCSliceY.back()->GetMaximum() ) maxEffCY = effCSliceY.back()->GetMaximum();
-	if ( maxEffCZ<effCSliceZ.back()->GetMaximum() ) maxEffCZ = effCSliceZ.back()->GetMaximum();
-	if ( maxEffCX<effCSliceX_corr.back()->GetMaximum() ) maxEffCX = effCSliceX_corr.back()->GetMaximum();
-	if ( maxEffCY<effCSliceY_corr.back()->GetMaximum() ) maxEffCY = effCSliceY_corr.back()->GetMaximum();
-	if ( maxEffCZ<effCSliceZ_corr.back()->GetMaximum() ) maxEffCZ = effCSliceZ_corr.back()->GetMaximum();
+          // checking maximum values
+          if ( maxEffW[ivar]<effWSlice[ivar].back()     ->GetMaximum() ) maxEffW[ivar] = effWSlice[ivar].back()->GetMaximum();
+          if ( maxEffW[ivar]<effWSlice_corr[ivar].back()->GetMaximum() ) maxEffW[ivar] = effWSlice_corr[ivar].back()->GetMaximum();
+        }
       }
-      if (doWT) {
-	if ( maxEffWX<effWSliceX.back()->GetMaximum() ) maxEffWX = effWSliceX.back()->GetMaximum();
-	if ( maxEffWY<effWSliceY.back()->GetMaximum() ) maxEffWY = effWSliceY.back()->GetMaximum();
-	if ( maxEffWZ<effWSliceZ.back()->GetMaximum() ) maxEffWZ = effWSliceZ.back()->GetMaximum();
-	if ( maxEffWX<effWSliceX_corr.back()->GetMaximum() ) maxEffWX = effWSliceX_corr.back()->GetMaximum();
-	if ( maxEffWY<effWSliceY_corr.back()->GetMaximum() ) maxEffWY = effWSliceY_corr.back()->GetMaximum();
-	if ( maxEffWZ<effWSliceZ_corr.back()->GetMaximum() ) maxEffWZ = effWSliceZ_corr.back()->GetMaximum();
-      }
+  } // end of slicing
 
-    }    
-
-  // set uniform y-axis ranges
-  if (doCT) {
-    for (vector<TH1D*>::iterator hist = effCSliceX.begin(); hist != effCSliceX.end(); ++hist) (*hist)->SetMaximum(maxEffCX*1.1);
-    for (vector<TH1D*>::iterator hist = effCSliceY.begin(); hist != effCSliceY.end(); ++hist) (*hist)->SetMaximum(maxEffCY*1.1);
-    for (vector<TH1D*>::iterator hist = effCSliceZ.begin(); hist != effCSliceZ.end(); ++hist) (*hist)->SetMaximum(maxEffCZ*1.1);
-  }
-  if (doWT) {
-    for (vector<TH1D*>::iterator hist = effWSliceX.begin(); hist != effWSliceX.end(); ++hist) (*hist)->SetMaximum(maxEffWX*1.1);
-    for (vector<TH1D*>::iterator hist = effWSliceY.begin(); hist != effWSliceY.end(); ++hist) (*hist)->SetMaximum(maxEffWY*1.1);
-    for (vector<TH1D*>::iterator hist = effWSliceZ.begin(); hist != effWSliceZ.end(); ++hist) (*hist)->SetMaximum(maxEffWZ*1.1);
+  //set  uniform y-axis ranges and save
+  for (int ivar=0; ivar< 3; ivar++){
+    if (doCT) {
+      for (vector<TH1D*>::iterator hist = effCSlice[ivar].begin(); hist != effCSlice[ivar].end(); ++hist) 
+        (*hist)->SetMaximum(maxEffC[ivar]*1.1);
+      csC[ivar][confIndex]->SaveAs( (confString+Form("_eff-ct_%sslices_comp_dp%i_%i.pdf",varNames[ivar] ,(int)(border*200), year)).c_str() );
+    }
+    if (doWT) {
+      for (vector<TH1D*>::iterator hist = effWSlice[ivar].begin(); hist != effWSlice[ivar].end(); ++hist) 
+        (*hist)->SetMaximum(maxEffW[ivar]*1.1);
+      csW[ivar][confIndex]->SaveAs( (confString+Form("_eff-wt_%sslices_comp_dp%i_%i.pdf",varNames[ivar] ,(int)(border*200), year)).c_str() );
+    }
   }
 
-  if (doCT) {
-    csxC[confIndex]->SaveAs( (confString+Form("_eff-ct_CTKslices_comp_dp%i_%i.pdf" ,(int)(border*200), year)).c_str() );
-    csyC[confIndex]->SaveAs( (confString+Form("_eff-ct_CTLslices_comp_dp%i_%i.pdf" ,(int)(border*200), year)).c_str() );
-    cszC[confIndex]->SaveAs( (confString+Form("_eff-ct_PHIslices_comp_dp%i_%i.pdf" ,(int)(border*200), year)).c_str() );
-  }
-  if (doWT) {
-    csxW[confIndex]->SaveAs( (confString+Form("_eff-wt_CTKslices_comp_dp%i_%i.pdf" ,(int)(border*200), year)).c_str() );
-    csyW[confIndex]->SaveAs( (confString+Form("_eff-wt_CTLslices_comp_dp%i_%i.pdf" ,(int)(border*200), year)).c_str() );
-    cszW[confIndex]->SaveAs( (confString+Form("_eff-wt_PHIslices_comp_dp%i_%i.pdf" ,(int)(border*200), year)).c_str() );
-  }
 
   // Plot projections of efficiency functions
   TH1D* effCProj_x = 0;
