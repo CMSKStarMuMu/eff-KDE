@@ -55,3 +55,18 @@ Compose the numerators and denominators to create efficiency descriptions:
 source extractEff.sh
 ```
 and find the efficiency histograms in the `files/KDEeff_b*_*.root` files.
+
+## Plot projections and slices
+To plot the individual numerator and denominator terms of the final efficiency, and the derived KDE description, use
+```
+source plotHist.sh
+```
+If necessary, change the [input dataset location](https://github.com/CMSKStarMuMu/eff-KDE/blob/working-basicMacroImplementation-sara/plotHist.cc#L60).
+
+
+To plot the efficiency slices and projections and the derived KDE description, use
+```
+source plotEff.sh
+```
+If necessary, change the [input dataset location](https://github.com/CMSKStarMuMu/eff-KDE/blob/working-basicMacroImplementation-sara/plotEff.cc#L52).
+
