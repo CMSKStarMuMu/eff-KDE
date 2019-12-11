@@ -99,7 +99,7 @@ void plotHistBin(int q2Bin, int effIndx, int parity, int year)
   // import KDE histograms
   vector<TH3D*> KDEhists;
   vector<TString> KDEconfs;
-  string inFileName = Form((parity==0?"files/KDEhist_b%i_ev.root":"files/KDEhist_b%i_od.root"),q2Bin);
+  string inFileName = Form((parity==0?"files/KDEhist_b%i_ev_%i.root":"files/KDEhist_b%i_od_%i.root"),q2Bin,year);
   TFile* fin = TFile::Open( inFileName.c_str() );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<inFileName<<endl;
