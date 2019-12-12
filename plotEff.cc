@@ -114,7 +114,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
   }
   
   // import KDE efficiency histograms
-  string filename = Form((parity==0?"files/KDEeff_b%i_ev_%i_recoFrac.root":"files/KDEeff_b%i_od_%i_recoFrac.root"),q2Bin, year);
+  string filename = Form((parity==0?"files/KDEeff_b%i_ev_%i.root":"files/KDEeff_b%i_od_%i.root"),q2Bin, year);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -293,15 +293,13 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
 
 
         TH1D* ctDist_corr = (TH1D*)ctGENNumDist_corr[ivar]->Clone(Form("ctDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
-        ctDist->Divide(ctGENDenDist_corr[ivar]);
+        ctDist_corr->Divide(ctGENDenDist_corr[ivar]);
         ctDist_corr->Divide(ctDenDist_corr[ivar]);
         effCDist_corr[ivar] = (TH1D*)ctDist_corr->Clone(Form("effCDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
         if (doCT) effCDist_corr[ivar]->Multiply(ctRECODist_corr[ivar]);
 
         TH1D* wtDist_corr = (TH1D*)wtGENNumDist_corr[ivar]->Clone(Form("wtDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
-//      // sara!! plot only the second fraction
-//       wtDist->Divide(wtGENDenDist_corr[ivar]);
-        wtDist_corr->Divide(wtGENNumDist_corr[ivar]);
+        wtDist_corr->Divide(wtGENDenDist_corr[ivar]);
         wtDist_corr->Divide(wtDenDist_corr[ivar]);
         effWDist_corr[ivar] = Invert1Dhist(wtDist_corr,Form("effWDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
         if (doWT) effWDist_corr[ivar]->Multiply(wtRECODist_corr[ivar]);
