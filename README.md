@@ -64,9 +64,8 @@ source plotHist.sh
 If necessary, change the [input dataset location](https://github.com/CMSKStarMuMu/eff-KDE/blob/working-basicMacroImplementation-sara/plotHist.cc#L60).
 
 
-To plot the efficiency slices and projections and the derived KDE description, use
+To plot the efficiency slices and projections and the derived KDE description and to run the efficiency closure test, use
 ```
 source plotEff.sh
 ```
 If necessary, change the [input dataset location](https://github.com/CMSKStarMuMu/eff-KDE/blob/working-basicMacroImplementation-sara/plotEff.cc#L52).
-
