@@ -1,7 +1,7 @@
 #!/bin/bash
 
 par=1
-closure=0
+closure=1
 year=2016
 
 # Create directories for logs and plots
