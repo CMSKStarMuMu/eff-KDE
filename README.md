@@ -32,14 +32,14 @@ Before running, you need to create a file `../confSF/KDE_SF.list`, containing th
 if [ ! -d ../confSF ]; then mkdir ../confSF; fi
 cat << EOF > ../confSF/KDE_SF.list
 0       0.50    1.00    1.00    0.50    1.00    1.00
-1       0.30    1.00    0.70    0.30    1.00    0.70
+1       0.30    1.00    0.70    0.30    0.80    0.30
 2       0.40    0.80    0.50    0.40    0.80    0.50
-3       0.60    1.00    0.80    0.60    1.00    0.80
-5       0.40    1.00    0.50    0.40    1.00    0.50
-7       0.60    1.00    0.60    0.60    1.00    0.60
+3       0.60    1.00    0.80    0.40    1.00    0.50
+5       0.40    1.00    0.50    0.40    1.20    1.10
+7       0.60    1.00    0.60    0.40    0.60    0.40
 EOF
 ```
-Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L3-L5).
+Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L16-L19).
 Submit 4200 jobs by running:
 ```sh
 source sub_composeEff_rooKeys.sh
@@ -55,3 +55,17 @@ Compose the numerators and denominators to create efficiency descriptions:
 source extractEff.sh
 ```
 and find the efficiency histograms in the `files/KDEeff_b*_*.root` files.
+
+## Plot projections and slices
+To plot the individual numerator and denominator terms of the final efficiency, and the derived KDE description, use
+```
+source plotHist.sh
+```
+If necessary, change the [input dataset location](https://github.com/CMSKStarMuMu/eff-KDE/blob/working-basicMacroImplementation-sara/plotHist.cc#L60).
+
+
+To plot the efficiency slices and projections and the derived KDE description and to run the efficiency closure test, use
+```
+source plotEff.sh
+```
+If necessary, change the [input dataset location](https://github.com/CMSKStarMuMu/eff-KDE/blob/working-basicMacroImplementation-sara/plotEff.cc#L52).
