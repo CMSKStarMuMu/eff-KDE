@@ -315,7 +315,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       ws_od[i]->import( *data_ctRECO_od[i] );
       ws_ev[i]->import( *data_wtRECO_ev[i] );
       ws_od[i]->import( *data_wtRECO_od[i] );
-      TFile* fout = new TFile( ( "effDataset_"+shortString[i]+".root" ).c_str(), "RECREATE" );
+      TFile* fout = new TFile( ( "effDataset_"+shortString[i]+Form("_%i.root",year) ).c_str(), "RECREATE" );
       ws_ev[i]->Write();
       ws_od[i]->Write();
       n_genDen[i]->Write();
