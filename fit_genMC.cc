@@ -29,13 +29,15 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
 
   // Load variables and dataset
   // import the "other parity" dataset, to stay coherent with fit_recoMC notation
+  // gen without cuts is the same for the 3 years
   string filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/2016/lmnr/effDataset_b%i.root",q2Bin);
   TFile* fin_data = TFile::Open( filename_data.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;
     return;
   }
-  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,1-parity)); // inverted parity
+  // import the "other parity" dataset, to stay coherent with fit_recoMC notation
+  RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,1-parity));
   if ( !wsp || wsp->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename_data<<endl;
     return;
