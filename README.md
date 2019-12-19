@@ -32,15 +32,15 @@ Before running, you need to create a file `../confSF/KDE_SF.list`, containing th
 ```sh
 if [ ! -d ../confSF ]; then mkdir ../confSF; fi
 cat << EOF > ../confSF/KDE_SF.list
-0       0.40    1.00    1.00    0.91    1.09    2.18
-1       0.30    1.00    0.50    0.81    0.97    2.58
-2       0.40    0.80    0.30    0.83    0.83    1.32
-3       0.40    0.70    0.50    0.60    0.60    1.04
-5       0.40    1.00    0.50    0.71    0.57    0.85
-7       0.60    1.00    0.40    1.06    0.60    1.21
+0       0.50    1.00    1.00    0.50    1.00    1.00
+1       0.30    1.00    0.70    0.30    0.80    0.30
+2       0.40    0.80    0.50    0.40    0.80    0.50
+3       0.60    1.00    0.80    0.40    1.00    0.50
+5       0.40    1.00    0.50    0.40    1.20    1.10
+7       0.60    1.00    0.60    0.40    0.60    0.40
 EOF
 ```
-Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L3-L5).
+Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L16-L19).
 Submit 4200 jobs by running:
 ```sh
 source sub_composeEff_rooKeys.sh
@@ -56,6 +56,20 @@ Compose the numerators and denominators to create efficiency descriptions:
 source extractEff.sh
 ```
 and find the efficiency histograms in the `files/KDEeff_b*_*.root` files.
+
+## Plot projections and slices
+To plot the individual numerator and denominator terms of the final efficiency, and the derived KDE description, use
+```
+source plotHist.sh
+```
+If necessary, change the [input dataset location](plotHist.cc#L60).
+
+
+To plot the efficiency slices and projections and the derived KDE description and to run the efficiency closure test, use
+```
+source plotEff.sh
+```
+If necessary, change the [input dataset location](plotEff.cc#L52).
 
 ## Run partial-integral numeric computation
 This code is configured to submit parallel computation of the KDE, using HTCondor (available at CERN and accessible from lxplus machines).
