@@ -279,30 +279,36 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
       
       // composing binned efficiencies from sliced distributions
       for (int ivar=0; ivar< 3; ivar++){
-        TH1D* ctDist = (TH1D*)ctGENNumDist[ivar]->Clone(Form("ctDist%s_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
-        ctDist->Divide(ctGENDenDist[ivar]);
-        ctDist->Divide(ctDenDist[ivar]);
-        effCDist[ivar] = (TH1D*)ctDist->Clone(Form("effCDist%s_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
-        if (doCT) effCDist[ivar]->Multiply(ctRECODist[ivar]);
+	if (doCT) {
+	  effCDist[ivar] = (TH1D*)ctGENNumDist[ivar]->Clone(Form("effCDist%s_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+	  effCDist[ivar]->Divide(ctGENDenDist[ivar]);
+	  effCDist[ivar]->Divide(ctDenDist[ivar]);
+	  effCDist[ivar]->Multiply(ctRECODist[ivar]);
+	}
       
-        TH1D* wtDist = (TH1D*)wtGENNumDist[ivar]->Clone(Form("wtDist%s_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
-        wtDist->Divide(wtGENDenDist[ivar]);
-        wtDist->Divide(wtDenDist[ivar]);
-        effWDist[ivar] = Invert1Dhist(wtDist,Form("effWDist%s_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
-        if (doWT) effWDist[ivar]->Multiply(wtRECODist[ivar]);
+	if (doWT) {
+	  TH1D* wtDist = (TH1D*)wtGENNumDist[ivar]->Clone(Form("wtDist%s_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+	  wtDist->Divide(wtGENDenDist[ivar]);
+	  wtDist->Divide(wtDenDist[ivar]);
+	  effWDist[ivar] = Invert1Dhist(wtDist,Form("effWDist%s_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+	  effWDist[ivar]->Multiply(wtRECODist[ivar]);
+	}
 
 
-        TH1D* ctDist_corr = (TH1D*)ctGENNumDist_corr[ivar]->Clone(Form("ctDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
-        ctDist_corr->Divide(ctGENDenDist_corr[ivar]);
-        ctDist_corr->Divide(ctDenDist_corr[ivar]);
-        effCDist_corr[ivar] = (TH1D*)ctDist_corr->Clone(Form("effCDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
-        if (doCT) effCDist_corr[ivar]->Multiply(ctRECODist_corr[ivar]);
+	if (doCT) {
+	  effCDist_corr[ivar] = (TH1D*)ctGENNumDist_corr[ivar]->Clone(Form("effCDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+	  effCDist_corr[ivar]->Divide(ctGENDenDist_corr[ivar]);
+	  effCDist_corr[ivar]->Divide(ctDenDist_corr[ivar]);
+	  effCDist_corr[ivar]->Multiply(ctRECODist_corr[ivar]);
+	}
 
-        TH1D* wtDist_corr = (TH1D*)wtGENNumDist_corr[ivar]->Clone(Form("wtDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
-        wtDist_corr->Divide(wtGENDenDist_corr[ivar]);
-        wtDist_corr->Divide(wtDenDist_corr[ivar]);
-        effWDist_corr[ivar] = Invert1Dhist(wtDist_corr,Form("effWDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
-        if (doWT) effWDist_corr[ivar]->Multiply(wtRECODist_corr[ivar]);
+	if (doWT) {
+	  TH1D* wtDist_corr = (TH1D*)wtGENNumDist_corr[ivar]->Clone(Form("wtDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+	  wtDist_corr->Divide(wtGENDenDist_corr[ivar]);
+	  wtDist_corr->Divide(wtDenDist_corr[ivar]);
+	  effWDist_corr[ivar] = Invert1Dhist(wtDist_corr,Form("effWDist%s_corr_%i_%i_%s",varCoord[ivar],i,j,shortString.c_str()));
+	  effWDist_corr[ivar]->Multiply(wtRECODist_corr[ivar]);
+	}
       }
 
       // set histo properties
