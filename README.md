@@ -15,7 +15,7 @@ cd CMSSW_10_4_0/src/ && cmsenv && cd ../..
 ```
 Clone this branch in the working directory:
 ```sh
-git clone -b working-fitWorkflow git@github.com:CMSKStarMuMu/eff-KDE.git
+git clone -b working-basicMacroImplementation git@github.com:CMSKStarMuMu/eff-KDE.git
 cd eff-KDE
 ```
 ## Create datasets
@@ -69,7 +69,6 @@ To plot the efficiency slices and projections and the derived KDE description an
 ```
 source plotEff.sh
 ```
-<<<<<<< HEAD
 If necessary, change the [input dataset location](plotEff.cc#L52).
 
 ## Run partial-integral numeric computation
