@@ -69,6 +69,7 @@ To plot the efficiency slices and projections and the derived KDE description an
 ```
 source plotEff.sh
 ```
+<<<<<<< HEAD
 If necessary, change the [input dataset location](plotEff.cc#L52).
 
 ## Run partial-integral numeric computation
@@ -110,3 +111,4 @@ root -b -q 'plotFitResults.cc(0)' # for fit with even efficiency on odd dataset
 root -b -q 'plotFitResults.cc(1)' # for fit with odd efficiency on even dataset
 ```
 This produces one plot for each parameter in `plotFit_d/fitResult_*.pdf`
+If necessary, change the [input dataset location](plotEff.cc#L52).
