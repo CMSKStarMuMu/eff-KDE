@@ -36,7 +36,7 @@ TCanvas* cctW [2*nBins];
 
 TH1D* Invert1Dhist(TH1D* hin, string hname);
 
-void plotEffBin(int q2Bin, int parity, bool doClosure)
+void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
 {
   string shortString = Form("b%ip%i",q2Bin,parity);
   cout<<"Conf: "<<shortString<<endl;
@@ -49,7 +49,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   int distBins = 10;
 
   // Load variables and dataset
-  string filename_data = Form("effDataset_b%i.root",q2Bin);
+  string filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/effDataset_b%i_%i.root",year,q2Bin,year);
   TFile* fin_data = TFile::Open( filename_data.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;
@@ -97,7 +97,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   }
   
   // import KDE efficiency histograms
-  string filename = Form((parity==0?"files/KDEeff_b%i_ev.root":"files/KDEeff_b%i_od.root"),q2Bin);
+  string filename = Form((parity==0?"files/KDEeff_b%i_ev_%i.root":"files/KDEeff_b%i_od_%i.root"),q2Bin, year);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -493,14 +493,14 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
   }
 
   if (doCT) {
-    csxC[confIndex]->SaveAs( (confString+Form("_eff-ct_CTKslices_comp_dp%i.pdf" ,(int)(border*200))).c_str() );
-    csyC[confIndex]->SaveAs( (confString+Form("_eff-ct_CTLslices_comp_dp%i.pdf" ,(int)(border*200))).c_str() );
-    cszC[confIndex]->SaveAs( (confString+Form("_eff-ct_PHIslices_comp_dp%i.pdf" ,(int)(border*200))).c_str() );
+    csxC[confIndex]->SaveAs( (confString+Form("_eff-ct_CTKslices_comp_dp%i_%i.pdf" ,(int)(border*200), year)).c_str() );
+    csyC[confIndex]->SaveAs( (confString+Form("_eff-ct_CTLslices_comp_dp%i_%i.pdf" ,(int)(border*200), year)).c_str() );
+    cszC[confIndex]->SaveAs( (confString+Form("_eff-ct_PHIslices_comp_dp%i_%i.pdf" ,(int)(border*200), year)).c_str() );
   }
   if (doWT) {
-    csxW[confIndex]->SaveAs( (confString+Form("_eff-wt_CTKslices_comp_dp%i.pdf" ,(int)(border*200))).c_str() );
-    csyW[confIndex]->SaveAs( (confString+Form("_eff-wt_CTLslices_comp_dp%i.pdf" ,(int)(border*200))).c_str() );
-    cszW[confIndex]->SaveAs( (confString+Form("_eff-wt_PHIslices_comp_dp%i.pdf" ,(int)(border*200))).c_str() );
+    csxW[confIndex]->SaveAs( (confString+Form("_eff-wt_CTKslices_comp_dp%i_%i.pdf" ,(int)(border*200), year)).c_str() );
+    csyW[confIndex]->SaveAs( (confString+Form("_eff-wt_CTLslices_comp_dp%i_%i.pdf" ,(int)(border*200), year)).c_str() );
+    cszW[confIndex]->SaveAs( (confString+Form("_eff-wt_PHIslices_comp_dp%i_%i.pdf" ,(int)(border*200), year)).c_str() );
   }
 
   // Plot projections of efficiency functions
@@ -551,7 +551,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
     effCProj_y->Draw("LHIST");
     cp1C[confIndex]->cd(3);
     effCProj_z->Draw("LHIST");
-    cp1C[confIndex]->SaveAs( (confString+"_eff-ct_1DProj.pdf").c_str() );
+    cp1C[confIndex]->SaveAs( (confString+Form("_eff-ct_1DProj_%i.pdf",year)).c_str() );
   }
   if (doWT) {
     cp1W[confIndex] = new TCanvas(Form("cp1W_%s",shortString.c_str()),Form("cp1W_%s",shortString.c_str()),1800,800);
@@ -571,7 +571,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
     effWProj_y->Draw("LHIST");
     cp1W[confIndex]->cd(3);
     effWProj_z->Draw("LHIST");
-    cp1W[confIndex]->SaveAs( (confString+"_eff-wt_1DProj.pdf").c_str() );
+    cp1W[confIndex]->SaveAs( (confString+Form("_eff-wt_1DProj_%i.pdf",year)).c_str() );
   }
   // 2D projections
   if (doCT) {
@@ -598,7 +598,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
     effCProj_xz->Draw("SURF3");
     cp2C[confIndex]->cd(3);
     effCProj_yz->Draw("SURF3");
-    cp2C[confIndex]->SaveAs( (confString+"_eff-ct_2DProj.pdf").c_str() );
+    cp2C[confIndex]->SaveAs( (confString+Form("_eff-ct_2DProj_%i.pdf",year)).c_str() );
   }
   if (doWT) {
     cp2W[confIndex] = new TCanvas(Form("cp2W_%s",shortString.c_str()),Form("cp2W_%s",shortString.c_str()),1800,800);
@@ -624,7 +624,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
     effWProj_xz->Draw("SURF3");
     cp2W[confIndex]->cd(3);
     effWProj_yz->Draw("SURF3");
-    cp2W[confIndex]->SaveAs( (confString+"_eff-wt_2DProj.pdf").c_str() );
+    cp2W[confIndex]->SaveAs( (confString+Form("_eff-wt_2DProj_%i.pdf", year)).c_str() );
   }
 
   if (!doClosure) return;
@@ -753,7 +753,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
     cctC[confIndex]->cd(3);
     hZctGEN_effC->Draw();
     hZctREC_effC->Draw("same");
-    cctC[confIndex]->SaveAs( (confString+"_eff-ct_ClosureTest.pdf").c_str() );
+    cctC[confIndex]->SaveAs( (confString+Form("_eff-ct_ClosureTest_%i.pdf",year)).c_str() );
   }
   if (doWT) {
     cctW[confIndex] = new TCanvas(("ccteffW_"+shortString).c_str(),("ccteffW_"+shortString).c_str(),2000,700);
@@ -778,7 +778,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure)
     cctW[confIndex]->cd(3);
     hZctGEN_effW->Draw();
     hZctREC_effW->Draw("same");
-    cctW[confIndex]->SaveAs( (confString+"_eff-wt_ClosureTest.pdf").c_str() );
+    cctW[confIndex]->SaveAs( (confString+Form("_eff-wt_ClosureTest_%i.pdf",year)).c_str() );
   }
 
 }
@@ -810,6 +810,7 @@ int main(int argc, char** argv)
 
   int q2Bin  = -1;
   int parity = -1; 
+  int year   = 2016;
 
   if ( argc >= 2 ) q2Bin  = atoi(argv[1]);
   if ( argc >= 3 ) parity = atoi(argv[2]);
@@ -819,23 +820,24 @@ int main(int argc, char** argv)
 
   bool doClosure = true;
   if ( argc >= 4 && atoi(argv[3]) == 0 ) doClosure = false;
+  if ( argc >= 5 ) year = atoi(argv[4]);
 
   if ( q2Bin > -1 ) {
     if ( parity > -1 ) {
       cout<<"Plotting efficiency for q2 bin "<<q2Bin<<(parity==1?" - odd":" - even")<<" events"<<endl;
-      plotEffBin( q2Bin, parity, doClosure );
+      plotEffBin( q2Bin, parity, doClosure, year );
     } else {
       cout<<"Plotting efficiency for q2 bin "<<q2Bin<<" - both event parities"<<endl;
-      plotEffBin( q2Bin, 0, doClosure );
-      plotEffBin( q2Bin, 1, doClosure );
+      plotEffBin( q2Bin, 0, doClosure, year );
+      plotEffBin( q2Bin, 1, doClosure, year );
     }
   } else {
     cout<<"Plotting efficiency for all q2 bins - "<<(parity==1?"odd events":(parity==0?"even events":"both event parities"))<<endl;
     for (q2Bin=0; q2Bin<nBins; ++q2Bin) {
-      if ( parity > -1 ) plotEffBin( q2Bin, parity, doClosure );
+      if ( parity > -1 ) plotEffBin( q2Bin, parity, doClosure, year );
       else {
-	plotEffBin( q2Bin, 0, doClosure );
-	plotEffBin( q2Bin, 1, doClosure );
+	plotEffBin( q2Bin, 0, doClosure, year );
+	plotEffBin( q2Bin, 1, doClosure, year );
       }
     }
   }

@@ -29,7 +29,7 @@ TCanvas* cp2 [12*nBins];
 //                [1] odd
 //                [-1] for each parity recursively
 
-void plotHistBin(int q2Bin, int effIndx, int parity)
+void plotHistBin(int q2Bin, int effIndx, int parity, int year)
 {
   string shortString = Form("b%ie%ip%i",q2Bin,effIndx,parity);
   cout<<"Conf: "<<shortString<<endl;
@@ -57,7 +57,7 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
   string confString = "plotHist_d/KDEhist_"+shortString;
 
   // Load variables and dataset
-  string filename = Form("effDataset_b%i.root",q2Bin);
+  string filename = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/effDataset_b%i_%i.root",year,q2Bin,year);
   TFile* fin_data = TFile::Open( filename.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -99,7 +99,7 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
   // import KDE histograms
   vector<TH3D*> KDEhists;
   vector<TString> KDEconfs;
-  string inFileName = Form((parity==0?"files/KDEhist_b%i_ev.root":"files/KDEhist_b%i_od.root"),q2Bin);
+  string inFileName = Form((parity==0?"files/KDEhist_b%i_ev_%i.root":"files/KDEhist_b%i_od_%i.root"),q2Bin,year);
   TFile* fin = TFile::Open( inFileName.c_str() );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<inFileName<<endl;
@@ -258,9 +258,9 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
     distSliceY[i]->GetYaxis()->SetRangeUser(0,maxValY*1.25);
     distSliceZ[i]->GetYaxis()->SetRangeUser(0,maxValZ*1.25);
   }
-  csx[confIndex]->SaveAs( (confString+Form("_CTKslices_dp%i.pdf",(int)(border*200))).c_str() );
-  csy[confIndex]->SaveAs( (confString+Form("_CTLslices_dp%i.pdf",(int)(border*200))).c_str() );
-  csz[confIndex]->SaveAs( (confString+Form("_PHIslices_dp%i.pdf",(int)(border*200))).c_str() );
+  csx[confIndex]->SaveAs( (confString+Form("_CTKslices_dp%i_%i.pdf",(int)(border*200), year)).c_str() );
+  csy[confIndex]->SaveAs( (confString+Form("_CTLslices_dp%i_%i.pdf",(int)(border*200), year)).c_str() );
+  csz[confIndex]->SaveAs( (confString+Form("_PHIslices_dp%i_%i.pdf",(int)(border*200), year)).c_str() );
 
   // Plot 1D projections
   cp1[confIndex] = new TCanvas(("cp1"+shortString).c_str(),(longString+" - 1D Projections").c_str(),2000,700) ;
@@ -401,7 +401,7 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
   }
   distProj1Z->Draw("same");
   leg3Pr.Draw("same");
-  cp1[confIndex]->SaveAs( (confString+"_Proj1D.pdf").c_str() );
+  cp1[confIndex]->SaveAs( (confString+Form("_Proj1D_%i.pdf", year)).c_str() );
     
   // Plot 2D projections
   cp2[confIndex] = new TCanvas(("cp2"+shortString).c_str(),(longString+" - 2D Projections").c_str(),1500,500*KDEhists.size()) ;
@@ -437,29 +437,29 @@ void plotHistBin(int q2Bin, int effIndx, int parity)
     histProj2YZ->SetMinimum(0);
     histProj2YZ->Draw("SURF3");
   }
-  cp2[confIndex]->SaveAs( (confString+"_Proj2D.pdf").c_str() );
+  cp2[confIndex]->SaveAs( (confString+Form("_Proj2D_%i.pdf", year)).c_str() );
 
 }
 
-void plotHistBin2(int q2Bin, int effIndx, int parity)
+void plotHistBin2(int q2Bin, int effIndx, int parity, int year)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      plotHistBin(q2Bin, effIndx, parity);
+      plotHistBin(q2Bin, effIndx, parity, year);
   else
-    plotHistBin(q2Bin, effIndx, parity);
+    plotHistBin(q2Bin, effIndx, parity, year);
 }
 
-void plotHistBin1(int q2Bin, int effIndx, int parity)
+void plotHistBin1(int q2Bin, int effIndx, int parity, int year)
 {
   if ( effIndx==-1 )
     for (effIndx=0; effIndx<6; ++effIndx)
-      plotHistBin2(q2Bin, effIndx, parity);
+      plotHistBin2(q2Bin, effIndx, parity, year);
   else
-    plotHistBin2(q2Bin, effIndx, parity);
+    plotHistBin2(q2Bin, effIndx, parity, year);
 }
 
-void plotHist(int q2Bin = -1, int effIndx = -1, int parity = -1)
+void plotHist(int q2Bin = -1, int effIndx = -1, int parity = -1, int year = 2016)
 {
 
   if ( q2Bin<-1 || q2Bin>=nBins ) return;
@@ -474,8 +474,8 @@ void plotHist(int q2Bin = -1, int effIndx = -1, int parity = -1)
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      plotHistBin1(q2Bin, effIndx, parity);
+      plotHistBin1(q2Bin, effIndx, parity, year);
   else
-    plotHistBin1(q2Bin, effIndx, parity);
+    plotHistBin1(q2Bin, effIndx, parity, year);
   
 }

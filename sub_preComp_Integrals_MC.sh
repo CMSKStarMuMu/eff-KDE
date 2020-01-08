@@ -2,6 +2,7 @@
 
 par=1
 tag=1
+year=2016
 
 # Create directory for log files
 if [ ! -d logs_preComp ]; then mkdir logs_preComp; fi
@@ -21,13 +22,21 @@ par	    = ${par}
 tag         = ${tag}
 cnt_hit     = 10000000
 seed        = \$(ProcId) + 1
-Arguments   = \$INT(bin) \$INT(par) \$INT(tag) \$INT(cnt_hit) \$INT(seed)
+year        = ${year}
+Arguments   = \$INT(bin) \$INT(par) \$INT(tag) \$INT(cnt_hit) \$INT(seed) \$INT(year)
 Log         = logs_preComp/sub_\$(ClusterId).log
-Output      = logs_preComp/preComp_Integrals_MC_\$INT(bin)_\$INT(par)_\$INT(tag)_\$INT(cnt_hit)_\$INT(seed).out
-Error       = logs_preComp/preComp_Integrals_MC_\$INT(bin)_\$INT(par)_\$INT(tag)_\$INT(cnt_hit)_\$INT(seed).out
-Queue 50
+Output      = logs_preComp/preComp_Integrals_MC_\$INT(bin)_\$INT(par)_\$INT(tag)_\$INT(cnt_hit)_\$INT(seed)_\$INT(year).out
+Error       = logs_preComp/preComp_Integrals_MC_\$INT(bin)_\$INT(par)_\$INT(tag)_\$INT(cnt_hit)_\$INT(seed)_\$INT(year).err
++JobFlavour = "tomorrow"
 EOF
-        echo "Submit par: "${par}" tag:"${tag}" bin:"${bin}
+
+        if [ "${USER}" == "fiorendi" ]; then
+            echo '+AccountingGroup = "group_u_CMST3.all"'>>temp_sub_preComp_Integrals_MC.sub
+        fi
+
+        echo 'Queue 50'>>temp_sub_preComp_Integrals_MC.sub
+
+        echo "Submit par: "${par}" tag:"${tag}" bin:"${bin} " year:"${year}
 	condor_submit temp_sub_preComp_Integrals_MC.sub
 	rm temp_sub_preComp_Integrals_MC.sub
 	    

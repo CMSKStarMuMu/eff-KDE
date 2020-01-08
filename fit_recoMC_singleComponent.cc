@@ -26,7 +26,7 @@ static const int nBins = 9;
 
 TCanvas* c [4*nBins];
 
-void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot, bool save)
+void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot, bool save, int year)
 {
 
   string shortString = Form("b%ip%it%i",q2Bin,parity,tagFlag);
@@ -34,7 +34,7 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
 
   // Load variables and dataset
   // importing the complementary dataset, to fit with statistically uncorrelated efficiency
-  string filename_data = Form("effDataset_b%i.root",q2Bin);
+  string filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/effDataset_b%i_%i.root",year,q2Bin,year);
   TFile* fin_data = TFile::Open( filename_data.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;
@@ -63,7 +63,7 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
 
   // import KDE efficiency histograms and partial integral histograms
   string filename = "files/KDEeff_b";
-  filename = filename + Form((parity==0?"%i_ev.root":"%i_od.root"),q2Bin);
+  filename = filename + Form((parity==0?"%i_ev_%i.root":"%i_od_%i.root"),q2Bin, year);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -188,7 +188,7 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
 
   if (save) {
     // Save fit results in file
-    TFile* fout = new TFile("fitResults/fitResult_recoMC_singleComponent.root","UPDATE");
+    TFile* fout = new TFile(Form("fitResults/fitResult_recoMC_singleComponent_%i.root",year),"UPDATE");
     fitResult->Write(("fitResult_"+shortString).c_str(),TObject::kWriteDelete);
     fout->Close();
   }
@@ -238,26 +238,26 @@ void fit_recoMC_singleComponentBin(int q2Bin, int parity, int tagFlag, bool plot
   zframe->Draw();
   leg->Draw("same");
 
-  c[confIndex]->SaveAs( ("plotFit_d/fitResult_recoMC_singleComponent_"+shortString+".pdf").c_str() );
+  c[confIndex]->SaveAs( ("plotFit_d/fitResult_recoMC_singleComponent_"+shortString+Form("_%i.pdf",year)).c_str() );
 
 }
 
-void fit_recoMC_singleComponentBin2(int q2Bin, int parity, int tagFlag, bool plot, bool save)
+void fit_recoMC_singleComponentBin2(int q2Bin, int parity, int tagFlag, bool plot, bool save, int year)
 {
   if ( tagFlag==-1 )
     for (tagFlag=0; tagFlag<2; ++tagFlag)
-      fit_recoMC_singleComponentBin(q2Bin, parity, tagFlag, plot, save);
+      fit_recoMC_singleComponentBin(q2Bin, parity, tagFlag, plot, save, year);
   else
-    fit_recoMC_singleComponentBin(q2Bin, parity, tagFlag, plot, save);
+    fit_recoMC_singleComponentBin(q2Bin, parity, tagFlag, plot, save, year);
 }
 
-void fit_recoMC_singleComponentBin1(int q2Bin, int parity, int tagFlag, bool plot, bool save)
+void fit_recoMC_singleComponentBin1(int q2Bin, int parity, int tagFlag, bool plot, bool save, int year)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      fit_recoMC_singleComponentBin2(q2Bin, parity, tagFlag, plot, save);
+      fit_recoMC_singleComponentBin2(q2Bin, parity, tagFlag, plot, save, year);
   else
-    fit_recoMC_singleComponentBin2(q2Bin, parity, tagFlag, plot, save);
+    fit_recoMC_singleComponentBin2(q2Bin, parity, tagFlag, plot, save, year);
 }
 
 int main(int argc, char** argv)
@@ -274,6 +274,7 @@ int main(int argc, char** argv)
   int q2Bin   = -1;
   int parity  = -1; 
   int tagFlag = -1;
+  int year    = 2016;
 
   if ( argc >= 2 ) q2Bin   = atoi(argv[1]);
   if ( argc >= 3 ) parity  = atoi(argv[2]);
@@ -284,6 +285,7 @@ int main(int argc, char** argv)
 
   if ( argc >= 5 && atoi(argv[4]) == 0 ) plot = false;
   if ( argc >= 6 && atoi(argv[5]) == 0 ) save = false;
+  if ( argc >= 7) year= atoi(argv[6]);
 
   if ( q2Bin   < -1 || q2Bin   >= nBins ) return 1;
   if ( parity  < -1 || parity  > 1      ) return 1;
@@ -295,9 +297,9 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      fit_recoMC_singleComponentBin1(q2Bin, parity, tagFlag, plot, save);
+      fit_recoMC_singleComponentBin1(q2Bin, parity, tagFlag, plot, save, year);
   else
-    fit_recoMC_singleComponentBin1(q2Bin, parity, tagFlag, plot, save);
+    fit_recoMC_singleComponentBin1(q2Bin, parity, tagFlag, plot, save, year);
 
   return 0;
 

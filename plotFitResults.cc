@@ -14,7 +14,7 @@ double ParMax [nPars] = {1,1,0.5,0.5,sqrt(2),sqrt(2),sqrt(2),sqrt(2)};
 
 TCanvas* c[nPars];
 
-void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool plotRECO)
+void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool plotRECO, int year)
 {
 
   float diffMax = 0.0999;
@@ -58,8 +58,8 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
   }
   TFile* finReco;
   TFile* finFullReco;
-  if (plotCT || plotWT) finReco = TFile::Open("fitResults/fitResult_recoMC_singleComponent.root");
-  if (plotRECO) finFullReco = TFile::Open("fitResults/fitResult_recoMC_fullAngular.root");
+  if (plotCT || plotWT) finReco = TFile::Open(Form("fitResults/fitResult_recoMC_singleComponent_%i.root", year));
+  if (plotRECO) finFullReco = TFile::Open(Form("fitResults/fitResult_recoMC_fullAngular_%i.root", year));
 
   for (int i=0; i<nBins; ++i) {
 
@@ -259,11 +259,11 @@ void plotFitResultsBin(int parity, int ParIndx, bool plotCT, bool plotWT, bool p
   if (plotCT) confString = confString + "ctRes_";
   if (plotWT) confString = confString + "wtRes_";
   if (plotRECO) confString = confString + "recoRes_";
-  c[ParIndx]->SaveAs( (confString+ParName[ParIndx]+".pdf").c_str() );
+  c[ParIndx]->SaveAs( (confString+ParName[ParIndx]+Form("_%i.pdf",year)).c_str() );
 
 }
 
-void plotFitResults(int parity, int ParIndx = -1, bool plotCT = true, bool plotWT = true, bool plotRECO = true)
+void plotFitResults(int parity, int ParIndx = -1, bool plotCT = true, bool plotWT = true, bool plotRECO = true, int year=2016)
 {
 
   if ( parity<0 || parity>1 ) return;
@@ -274,8 +274,8 @@ void plotFitResults(int parity, int ParIndx = -1, bool plotCT = true, bool plotW
 
   if ( ParIndx==-1 )
     for (ParIndx=0; ParIndx<nPars; ++ParIndx)
-      plotFitResultsBin(parity, ParIndx, plotCT, plotWT, plotRECO);
+      plotFitResultsBin(parity, ParIndx, plotCT, plotWT, plotRECO, year);
   else
-    plotFitResultsBin(parity, ParIndx, plotCT, plotWT, plotRECO);
+    plotFitResultsBin(parity, ParIndx, plotCT, plotWT, plotRECO, year);
 
 }

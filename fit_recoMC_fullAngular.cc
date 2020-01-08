@@ -26,7 +26,7 @@ static const int nBins = 9;
 
 TCanvas* c [2*nBins];
 
-void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
+void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save, int year)
 {
 
   string shortString = Form("b%ip%i",q2Bin,parity);
@@ -34,7 +34,7 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
 
   // Load variables and dataset
   // importing the complementary dataset, to fit with statistically uncorrelated efficiency
-  string filename_data = Form("effDataset_b%i.root",q2Bin);
+  string filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/effDataset_b%i_%i.root",year,q2Bin,year);
   TFile* fin_data = TFile::Open( filename_data.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;
@@ -64,7 +64,7 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
 
   // import KDE efficiency histograms and partial integral histograms
   string filename = "files/KDEeff_b";
-  filename = filename + Form((parity==0?"%i_ev.root":"%i_od.root"),q2Bin);
+  filename = filename + Form((parity==0?"%i_ev_%i.root":"%i_od_%i.root"),q2Bin, year);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -111,15 +111,15 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
   }
 
   // define angular parameters with ranges from positiveness requirements on the decay rate
-  RooRealVar* Fl = new RooRealVar("Fl","F_{L}",0.5,0,1);
-  RooRealVar* P1 = new RooRealVar("P1","P_{1}",0,-1,1);
-  RooRealVar* P2 = new RooRealVar("P2","P_{2}",0,-0.5,0.5);
-  RooRealVar* P3 = new RooRealVar("P3","P_{3}",0,-0.5,0.5);
+  RooRealVar* Fl  = new RooRealVar("Fl","F_{L}",0.5,0,1);
+  RooRealVar* P1  = new RooRealVar("P1","P_{1}",0,-1,1);
+  RooRealVar* P2  = new RooRealVar("P2","P_{2}",0,-0.5,0.5);
+  RooRealVar* P3  = new RooRealVar("P3","P_{3}",0,-0.5,0.5);
   RooRealVar* P4p = new RooRealVar("P4p","P'_{4}",0,-1*sqrt(2),sqrt(2));
   RooRealVar* P5p = new RooRealVar("P5p","P'_{5}",0,-1*sqrt(2),sqrt(2));
   RooRealVar* P6p = new RooRealVar("P6p","P'_{6}",0,-1*sqrt(2),sqrt(2));
   RooRealVar* P8p = new RooRealVar("P8p","P'_{8}",0,-1*sqrt(2),sqrt(2));
-  RooRealVar* mFrac = new RooRealVar("mFrac","mistag fraction",1);
+  RooRealVar* mFrac = new RooRealVar("mFrac","mistag fraction",1, 0, 2);
   mFrac->setConstant();
 
   // define angular PDF for signal and both tag components, using the custom class
@@ -195,7 +195,7 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
   if (nllGen!=0) cout<<"GEN-RECO deltaNLL="<<nllGen-nllReco<<endl;
 
   if (save) {
-    TFile* fout = new TFile("fitResults/fitResult_recoMC_fullAngular.root","UPDATE");
+    TFile* fout = new TFile(Form("fitResults/fitResult_recoMC_fullAngular_%i.root",year),"UPDATE");
     fitResult->Write(("fitResult_"+shortString).c_str(),TObject::kWriteDelete);
     fout->Close();
   }
@@ -245,17 +245,17 @@ void fit_recoMC_fullAngularBin(int q2Bin, int parity, bool plot, bool save)
   zframe->Draw();
   leg->Draw("same");
 
-  c[confIndex]->SaveAs( ("plotFit_d/fitResult_recoMC_fullAngular_"+shortString+".pdf").c_str() );
+  c[confIndex]->SaveAs( ("plotFit_d/fitResult_recoMC_fullAngular_"+shortString+Form("_%i.pdf",year)).c_str() );
 
 }
 
-void fit_recoMC_fullAngularBin1(int q2Bin, int parity, bool plot, bool save)
+void fit_recoMC_fullAngularBin1(int q2Bin, int parity, bool plot, bool save, int year)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      fit_recoMC_fullAngularBin(q2Bin, parity, plot, save);
+      fit_recoMC_fullAngularBin(q2Bin, parity, plot, save, year);
   else
-    fit_recoMC_fullAngularBin(q2Bin, parity, plot, save);
+    fit_recoMC_fullAngularBin(q2Bin, parity, plot, save, year);
 }
 
 int main(int argc, char** argv)
@@ -268,6 +268,7 @@ int main(int argc, char** argv)
 
   int q2Bin   = -1;
   int parity  = -1; 
+  int year    = 2016;
 
   if ( argc >= 2 ) q2Bin   = atoi(argv[1]);
   if ( argc >= 3 ) parity  = atoi(argv[2]);
@@ -277,6 +278,7 @@ int main(int argc, char** argv)
 
   if ( argc >= 4 && atoi(argv[3]) == 0 ) plot = false;
   if ( argc >= 5 && atoi(argv[4]) == 0 ) save = false;
+  if ( argc >= 6 ) year = atoi(argv[5]);
 
   if ( q2Bin   < -1 || q2Bin   >= nBins ) return 1;
   if ( parity  < -1 || parity  > 1      ) return 1;
@@ -286,9 +288,9 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      fit_recoMC_fullAngularBin1(q2Bin, parity, plot, save);
+      fit_recoMC_fullAngularBin1(q2Bin, parity, plot, save, year);
   else
-    fit_recoMC_fullAngularBin1(q2Bin, parity, plot, save);
+    fit_recoMC_fullAngularBin1(q2Bin, parity, plot, save, year);
 
   return 0;
 

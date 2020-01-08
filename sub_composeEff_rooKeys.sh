@@ -8,6 +8,7 @@ par=1
 xbin=50
 ybin=50
 zbin=50
+year=2017
 
 # Create directory for log files
 if [ ! -d logs_parSub ]; then mkdir logs_parSub; fi
@@ -43,13 +44,17 @@ ybin        = ${ybin}
 zbin        = ${zbin}
 ndiv        = \$(ProcId)
 totdiv      = ${njobs}
-Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT(xbin) \$INT(ybin) \$INT(zbin) \$INT(ndiv) \$INT(totdiv)
+year        = ${year}
+Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT(xbin) \$INT(ybin) \$INT(zbin) \$INT(ndiv) \$INT(totdiv) \$INT(year)
 Log         = logs_parSub/sub_\$(ClusterId).log
-Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
-Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
-+JobFlavour = workday
-Queue ${njobs}
+Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).out
+Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).err
++JobFlavour = "testmatch"
 EOF
+        if [ "${USER}" == "fiorendi" ]; then
+            echo '+AccountingGroup = "group_u_CMST3.all"'>>temp_sub_composeEff_rooKeys_oneBin.sub
+        fi
+        echo 'Queue ${njobs}'>>temp_sub_composeEff_rooKeys_oneBin.sub
 
         # Submission and file removal
         condor_submit temp_sub_composeEff_rooKeys_oneBin.sub
@@ -79,14 +84,18 @@ ybin        = ${ybin}
 zbin        = ${zbin}
 ndiv        = \$(ProcId)
 totdiv      = ${njobs}
-Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT(xbin) \$INT(ybin) \$INT(zbin) \$INT(ndiv) \$INT(totdiv)
+year        = ${year}
+Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT(xbin) \$INT(ybin) \$INT(zbin) \$INT(ndiv) \$INT(totdiv) \$INT(year)
 Log         = logs_parSub/sub_\$(ClusterId).log
-Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
-Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv).out
-+JobFlavour = workday
-Queue ${njobs}
+Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).out
+Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).err
++JobFlavour = "testmatch"
 EOF
-    
+    if [ "${USER}" == "fiorendi" ]; then
+        echo '+AccountingGroup = "group_u_CMST3.all"'>>temp_sub_composeEff_rooKeys_oneBin.sub
+    fi
+    echo 'Queue ${njobs}'>>temp_sub_composeEff_rooKeys_oneBin.sub
+
     # Submission and file removal
     condor_submit temp_sub_composeEff_rooKeys_oneBin.sub
     rm temp_sub_composeEff_rooKeys_oneBin.sub
