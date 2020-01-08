@@ -19,7 +19,7 @@ git clone -b working-fitWorkflow git@github.com:CMSKStarMuMu/eff-KDE.git
 cd eff-KDE
 ```
 ## Create datasets
-If needed, change the [location of the ntuples](createDataset.cc#L42-L55), which need to be produced with the code in the [B0KstMuMuNtuple repository](https://github.com/CMSKStarMuMu/B0KstMuMuNtuple).
+If needed, change the [location of the ntuples](createDataset.cc#L49-L60), which need to be produced with the code in the [B0KstMuMuNtuple repository](https://github.com/CMSKStarMuMu/B0KstMuMuNtuple).
 Then produce files with all the needed datasets (example for 2017 ntuples):
 ```sh
 root -q -b 'createDataset.cc(7)'
