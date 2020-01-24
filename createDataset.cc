@@ -28,6 +28,9 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   RooRealVar phi ("phi","#phi",-TMath::Pi(),TMath::Pi());
   RooArgSet vars (ctK, ctL, phi);
   RooRealVar wei ("weight","weight",1);
+  RooRealVar rand("rand", "rand", 0,1);
+  TRandom rand_gen(1029);
+  RooArgSet all_vars (ctK, ctL, phi, rand);
 
   // flags to mark which q2 bins should be filled
   bool runBin [nBins];
@@ -143,9 +146,9 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   RooDataSet* data_wtRECO_od [nBins];
   for (int i=0; i<nBins; ++i) if (runBin[i]) {
       data_genDen_ev [i] = new RooDataSet( ("data_genDen_ev_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (even)",
-					   vars );
+					   all_vars );
       data_genDen_od [i] = new RooDataSet( ("data_genDen_od_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (odd)",
-					   vars );
+					   all_vars );
       data_genNum_ev [i] = new RooDataSet( ("data_genNum_ev_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (even)",
 					   vars );
       data_genNum_od [i] = new RooDataSet( ("data_genNum_od_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (odd)",
@@ -196,11 +199,12 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     ctK.setVal(genCosThetaK);
     ctL.setVal(genCosThetaL);
     phi.setVal(genPhi);
+    rand.setVal(rand_gen.Uniform(1));
     // fill genDen dataset
     n_genDen[xBin]->Fill(((int)eventN_Dou)%2);
     if ( genSignHasFSR<0.5 ) {
-      if (((int)eventN_Dou)%2==0) data_genDen_ev[xBin]->add(vars);
-      else data_genDen_od[xBin]->add(vars);
+      if (((int)eventN_Dou)%2==0) data_genDen_ev[xBin]->add(all_vars);
+      else data_genDen_od[xBin]->add(all_vars);
     }
     // apply same selection as in GEN-filter of recoDen MC sample
     // and fill genNum dataset

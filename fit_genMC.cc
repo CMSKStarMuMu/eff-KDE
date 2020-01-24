@@ -30,7 +30,8 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
   // Load variables and dataset
   // import the "other parity" dataset, to stay coherent with fit_recoMC notation
   // gen without cuts is the same for the 3 years
-  string filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/2016/lmnr/effDataset_b%i.root",q2Bin);
+  string filename_data = Form("/afs/cern.ch/work/f/fiorendi/private/effKDE/eff-KDE/effDataset_b%i_2016.root",q2Bin);
+//   string filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/2016/lmnr/effDataset_b%i.root",q2Bin);
   TFile* fin_data = TFile::Open( filename_data.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;
@@ -45,13 +46,17 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
   RooRealVar* ctK = wsp->var("ctK");
   RooRealVar* ctL = wsp->var("ctL");
   RooRealVar* phi = wsp->var("phi");
+  RooRealVar* rand = new RooRealVar("rand", "rand", 0,1);
   if ( !ctK || !ctL || !phi || ctK->IsZombie() || ctL->IsZombie() || phi->IsZombie() ) {
     cout<<"Variables not found in file: "<<filename_data<<endl;
     return;
   }
   RooArgList vars (* ctK,* ctL,* phi);
+  RooArgList all_vars (* ctK,* ctL,* phi, *rand);
   string datasetString = Form((parity==1?"data_genDen_ev_b%i":"data_genDen_od_b%i"),q2Bin);
-  RooDataSet* data = (RooDataSet*)wsp->data(datasetString.c_str());
+
+  RooDataSet* data = (RooDataSet*)wsp->data(datasetString.c_str()) ->reduce( RooArgSet(all_vars), "rand < 0.01" ) ;
+//   RooDataSet* data = (RooDataSet*)wsp->data(datasetString.c_str());
   if ( !data || data->IsZombie() ) {
     cout<<"Dataset "<<datasetString<<" not found in file: "<<filename_data<<endl;
     return;
@@ -78,11 +83,24 @@ void fit_genMCBin(int q2Bin, int parity, bool plot, bool save)
   fitResult->Print("v");
 
   if (save) {
-    TFile* fout = new TFile("fitResults/fitResult_genMC.root","UPDATE");
+    TFile* fout = new TFile("fitResults/fitResult_genMC_noCheckPdf_1PerCent.root","UPDATE");
     fitResult->Write(("fitResult_"+shortString).c_str(),TObject::kWriteDelete);
     fout->Close();
   }
 
+  std::cout << "-------------------------------------------------------" << std::endl;
+  std::cout << "Values of the boundary conditions:" << std::endl;
+  double ctL4phi1 = P4p->getVal()*P4p->getVal() + P5p->getVal()*P5p->getVal() + P6p->getVal()*P6p->getVal() + P8p->getVal()*P8p->getVal() - 2 + 2*fabs( 2*P2->getVal() - P4p->getVal()*P5p->getVal() +P6p->getVal()*P8p->getVal() );
+  std::cout<<"ctL4phi1 = " << ctL4phi1 << " \t\t\t should be < 0" << std::endl;     
+  double ctK2 = P1->getVal()*P1->getVal() + 4*P2->getVal()*P2->getVal() + 4*P3->getVal()*P3->getVal() -1;
+  std::cout<<"ctK2 = " << ctK2 << " \t\t\t should be < 0" << std::endl;
+  double ctL2phi1 = P5p->getVal()*P5p->getVal()*(1-P1->getVal()) + P6p->getVal()*P6p->getVal()*(1+P1->getVal()) - 4*P3->getVal()*P5p->getVal()*P6p->getVal() - 1 + P1->getVal()*P1->getVal() + 4*P3->getVal()*P3->getVal();
+  double ctL2phi2 = P6p->getVal()*P6p->getVal() - 1 + P1->getVal();
+  double ctL2phi3 = P5p->getVal()*P5p->getVal() - 1 - P1->getVal();
+  std::cout<<"ctL2phi1 = " << ctL2phi1 << " \t\t\t should be < 0" << std::endl;
+  std::cout<<"ctL2phi2 = " << ctL2phi2 << " \t\t\t should be < 0" << std::endl;
+  std::cout<<"ctL2phi3 = " << ctL2phi3 << " \t\t\t should be < 0" << std::endl;
+ 
   if (!plot) return;
 
   int confIndex = nBins*parity + q2Bin;
