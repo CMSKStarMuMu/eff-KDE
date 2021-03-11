@@ -19,7 +19,7 @@ using namespace RooFit;
 using namespace std;
 
 static const int nBins = 9;
-static const int nFunc = 17;
+static const int nFunc = 6;
 
 void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, unsigned cnt_hit, int seed, int year)
 {
@@ -55,23 +55,12 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, unsigned cnt_hi
   // define set of partial deacy rate components
   // the normalisation is chosen such that the function has values in the range [-1,1]
   RooFormulaVar* function [nFunc];
-  function[0 ] = new RooFormulaVar(("function0" +shortString).c_str(),"function0" ,"1-ctK*ctK",vars);
-  function[1 ] = new RooFormulaVar(("function1" +shortString).c_str(),"function1" ,"ctK*ctK",vars);
-  function[2 ] = new RooFormulaVar(("function2" +shortString).c_str(),"function2" ,"(1-ctK*ctK)*(2*ctL*ctL-1)",vars);
-  function[3 ] = new RooFormulaVar(("function3" +shortString).c_str(),"function3" ,"ctK*ctK*(2*ctL*ctL-1)",vars);
-  function[4 ] = new RooFormulaVar(("function4" +shortString).c_str(),"function4" ,"(1-ctK*ctK)*(1-ctL*ctL)*cos(2*phi)",vars);
-  function[5 ] = new RooFormulaVar(("function5" +shortString).c_str(),"function5" ,"4*ctK*ctL*sqrt((1-ctK*ctK)*(1-ctL*ctL))*cos(phi)",vars);
-  function[6 ] = new RooFormulaVar(("function6" +shortString).c_str(),"function6" ,"2*ctK*sqrt((1-ctK*ctK)*(1-ctL*ctL))*cos(phi)",vars);
-  function[7 ] = new RooFormulaVar(("function7" +shortString).c_str(),"function7" ,"2*ctK*sqrt((1-ctK*ctK)*(1-ctL*ctL))*sin(phi)",vars);
-  function[8 ] = new RooFormulaVar(("function8" +shortString).c_str(),"function8" ,"4*ctK*ctL*sqrt((1-ctK*ctK)*(1-ctL*ctL))*sin(phi)",vars);
-  function[9 ] = new RooFormulaVar(("function9" +shortString).c_str(),"function9" ,"(1-ctK*ctK)*ctL",vars);
-  function[10] = new RooFormulaVar(("function10"+shortString).c_str(),"function10","(1-ctK*ctK)*(1-ctL*ctL)*sin(2*phi)",vars);
-  function[11] = new RooFormulaVar(("function11"+shortString).c_str(),"function11","(1-ctL*ctL)",vars);
-  function[12] = new RooFormulaVar(("function12"+shortString).c_str(),"function12","ctK*(1-ctL*ctL)",vars);
-  function[13] = new RooFormulaVar(("function13"+shortString).c_str(),"function13","2*ctL*sqrt((1-ctK*ctK)*(1-ctL*ctL))*cos(phi)",vars);
-  function[14] = new RooFormulaVar(("function14"+shortString).c_str(),"function14","sqrt((1-ctK*ctK)*(1-ctL*ctL))*cos(phi)",vars);
-  function[15] = new RooFormulaVar(("function15"+shortString).c_str(),"function15","sqrt((1-ctK*ctK)*(1-ctL*ctL))*sin(phi)",vars);
-  function[16] = new RooFormulaVar(("function16"+shortString).c_str(),"function16","2*ctL*sqrt((1-ctK*ctK)*(1-ctL*ctL))*sin(phi)",vars);
+  function[0] = new RooFormulaVar(("function11"+shortString).c_str(),"function11","(1-ctL*ctL)",vars);
+  function[1] = new RooFormulaVar(("function12"+shortString).c_str(),"function12","ctK*(1-ctL*ctL)",vars);
+  function[2] = new RooFormulaVar(("function13"+shortString).c_str(),"function13","2*ctL*sqrt((1-ctK*ctK)*(1-ctL*ctL))*cos(phi)",vars);
+  function[3] = new RooFormulaVar(("function14"+shortString).c_str(),"function14","sqrt((1-ctK*ctK)*(1-ctL*ctL))*cos(phi)",vars);
+  function[4] = new RooFormulaVar(("function15"+shortString).c_str(),"function15","sqrt((1-ctK*ctK)*(1-ctL*ctL))*sin(phi)",vars);
+  function[5] = new RooFormulaVar(("function16"+shortString).c_str(),"function16","2*ctL*sqrt((1-ctK*ctK)*(1-ctL*ctL))*sin(phi)",vars);
 
   // variables to count number of random points generated below each PDF curve
   unsigned long long cnt_p [nFunc];
@@ -142,7 +131,7 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, unsigned cnt_hi
   }
 
   // save histograms to file
-  TFile* fout = TFile::Open(Form("PreIntMC_%s_s%i_%i.root",shortString.c_str(),seed,year),"RECREATE");
+  TFile* fout = TFile::Open(Form("PreIntMC_Swave_%s_s%i_%i.root",shortString.c_str(),seed,year),"RECREATE");
   fout->cd();
   hvolume ->Write();
   hcnt_p  ->Write();
