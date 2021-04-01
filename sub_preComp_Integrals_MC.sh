@@ -2,7 +2,7 @@
 
 par=1
 tag=1
-year=2016
+year=${1}
 
 # Create directory for log files
 if [ ! -d logs_preComp ]; then mkdir logs_preComp; fi
@@ -20,7 +20,7 @@ Executable  = run_preComp_Integrals_MC.sh
 bin         = ${bin}
 par	    = ${par}
 tag         = ${tag}
-cnt_hit     = 10000000
+cnt_hit     = 100000000
 seed        = \$(ProcId) + 1
 year        = ${year}
 Arguments   = \$INT(bin) \$INT(par) \$INT(tag) \$INT(cnt_hit) \$INT(seed) \$INT(year)
