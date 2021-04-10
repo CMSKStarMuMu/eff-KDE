@@ -7,6 +7,7 @@ float binBorders [nBins+1] = { 1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16, 19};
 double PDGB0Mass = 5.27958;
 double PDGJpsiMass = 3.096916;
 double PDGPsiPrimeMass = 3.686109;
+double PDGKstMass = 0.896;
 
 TCanvas* c [nBins];
 
@@ -21,6 +22,18 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   if ( q2Bin<-1 || q2Bin>=nBins ) return;
 
   if ( year<6 || year>8 ) return;
+
+  bool isJpsi = false;
+  bool isPsi  = false;
+  bool isLMNR = false;
+  
+  if (q2Bin==4)      isJpsi = true;
+  else if (q2Bin==6) isPsi = true;
+  else isLMNR = true;
+  
+  // define if need to split into more files due to workspace memory 
+  bool saveDen = true;
+  if (q2Bin==4) saveDen = false;
 
   // define angular variables and variable for PU-reweighting
   RooRealVar ctK ("ctK","cos(#theta_{K})",-1,1);
@@ -48,20 +61,57 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   TChain* t_gen = new TChain();
   TChain* t_den = new TChain();
   TChain* t_num = new TChain();
-  t_gen->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/GEN_BFilter_B0MuMuKstar_p*.root/ntuple");
-  if ( year==6 ) {
-    // 2016
-    t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/NtupleMay20/2016GEN_MC_LMNR.root/ntuple");
-    t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/ntuple_01_10_2019/2016MC_LMNR.root/ntuple");
-  } else if ( year==7 ) {
-    // 2017
-    t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/2017GEN_MC_LMNR.root/ntuple");
-    t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/2017MC_LMNR.root/ntuple");
-  } else if ( year==8 ) {
-    // 2018
-    t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/2018GEN_MC_LMNR.root/ntuple");
-    t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/2018MC_LMNR.root/ntuple");
+  //first for 2017
+  if (isLMNR){
+    t_gen->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/newphi/GEN_BFilter_B0MuMuKstar_p*.root/ntuple");
+    if ( year==6 ) {
+      // 2016
+      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_LMNR.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_LMNR.root/ntuple");
+    } else if ( year==7 ) {
+      // 2017
+      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_LMNR.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_LMNR.root/ntuple");
+    } else if ( year==8 ) {
+      // 2018
+      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_LMNR.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_LMNR.root/ntuple");
+    }
   }
+  else if (isJpsi){
+    t_gen->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/newphi/GEN_BFilter_B0JpsiKstar.root/ntuple");
+    if ( year==6 ) {
+      // 2016
+      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_JPSI.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_JPSI.root/ntuple");
+    } else if ( year==7 ) {
+      // 2017
+      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_JPSI.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_JPSI.root/ntuple");
+    } else if ( year==8 ) {
+      // 2018
+      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_JPSI.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_JPSI.root/ntuple");
+    }  
+  }
+  else if (isPsi){
+    t_gen->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/newphi/GEN_BFilter_B0PsiKstar.root/ntuple");
+    if ( year==6 ) {
+      // 2016
+      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_PSI.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_PSI.root/ntuple");
+    } else if ( year==7 ) {
+      // 2017
+      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_PSI.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_PSI.root/ntuple");
+    } else if ( year==8 ) {
+      // 2018
+      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_PSI.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_PSI.root/ntuple");
+    }  
+  }
+  else 
+    return;
   int genEntries = t_gen->GetEntries();
   int denEntries = t_den->GetEntries();
   int numEntries = t_num->GetEntries();
@@ -100,8 +150,13 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 
   // B0 mass variable
   double recoB0Mass;
+  bool passB0Psi_lmnr, passB0Psi_jpsi, passB0Psi_psip;
   t_num->SetBranchAddress( "tagged_mass", &recoB0Mass );
-
+  t_num->SetBranchAddress( "passB0Psi_lmnr", &passB0Psi_lmnr );
+  t_num->SetBranchAddress( "passB0Psi_jpsi", &passB0Psi_jpsi );
+  t_num->SetBranchAddress( "passB0Psi_psip", &passB0Psi_psip );
+  
+  
   // B0-kinematic variables
   // double genB0pT, genB0eta;
   // double recoB0pT, recoB0eta;
@@ -118,9 +173,10 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   t_num->SetBranchAddress( "tagB0"    , &tagB0     );
 
   // event number for even/odd splitting
-  double eventN_Dou;
+//   double eventN_Dou;
   Long64_t eventN;
-  t_gen->SetBranchAddress( "eventN", &eventN_Dou );
+  t_gen->SetBranchAddress( "eventN", &eventN     );
+//   t_gen->SetBranchAddress( "eventN", &eventN_Dou );
   t_den->SetBranchAddress( "eventN", &eventN     );
   t_num->SetBranchAddress( "eventN", &eventN     );
 
@@ -132,6 +188,35 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   // final state radiation flag
   double genSignHasFSR;
   t_gen->SetBranchAddress( "genSignHasFSR", &genSignHasFSR );
+
+  
+  // cut to remove B+->Psi(2S)K->Jpsi pi pi K
+  // will be a boolean in ntuples in the future
+  // keep it here for now since not finalized
+  // as from https://github.com/CMSKStarMuMu/RooSideBand/blob/master/testSidebandFit.cc#L2592-L2661
+  double wt_mass, wt_kstarmass, kaonPt, pionPt, mmpiMass, mmkMass;
+  t_num->SetBranchAddress( "wt_mass",      &wt_mass      );
+  t_num->SetBranchAddress( "wt_kstarmass", &wt_kstarmass );
+  t_num->SetBranchAddress( "kaonPt",       &kaonPt       );
+  t_num->SetBranchAddress( "pionPt",       &pionPt       );
+  t_num->SetBranchAddress( "mmpiMass",     &mmpiMass     );
+  t_num->SetBranchAddress( "mmkMass",      &mmkMass      );
+
+  double x0Cut=-0.4;
+  double y0Cut= 0.3;
+  double x1Cut= 0.6;
+  double y1Cut=-0.1;
+  
+  double x_0Cut=3;
+  double y_0Cut=3.8;
+  double x_1Cut=3.6;
+  double y_1Cut=4.8;
+  
+  double CutX1=3.2;
+  double CutX2=3.6;
+  double CutY1=4.7;
+  double CutY2=4.9;
+
 
   // Define datasets for five efficiency terms
   RooDataSet* data_genDen_ev [nBins];
@@ -201,9 +286,9 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     phi.setVal(genPhi);
     rand.setVal(rand_gen.Uniform(1));
     // fill genDen dataset
-    n_genDen[xBin]->Fill(((int)eventN_Dou)%2);
+    n_genDen[xBin]->Fill((eventN)%2);
     if ( genSignHasFSR<0.5 ) {
-      if (((int)eventN_Dou)%2==0) data_genDen_ev[xBin]->add(all_vars);
+      if ((eventN)%2==0) data_genDen_ev[xBin]->add(all_vars);
       else data_genDen_od[xBin]->add(all_vars);
     }
     // apply same selection as in GEN-filter of recoDen MC sample
@@ -212,10 +297,12 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 	 fabs(genkstTrkpEta)<2.5 && fabs(genkstTrkmEta)<2.5 &&
 	 genmupPt>2.5 && genmumPt>2.5 &&
 	 genkstTrkpPt>0.4 && genkstTrkmPt>0.4) {
-      if (((int)eventN_Dou)%2==0) data_genNum_ev[xBin]->add(vars);
+      if ((eventN)%2==0) data_genNum_ev[xBin]->add(vars);
       else data_genNum_od[xBin]->add(vars);
     }
   }
+  
+  delete t_gen;
 
   // Prepare denominator dataset
   cout<<"Starting denominator dataset filling..."<<endl;
@@ -245,20 +332,18 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     else data_den_od[xBin]->add(vars,PUweight);
   }
 
+  delete t_den;
+
   // Prepare numerator dataset
   cout<<"Starting numerator dataset filling..."<<endl;
   counter=0;
   for (int iCand=0; iCand<numEntries; ++iCand) {
     t_num->GetEntry(iCand);
     // anti-radiation cut
-    if ( recoDimuMass < PDGJpsiMass ) { // below Jpsi
-      if ( fabs( recoB0Mass - PDGB0Mass - recoDimuMass + PDGJpsiMass ) < 0.18 ) continue;
-    } else if ( recoDimuMass > PDGPsiPrimeMass ) { // above PsiPrime
-      if ( fabs( recoB0Mass - PDGB0Mass - recoDimuMass + PDGPsiPrimeMass ) < 0.08 ) continue;
-    } else { // between the resonances
-      if ( fabs( recoB0Mass - PDGB0Mass - recoDimuMass + PDGJpsiMass ) < 0.08 ) continue;
-      if ( fabs( recoB0Mass - PDGB0Mass - recoDimuMass + PDGPsiPrimeMass ) < 0.09 ) continue;
-    }      
+    if (isLMNR && passB0Psi_lmnr == 0) continue;
+    else if (isJpsi && passB0Psi_jpsi == 0) continue;
+    else if (isPsi  && passB0Psi_psip == 0)  continue;
+
     // find q2 bin of current candidate
     xBin=-1;
     for (int i=0; i<nBins; ++i)
@@ -269,6 +354,17 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 	  break;
 	}
     if (xBin<0) continue;
+
+    // apply cut for bin 4 
+    bool XCut= (( (PDGB0Mass - wt_mass) - y0Cut ) / (y1Cut-y0Cut)) < (((wt_kstarmass-PDGKstMass)-x0Cut) / (x1Cut-x0Cut)) && \
+                  kaonPt > pionPt && \
+                  (wt_kstarmass-PDGKstMass)>0 && \
+                  (mmpiMass > CutX1 && mmpiMass < CutX2) && \
+                  (mmkMass >  CutY1 && mmkMass  < CutY2) && \
+                  ((mmkMass - y_0Cut) / (y_1Cut - y_0Cut)) > ((mmpiMass-x_0Cut)/(x_1Cut-x_0Cut));
+  
+    if (XCut && xBin == 4) continue;
+
     // status display
     if ( iCand > 1.0*counter*numEntries/100 ) {
       cout<<counter<<"%"<<endl;
@@ -286,6 +382,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       else data_wtRECO_od[xBin]->add(vars,PUweight);
     }
   }
+  delete t_num;
   cout<<"Dataset prepared"<<endl;
 
   // Save datasets in workspaces
@@ -313,8 +410,10 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       ws_od[i]->import( *data_genDen_od[i] );
       ws_ev[i]->import( *data_genNum_ev[i] );
       ws_od[i]->import( *data_genNum_od[i] );
-      ws_ev[i]->import( *data_den_ev   [i] );
-      ws_od[i]->import( *data_den_od   [i] );
+      if (saveDen){
+        ws_ev[i]->import( *data_den_ev   [i] );
+        ws_od[i]->import( *data_den_od   [i] );
+      }  
       ws_ev[i]->import( *data_ctRECO_ev[i] );
       ws_od[i]->import( *data_ctRECO_od[i] );
       ws_ev[i]->import( *data_wtRECO_ev[i] );
@@ -324,6 +423,18 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       ws_od[i]->Write();
       n_genDen[i]->Write();
       fout->Close();
+
+      if (!saveDen){
+        TFile* fout = new TFile( ( "effDataset_"+shortString[i]+Form("_201%i_den.root",year) ).c_str(), "RECREATE" );
+        ws_ev[i] = new RooWorkspace(("ws_"+shortString[i]+"p0").c_str(),"Workspace with single-bin even datasets");
+        ws_od[i] = new RooWorkspace(("ws_"+shortString[i]+"p1").c_str(),"Workspace with single-bin odd datasets");
+        ws_ev[i]->import( *data_genDen_ev[i] );
+        ws_od[i]->import( *data_genDen_od[i] );
+        ws_ev[i]->Write();
+        ws_od[i]->Write();
+        n_genDen[i]->Write();
+        fout->Close();
+      }
     }
 
   // compute and print average efficiency (merged and individual tag configurations) and mistag fraction
