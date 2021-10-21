@@ -1,5 +1,6 @@
 # eff-KDE
 Set of root macros used to create a description of selection efficiency, by means of Kernel Density Estimators 
+and perform maximum likelihood fits with them
 
 # Quick run
 Use this list of commands to produce a result as quickly as possible
@@ -18,7 +19,7 @@ git clone -b working-basicMacroImplementation git@github.com:CMSKStarMuMu/eff-KD
 cd eff-KDE
 ```
 ## Create datasets
-If needed, change the [location of the ntuples](createDataset.cc#L42-L55), which need to be produced with the code in the [B0KstMuMuNtuple repository](https://github.com/CMSKStarMuMu/B0KstMuMuNtuple).
+If needed, change the [location of the ntuples](createDataset.cc#L49-L60), which need to be produced with the code in the [B0KstMuMuNtuple repository](https://github.com/CMSKStarMuMu/B0KstMuMuNtuple).
 Then produce files with all the needed datasets (example for 2017 ntuples):
 ```sh
 root -q -b 'createDataset.cc(7)'
@@ -38,6 +39,11 @@ cat << EOF > ../confSF/KDE_SF.list
 5       0.40    1.00    0.50    0.40    1.20    1.10
 7       0.60    1.00    0.60    0.40    0.60    0.40
 EOF
+```
+The KDE scale factors that have been used for the normalisation channels are
+```
+4       0.60    1.00    0.80    0.40    1.00    0.50
+6       0.60    1.00    0.60    0.40    1.00    1.00
 ```
 Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L16-L19).
 Submit 4200 jobs by running:
@@ -61,11 +67,52 @@ To plot the individual numerator and denominator terms of the final efficiency, 
 ```
 source plotHist.sh
 ```
-If necessary, change the [input dataset location](https://github.com/CMSKStarMuMu/eff-KDE/blob/working-basicMacroImplementation-sara/plotHist.cc#L60).
+If necessary, change the [input dataset location](plotHist.cc#L60).
 
 
 To plot the efficiency slices and projections and the derived KDE description and to run the efficiency closure test, use
 ```
 source plotEff.sh
 ```
-If necessary, change the [input dataset location](https://github.com/CMSKStarMuMu/eff-KDE/blob/working-basicMacroImplementation-sara/plotEff.cc#L52).
+If necessary, change the [input dataset location](plotEff.cc#L52).
+
+## Run partial-integral numeric computation
+This code is configured to submit parallel computation of the KDE, using HTCondor (available at CERN and accessible from lxplus machines).
+Feel free to adapt the code to run on other kind of infrastructure or, discouraged, to run it locally.
+Adapt the paths to CMSSW area and working directory in [run_preComp_Integrals_MC.sh](run_preComp_Integrals_MC.sh#L3-L6), then submit the jobs with:
+```sh
+source sub_preComp_Integrals_MC.sh
+```
+when all the jobs have finished (you can check with `condor_q`) you can merge them:
+```sh
+source mergeParSub_preComp_Integrals_MC.sh
+```
+
+## Fit generator-level distributions
+Compile and run with:
+```sh
+source fit_genMC.sh
+```
+This produces a root file `fitResults/fitResult_genMC.root` containing the RooFitResult objects, and fit projection plots in `plotFit_d/fitResult_genMC_*.pdf`.
+
+## Fit single flavour-tagged components of post-selection distributions
+Compile and run with:
+```sh
+source fit_recoMC_singleComponent.sh
+```
+This produces a root file `fitResults/fitResult_recoMC_singleComponent.root` containing the RooFitResult objects, and fit projection plots in `plotFit_d/fitResult_recoMC_singleComponent_*.pdf`.
+
+## Fit post-selection distributions
+Compile and run with:
+```sh
+source fit_recoMC_fullAngular.sh
+```
+This produces a root file `fitResults/fitResult_recoMC_fullAngular.root` containing the RooFitResult objects, and fit projection plots in `plotFit_d/fitResult_recoMC_fullAngular_*.pdf`.
+
+## Plot and compare fit results
+```sh
+root -b -q 'plotFitResults.cc(0)' # for fit with even efficiency on odd dataset
+root -b -q 'plotFitResults.cc(1)' # for fit with odd efficiency on even dataset
+```
+This produces one plot for each parameter in `plotFit_d/fitResult_*.pdf`
+If necessary, change the [input dataset location](plotEff.cc#L52).
