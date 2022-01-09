@@ -40,6 +40,11 @@ cat << EOF > ../confSF/KDE_SF.list
 7       0.60    1.00    0.60    0.40    0.60    0.40
 EOF
 ```
+The KDE scale factors that have been used for the normalisation channels are
+```
+4       0.60    1.00    0.80    0.40    1.00    0.50
+6       0.60    1.00    0.60    0.40    1.00    1.00
+```
 Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L16-L19).
 Submit 4200 jobs by running:
 ```sh
