@@ -1,3 +1,4 @@
+
 #root_stuff (root libraries and needed root options)
 ROOTLIBS  := $(shell root-config --glibs)
 ROOTFLAGS := $(shell root-config --cflags --libs) -lRooFit -lRooFitCore -lMathMore
@@ -14,6 +15,8 @@ EXECUTABLE2 := preComp_Integrals_MC_Swave
 EXECUTABLE3 := fit_recoMC_singleComponent
 EXECUTABLE4 := fit_genMC
 EXECUTABLE5 := fit_recoMC_fullAngular
+EXECUTABLE6 := composeToyEff_rooKeys_parSub
+EXECUTABLE7 := plotToyEff
 
 EXTRACLASS := RooDataHist.cxx
 CLASS0     := PdfRT
@@ -50,6 +53,13 @@ $(EXECUTABLE4): $(EXECUTABLE4).cc
 
 $(EXECUTABLE5): $(EXECUTABLE5).cc 
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR)
+
+$(EXECUTABLE6): $(EXECUTABLE6).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(SOURCEDIR)/$(EXTRACLASS) $(ROOTLIBS) $(ROOTFLAGS)
+
+$(EXECUTABLE7): $(EXECUTABLE7).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(SOURCEDIR)/$(EXTRACLASS) $(ROOTLIBS) $(ROOTFLAGS)
+
 
 
 #cleaning options
