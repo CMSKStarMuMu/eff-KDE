@@ -1,8 +1,11 @@
 #!/bin/bash
 
-par=1
+par=${1}
+[ -z "${par}" ] && par=1	# set default
+year=${2}
+[ -z "${year}" ] && year=2016	# set default
+
 closure=1
-year=2016
 
 # Create directories for logs and plots
 if [ ! -d logs_plot ]; then mkdir logs_plot; fi

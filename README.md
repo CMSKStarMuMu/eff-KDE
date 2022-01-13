@@ -48,31 +48,32 @@ The KDE scale factors that have been used for the normalisation channels are
 Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L16-L19).
 Submit 4200 jobs by running:
 ```sh
-source sub_composeEff_rooKeys.sh
+source sub_composeEff_rooKeys.sh <parity> <year>
 ```
+setting `<parity>` to 1 (if computing efficiency for tuning or fit validation) or 0 (if computing efficiency for systematic uncertainties), and setting `<year>` to a value from 2016 to 2018.
 when all the jobs have finished (you can check with `condor_q`) you can merge them:
 ```sh
-source mergeParSub_rooKeys.sh
+source mergeParSub_rooKeys.sh <parity> <year>
 ```
 
 ## Compose efficiency histograms
 Compose the numerators and denominators to create efficiency descriptions:
 ```sh
-source extractEff.sh
+source extractEff.sh <parity> <year>
 ```
 and find the efficiency histograms in the `files/KDEeff_b*_*.root` files.
 
 ## Plot projections and slices
 To plot the individual numerator and denominator terms of the final efficiency, and the derived KDE description, use
 ```
-source plotHist.sh
+source plotHist.sh <parity> <year>
 ```
 If necessary, change the [input dataset location](plotHist.cc#L60).
 
 
 To plot the efficiency slices and projections and the derived KDE description and to run the efficiency closure test, use
 ```
-source plotEff.sh
+source plotEff.sh <parity> <year>
 ```
 If necessary, change the [input dataset location](plotEff.cc#L52).
 
@@ -81,12 +82,13 @@ This code is configured to submit parallel computation of the KDE, using HTCondo
 Feel free to adapt the code to run on other kind of infrastructure or, discouraged, to run it locally.
 Adapt the paths to CMSSW area and working directory in [run_preComp_Integrals_MC.sh](run_preComp_Integrals_MC.sh#L3-L6), then submit the jobs with:
 ```sh
-source sub_preComp_Integrals_MC.sh
+source sub_preComp_Integrals_MC.sh <parity> <year>
 ```
 when all the jobs have finished (you can check with `condor_q`) you can merge them:
 ```sh
-source mergeParSub_preComp_Integrals_MC.sh
+source mergeParSub_preComp_Integrals_MC.sh <parity> <year>
 ```
+*Warning: the fit macros in this repository are deprecated! Please use the code in UML-fit repository*
 
 ## Fit generator-level distributions
 Compile and run with:

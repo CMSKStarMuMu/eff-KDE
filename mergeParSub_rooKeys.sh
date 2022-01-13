@@ -1,11 +1,14 @@
 #!/bin/bash
 
 # Same configuration as in sub_composeEff_rooKeys.sh
-par=1
+par=${1}
+[ -z "${par}" ] && par=1	# set default
+year=${2}
+[ -z "${year}" ] && year=2016	# set default
+
 xbin=50
 ybin=50
 zbin=50
-year=2016
 
 # Create directory for KDE and efficiency histograms
 if [ ! -d files ]; then mkdir files; fi

@@ -2,13 +2,15 @@
 
 # Set parity of the dataset to use for efficiency computation
 # (1->procedure definition and validation, 0->fit data and systematics evaluation)
-par=1
+par=${1}
+[ -z "${par}" ] && par=1	# set default
+year=${2}
+[ -z "${year}" ] && year=2016	# set default
 
 # Number of steps in the grid used to sample the KDE functions
 xbin=50
 ybin=50
 zbin=50
-year=2017
 
 # Create directory for log files
 if [ ! -d logs_parSub ]; then mkdir logs_parSub; fi
@@ -54,7 +56,7 @@ EOF
         if [ "${USER}" == "fiorendi" ]; then
             echo '+AccountingGroup = "group_u_CMST3.all"'>>temp_sub_composeEff_rooKeys_oneBin.sub
         fi
-        echo 'Queue ${njobs}'>>temp_sub_composeEff_rooKeys_oneBin.sub
+        echo "Queue ${njobs}">>temp_sub_composeEff_rooKeys_oneBin.sub
 
         # Submission and file removal
         condor_submit temp_sub_composeEff_rooKeys_oneBin.sub
@@ -94,7 +96,7 @@ EOF
     if [ "${USER}" == "fiorendi" ]; then
         echo '+AccountingGroup = "group_u_CMST3.all"'>>temp_sub_composeEff_rooKeys_oneBin.sub
     fi
-    echo 'Queue ${njobs}'>>temp_sub_composeEff_rooKeys_oneBin.sub
+    echo "Queue ${njobs}">>temp_sub_composeEff_rooKeys_oneBin.sub
 
     # Submission and file removal
     condor_submit temp_sub_composeEff_rooKeys_oneBin.sub

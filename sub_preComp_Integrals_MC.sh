@@ -1,14 +1,17 @@
 #!/bin/bash
 
-par=1
-tag=1
-year=${1}
+par=${1}
+[ -z "${par}" ] && par=1	# set default
+year=${2}
+[ -z "${year}" ] && year=2016	# set default
 
 # Create directory for log files
 if [ ! -d logs_preComp ]; then mkdir logs_preComp; fi
 
 # Compile file
 make preComp_Integrals_MC
+
+tag=1
 
 while [ ${tag} -ge 0 ]; do
     while read -a line; do
@@ -20,7 +23,7 @@ Executable  = run_preComp_Integrals_MC.sh
 bin         = ${bin}
 par	    = ${par}
 tag         = ${tag}
-cnt_hit     = 100000000
+cnt_hit     = 10000000
 seed        = \$(ProcId) + 1
 year        = ${year}
 Arguments   = \$INT(bin) \$INT(par) \$INT(tag) \$INT(cnt_hit) \$INT(seed) \$INT(year)
@@ -34,7 +37,7 @@ EOF
             echo '+AccountingGroup = "group_u_CMST3.all"'>>temp_sub_preComp_Integrals_MC.sub
         fi
 
-        echo 'Queue 50'>>temp_sub_preComp_Integrals_MC.sub
+        echo 'Queue 500'>>temp_sub_preComp_Integrals_MC.sub
 
         echo "Submit par: "${par}" tag:"${tag}" bin:"${bin} " year:"${year}
 	condor_submit temp_sub_preComp_Integrals_MC.sub
