@@ -61,7 +61,9 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   TChain* t_gen = new TChain();
   TChain* t_den = new TChain();
   TChain* t_num = new TChain();
-  //first for 2017
+
+  string xgb_weighted_samples_dir="/eos/user/x/xuqin/workdir/B0KstMuMu/reweight/Tree/final/finaltree/forEff/";
+
   if (isLMNR){
     t_gen->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/newphi/GEN_BFilter_B0MuMuKstar_p*.root/ntuple");
     if ( year==6 ) {
@@ -83,15 +85,15 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     if ( year==6 ) {
       // 2016
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_JPSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_JPSI.root/ntuple");
+      t_num->Add((xgb_weighted_samples_dir+"recoMCDataset_rw_b4_2016_p1.root/ntuple").c_str());
     } else if ( year==7 ) {
       // 2017
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_JPSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_JPSI.root/ntuple");
+      t_num->Add((xgb_weighted_samples_dir+"recoMCDataset_rw_b4_2017_p1.root/ntuple").c_str());
     } else if ( year==8 ) {
       // 2018
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_JPSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_JPSI.root/ntuple");
+      t_num->Add((xgb_weighted_samples_dir+"recoMCDataset_rw_b4_2018_p1.root/ntuple").c_str());
     }  
   }
   else if (isPsi){
@@ -99,15 +101,15 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     if ( year==6 ) {
       // 2016
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_PSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_PSI.root/ntuple");
+      t_num->Add((xgb_weighted_samples_dir+"recoMCDataset_rw_b6_2016_p1.root/ntuple").c_str());
     } else if ( year==7 ) {
       // 2017
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_PSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_PSI.root/ntuple");
+      t_num->Add((xgb_weighted_samples_dir+"recoMCDataset_rw_b6_2017_p1.root/ntuple").c_str());
     } else if ( year==8 ) {
       // 2018
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_PSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_PSI.root/ntuple");
+      t_num->Add((xgb_weighted_samples_dir+"recoMCDataset_rw_b6_2018_p1.root/ntuple").c_str());
     }  
   }
   else 
@@ -181,12 +183,27 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   t_num->SetBranchAddress( "eventN", &eventN     );
 
   // event pileup weight
-  double PUweight = 1;
-  double fPUweight = 1;
-  
-  t_den->SetBranchAddress( "weight", &fPUweight );
-  t_num->SetBranchAddress( "weight", &PUweight );
+  double PUweight = 1; 	// nj6, np6, dp6
+  float fPUweight = 1;	// nj7, nj8, np7, np8, dj6, dj7, dp7, dj8, dp8
 
+  bool isNumWeightFloat = true;
+  bool isDenWeightFloat = true;
+  if (year==6) isNumWeightFloat = false;
+  if (year==6 && isPsi) isDenWeightFloat = false;
+
+  if (isDenWeightFloat)
+    t_den->SetBranchAddress( "weight", &fPUweight );
+  else
+    t_den->SetBranchAddress( "weight", &PUweight );
+  if (isNumWeightFloat)
+    t_num->SetBranchAddress( "weight", &fPUweight );
+  else
+    t_num->SetBranchAddress( "weight", &PUweight );
+
+  // XGBoost weight
+  double XGBweight = 1;
+  t_num->SetBranchAddress( "MCw", &XGBweight );
+  
   // final state radiation flag
   double genSignHasFSR;
   t_gen->SetBranchAddress( "genSignHasFSR", &genSignHasFSR );
@@ -330,8 +347,12 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     ctK.setVal(genCosThetaK);
     ctL.setVal(genCosThetaL);
     phi.setVal(genPhi);
-    if (eventN%2==0) data_den_ev[xBin]->add(vars,fPUweight);
-    else data_den_od[xBin]->add(vars,fPUweight);
+    if (isDenWeightFloat)
+      if (eventN%2==0) data_den_ev[xBin]->add(vars,fPUweight);
+      else data_den_od[xBin]->add(vars,fPUweight);
+    else
+      if (eventN%2==0) data_den_ev[xBin]->add(vars,PUweight);
+      else data_den_od[xBin]->add(vars,PUweight);
   }
 
   delete t_den;
@@ -376,13 +397,22 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     ctK.setVal(recoCosThetaK);
     ctL.setVal(recoCosThetaL);
     phi.setVal(recoPhi);
-    if (genSignal != tagB0+1) { // correctly tagged events
-      if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,PUweight);
-      else data_ctRECO_od[xBin]->add(vars,PUweight);
-    } else { // wrongly tagged events
-      if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,PUweight);
-      else data_wtRECO_od[xBin]->add(vars,PUweight);
-    }
+    if (isNumWeightFloat)
+      if (genSignal != tagB0+1) { // correctly tagged events
+	if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,fPUweight*XGBweight);
+	else data_ctRECO_od[xBin]->add(vars,fPUweight*XGBweight);
+      } else { // wrongly tagged events
+	if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,fPUweight*XGBweight);
+	else data_wtRECO_od[xBin]->add(vars,fPUweight*XGBweight);
+      }
+    else
+      if (genSignal != tagB0+1) { // correctly tagged events
+	if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,PUweight*XGBweight);
+	else data_ctRECO_od[xBin]->add(vars,PUweight*XGBweight);
+      } else { // wrongly tagged events
+	if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,PUweight*XGBweight);
+	else data_wtRECO_od[xBin]->add(vars,PUweight*XGBweight);
+      }
   }
   delete t_num;
   cout<<"Dataset prepared"<<endl;
@@ -420,7 +450,8 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       ws_od[i]->import( *data_ctRECO_od[i] );
       ws_ev[i]->import( *data_wtRECO_ev[i] );
       ws_od[i]->import( *data_wtRECO_od[i] );
-      TFile* fout = new TFile( ( "effDataset_"+shortString[i]+Form("_201%i.root",year) ).c_str(), "RECREATE" );
+      string foutDir = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-XGBoost/";
+      TFile* fout = new TFile( ( foutDir+"effDataset_"+shortString[i]+Form("_201%i.root",year) ).c_str(), "RECREATE" );
       ws_ev[i]->Write();
       ws_od[i]->Write();
       n_genDen[i]->Write();

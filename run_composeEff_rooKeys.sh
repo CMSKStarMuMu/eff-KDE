@@ -18,9 +18,9 @@ if [ "${USER}" == "fiorendi" ]; then
     export CMSSWDIR=/afs/cern.ch/work/f/fiorendi/private/effKDE/CMSSW_10_4_0/src
     export SAMPLEDIR=/eos/cms/store/user/fiorendi/p5prime/effKDE/${year}/lmnr/
 elif [ "${USER}" == "aboletti" ]; then
-    export HOME=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-parSub
+    export HOME=/afs/cern.ch/work/a/aboletti/private/Kstmumu-Run2/eff-KDE-XGBoost
     export CMSSWDIR=/eos/user/a/aboletti/BdToKstarMuMu/CMSSW_10_4_0/src
-    export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/datasets/PUweight
+    export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-XGBoost
 else
     echo no user found
     exit 1
@@ -53,9 +53,5 @@ cp $HOME/composeEff_rooKeys_parSub.cc .
 echo 'root -l -q -b composeEff_rooKeys_parSub.cc($bin,$indx,$par,$wid0,$wid1,$wid2,$xbin,$ybin,$zbin,$ndiv,$totdiv,$year)'
 root -l -q -b 'composeEff_rooKeys_parSub.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${ndiv}','${totdiv}','${year}')'
 
-if [ ! -d $HOME/tmp ]; then mkdir $HOME/tmp; fi
-cp KDEhist* $HOME/tmp/
-
-rm composeEff_rooKeys_parSub.cc
-rm effDataset_b*
-rm KDEhist*
+if [ ! -d $SAMPLEDIR/tmp ]; then mkdir $SAMPLEDIR/tmp; fi
+cp KDEhist* $SAMPLEDIR/tmp/
