@@ -1,10 +1,13 @@
+#include "TFile.h"
+#include "RooWorkspace.h"
+#include "TStopwatch.h"
+#include "TH3D.h"
 #include "RooRealVar.h"
 #include "RooDataSet.h"
-#include "TCanvas.h"
-#include "TAxis.h"
-#include "TMath.h"
-#include "RooPlot.h"
+#include "TVectorD.h"
 #include "RooNDKeysPdf.h"
+#include "TMath.h"
+#include "RooBinning.h"
 
 using namespace RooFit ;
 using namespace std ;
@@ -52,7 +55,7 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   datasetString = datasetString + Form((parity==0?"_ev_b%i":"_od_b%i"),q2Bin);
 
   // Load variables and dataset
-  string filename = Form("effDataset_b%i_%i.root",q2Bin,year);
+  string filename = Form("effDatasetTheta_b%i_%i.root",q2Bin,year);
   TFile* fin = TFile::Open( filename.c_str() );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -115,11 +118,20 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   t.Print();
 
   // sample the KDE function to save it in a file (this is the most time-consuming process)
+  vector<Double_t> xboundaries (xbins+1);
+  vector<Double_t> yboundaries (ybins+1);
+  for (int i=0; i<=xbins; ++i)
+    xboundaries[i] = TMath::ACos(1.0-2.0*i/xbins);
+  for (int i=0; i<=ybins; ++i)
+    yboundaries[i] = TMath::ACos(1.0-2.0*i/ybins);
+  RooBinning cosBinX ( xbins, &xboundaries[0], "cosBinX" );
+  RooBinning cosBinY ( ybins, &yboundaries[0], "cosBinY" );
+
   TStopwatch t1;
   t1.Start();
   TH3D* KDEhist = (TH3D*)KDEfunc->createHistogram( ("KDEhist_"+shortString).c_str(),
-  						   *ctK,     Binning(xbins,-1,1) ,
-  						   YVar(*ctL,Binning(ybins,-1,1)),
+  						   *ctK,     Binning(cosBinX) ,
+  						   YVar(*ctL,Binning(cosBinY)),
   						   ZVar(*phi,Binning(zbins,-TMath::Pi(),TMath::Pi())),
 						   Scaling(false) );
   t1.Stop();
@@ -129,10 +141,52 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   else KDEhist->Scale(data->sumEntries()/KDEhist->Integral());
 
   // save histogram to file
-  TFile* fout = TFile::Open(Form("KDEhist_%s_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i_%i-frac-%i_%i.root",
+  TFile* fout = TFile::Open(Form("KDEhistTheta_%s_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i_%i-frac-%i_%i.root",
 				 shortString.c_str(),widthCTK,widthCTL,widthPHI,xbins,ybins,zbins,ndiv,totdiv,year),"RECREATE");
   fout->cd();
   KDEhist->Write();
   fout->Close();
+
+}
+
+int main(int argc, char** argv)
+{
+
+  int q2Bin = -1;
+  int effIndx = 0;
+  int parity = 0;
+  float widthCTK = 0.5;
+  float widthCTL = 0.5;
+  float widthPHI = 0.5;
+  int xbins = 50;
+  int ybins = 50;
+  int zbins = 50;
+  int ndiv = 50;
+  int totdiv = 1;
+  int year = 2016;
+
+  if ( argc >= 2 ) q2Bin = atoi(argv[1]);
+  if ( argc >= 3 ) effIndx = atoi(argv[2]);
+  if ( argc >= 4 ) parity = atoi(argv[3]);
+  if ( argc >= 5 ) widthCTK = atof(argv[4]);
+  if ( argc >= 6 ) widthCTL = atof(argv[5]);
+  if ( argc >= 7 ) widthPHI = atof(argv[6]);
+  if ( argc >= 8 ) xbins = atoi(argv[7]);
+  if ( argc >= 9 ) ybins = atoi(argv[8]);
+  if ( argc >= 10 ) zbins = atoi(argv[9]);
+  if ( argc >= 11 ) ndiv = atoi(argv[10]);
+  if ( argc >= 12 ) totdiv = atoi(argv[11]);
+  if ( argc >= 13 ) year = atoi(argv[12]);
+
+  if ( q2Bin   < -1 || q2Bin   >= nBins ) return 1;
+  if ( parity  <  0 || parity  > 1      ) return 1;
+
+  if ( q2Bin==-1 )
+    for (q2Bin=0; q2Bin<nBins; ++q2Bin)
+      composeEff_rooKeys_parSub(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, ndiv, totdiv, year);
+  else
+    composeEff_rooKeys_parSub(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, ndiv, totdiv, year);
+    
+  return 0;
 
 }
