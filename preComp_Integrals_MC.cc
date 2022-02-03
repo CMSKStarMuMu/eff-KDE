@@ -21,7 +21,7 @@ using namespace std;
 static const int nBins = 9;
 static const int nFunc = 17;
 
-void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, unsigned cnt_hit, int seed, int year)
+void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, unsigned cnt_hit, int seed, int year, int vers)
 {
 
   string shortString = Form("b%ip%it%i",q2Bin,parity,tagFlag);
@@ -34,7 +34,8 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, unsigned cnt_hi
   RooArgList vars (*ctK, *ctL, *phi);
 
   // import KDE efficiency histograms
-  string filename = Form((parity==0?"KDEeff_b%i_ev_%i.root":"KDEeff_b%i_od_%i.root"),q2Bin,year);
+  string fileDir = "/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta";
+  string filename = fileDir + Form((parity==0?"/files/KDEeff_b%i_ev_%i_v%i.root":"/files/KDEeff_b%i_od_%i_v%i.root"),q2Bin,year,vers);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -142,7 +143,7 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, unsigned cnt_hi
   }
 
   // save histograms to file
-  TFile* fout = TFile::Open(Form("PreIntMC_%s_s%i_%i.root",shortString.c_str(),seed,year),"RECREATE");
+  TFile* fout = TFile::Open(Form("%s/tmpint_v%i/PreIntMC_%s_s%i_%i.root",fileDir.c_str(),vers,shortString.c_str(),seed,year),"RECREATE");
   fout->cd();
   hvolume ->Write();
   hcnt_p  ->Write();
@@ -150,24 +151,30 @@ void preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, unsigned cnt_hi
   hcnt_tot->Write();
   fout->Close();
 
+  fin->Close();
+  delete eff;
+  delete effData;
+
+  return;
+
 }
 
-void preComp_Integrals_MCBin2(int q2Bin, int parity, int tagFlag, unsigned cnt_hit, int seed, int year)
+void preComp_Integrals_MCBin2(int q2Bin, int parity, int tagFlag, unsigned cnt_hit, int seed, int year, int vers)
 {
   if ( tagFlag==-1 )
     for (tagFlag=0; tagFlag<2; ++tagFlag)
-      preComp_Integrals_MCBin(q2Bin, parity, tagFlag, cnt_hit, seed, year);
+      preComp_Integrals_MCBin(q2Bin, parity, tagFlag, cnt_hit, seed, year, vers);
   else
-    preComp_Integrals_MCBin(q2Bin, parity, tagFlag, cnt_hit, seed, year);
+    preComp_Integrals_MCBin(q2Bin, parity, tagFlag, cnt_hit, seed, year, vers);
 }
 
-void preComp_Integrals_MCBin1(int q2Bin, int parity, int tagFlag, unsigned cnt_hit, int seed, int year)
+void preComp_Integrals_MCBin1(int q2Bin, int parity, int tagFlag, unsigned cnt_hit, int seed, int year, int vers)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      preComp_Integrals_MCBin2(q2Bin, parity, tagFlag, cnt_hit, seed, year);
+      preComp_Integrals_MCBin2(q2Bin, parity, tagFlag, cnt_hit, seed, year, vers);
   else
-    preComp_Integrals_MCBin2(q2Bin, parity, tagFlag, cnt_hit, seed, year);
+    preComp_Integrals_MCBin2(q2Bin, parity, tagFlag, cnt_hit, seed, year, vers);
 }
 
 int main(int argc, char** argv)
@@ -187,6 +194,7 @@ int main(int argc, char** argv)
   int seed    = 1;
   unsigned cnt_hit = 1e6;
   int year    = 2016;
+  int vers    = -1;
 
   if ( argc >= 2 ) q2Bin   = atoi(argv[1]);
   if ( argc >= 3 ) parity  = atoi(argv[2]);
@@ -194,6 +202,7 @@ int main(int argc, char** argv)
   if ( argc >= 5 ) cnt_hit = atoi(argv[4]);
   if ( argc >= 6 ) seed    = atoi(argv[5]);
   if ( argc >= 7 ) year    = atoi(argv[6]);
+  if ( argc >= 8 ) vers    = atoi(argv[7]);
 
   if ( q2Bin   < -1 || q2Bin   >= nBins ) return 1;
   if ( parity  < -1 || parity  > 1      ) return 1;
@@ -205,9 +214,9 @@ int main(int argc, char** argv)
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      preComp_Integrals_MCBin1(q2Bin, parity, tagFlag, cnt_hit, seed, year);
+      preComp_Integrals_MCBin1(q2Bin, parity, tagFlag, cnt_hit, seed, year, vers);
   else
-    preComp_Integrals_MCBin1(q2Bin, parity, tagFlag, cnt_hit, seed, year);
+    preComp_Integrals_MCBin1(q2Bin, parity, tagFlag, cnt_hit, seed, year, vers);
 
   return 0;
 

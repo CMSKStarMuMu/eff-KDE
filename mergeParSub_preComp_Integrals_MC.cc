@@ -20,14 +20,14 @@ static const int nFunc = 17;
 //             [1] correctly-tagged
 //             [-1] for each tag recursively
 
-void mergeParSub_preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int minSeed, int maxSeed, int year)
+void mergeParSub_preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int minSeed, int maxSeed, int year, int vers)
 {
 
   string shortString = Form("b%ip%it%i",q2Bin,parity,tagFlag);
   cout<<"Conf: "<<shortString<<endl;
 
   // Open efficiency file to append integral histogram
-  string efffilename = Form((parity==0?"files/KDEeff_b%i_ev_%i.root":"files/KDEeff_b%i_od_%i.root"),q2Bin,year);
+  string efffilename = Form((parity==0?"files/KDEeff_b%i_ev_%i_v%i.root":"files/KDEeff_b%i_od_%i_v%i.root"),q2Bin,year,vers);
   TFile* fout = new TFile( efffilename.c_str(), "UPDATE" );
   if ( !fout || !fout->IsOpen() ) {
     cout<<"File not found: "<<efffilename<<endl;
@@ -46,7 +46,7 @@ void mergeParSub_preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int
   for (int seed=minSeed; seed<=maxSeed; ++seed) {
 
     // open output file from parallel jobs
-    filename = "tmp/PreIntMC_"+shortString+Form("_s%i_%i.root",seed,year);
+    filename = Form("tmpint_v%i/PreIntMC_",vers)+shortString+Form("_s%i_%i.root",seed,year);
     TFile* fin = TFile::Open( filename.c_str() );
     if ( !fin || !fin->IsOpen() ) {
       continue;
@@ -98,25 +98,25 @@ void mergeParSub_preComp_Integrals_MCBin(int q2Bin, int parity, int tagFlag, int
 
 }
 
-void mergeParSub_preComp_Integrals_MCBin2(int q2Bin, int parity, int tagFlag, int minSeed, int maxSeed, int year)
+void mergeParSub_preComp_Integrals_MCBin2(int q2Bin, int parity, int tagFlag, int minSeed, int maxSeed, int year, int vers)
 {
   if ( tagFlag==-1 )
     for (tagFlag=0; tagFlag<2; ++tagFlag)
-      mergeParSub_preComp_Integrals_MCBin(q2Bin, parity, tagFlag, minSeed, maxSeed, year);
+      mergeParSub_preComp_Integrals_MCBin(q2Bin, parity, tagFlag, minSeed, maxSeed, year, vers);
   else
-    mergeParSub_preComp_Integrals_MCBin(q2Bin, parity, tagFlag, minSeed, maxSeed, year);
+    mergeParSub_preComp_Integrals_MCBin(q2Bin, parity, tagFlag, minSeed, maxSeed, year, vers);
 }
 
-void mergeParSub_preComp_Integrals_MCBin1(int q2Bin, int parity, int tagFlag, int minSeed, int maxSeed, int year)
+void mergeParSub_preComp_Integrals_MCBin1(int q2Bin, int parity, int tagFlag, int minSeed, int maxSeed, int year, int vers)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      mergeParSub_preComp_Integrals_MCBin2(q2Bin, parity, tagFlag, minSeed, maxSeed, year);
+      mergeParSub_preComp_Integrals_MCBin2(q2Bin, parity, tagFlag, minSeed, maxSeed, year, vers);
   else
-    mergeParSub_preComp_Integrals_MCBin2(q2Bin, parity, tagFlag, minSeed, maxSeed, year);
+    mergeParSub_preComp_Integrals_MCBin2(q2Bin, parity, tagFlag, minSeed, maxSeed, year, vers);
 }
 
-void mergeParSub_preComp_Integrals_MC(int q2Bin, int parity, int tagFlag, int maxSeed, int minSeed=1, int year=2016)
+void mergeParSub_preComp_Integrals_MC(int q2Bin, int parity, int tagFlag, int maxSeed, int minSeed=1, int year=2016, int vers=-1)
 {
 
   if ( q2Bin   < -1 || q2Bin   >= nBins ) return;
@@ -132,9 +132,9 @@ void mergeParSub_preComp_Integrals_MC(int q2Bin, int parity, int tagFlag, int ma
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      mergeParSub_preComp_Integrals_MCBin1(q2Bin, parity, tagFlag, minSeed, maxSeed, year);
+      mergeParSub_preComp_Integrals_MCBin1(q2Bin, parity, tagFlag, minSeed, maxSeed, year, vers);
   else
-    mergeParSub_preComp_Integrals_MCBin1(q2Bin, parity, tagFlag, minSeed, maxSeed, year);
+    mergeParSub_preComp_Integrals_MCBin1(q2Bin, parity, tagFlag, minSeed, maxSeed, year, vers);
   
 }
 

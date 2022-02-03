@@ -1,61 +1,29 @@
 #!/bin/bash
 
-bin=${1}
-indx=${2}
-par=${3}
-wid0=${4}
-wid1=${5}
-wid2=${6}
-xbin=${7}
-ybin=${8}
-zbin=${9}
-ndiv=${10}
-totdiv=${11}
-year=${12}
+#SBATCH -p lipq
 
-if [ "${USER}" == "fiorendi" ]; then
-    export HOME=/afs/cern.ch/work/f/fiorendi/private/effKDE/eff-KDE
-    export CMSSWDIR=/afs/cern.ch/work/f/fiorendi/private/effKDE/CMSSW_10_4_0/src
-    export SAMPLEDIR=/eos/cms/store/user/fiorendi/p5prime/effKDE/${year}/lmnr/
-elif [ "${USER}" == "aboletti" ]; then
-    export HOME=/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-parSub
-    export CMSSWDIR=/eos/user/a/aboletti/BdToKstarMuMu/CMSSW_10_4_0/src
-    export SAMPLEDIR=/eos/user/a/aboletti/BdToKstarMuMu/datasets/PUweight
-else
-    echo no user found
-    exit 1
-fi
+ndiv=$SLURM_ARRAY_TASK_ID
 
-echo setting HOME to $HOME 
-echo setting CMSSWDIR to $CMSSWDIR
+echo "bin=${bin},indx=${indx},par=${par},wid0=${wid0},wid1=${wid1},wid2=${wid2},xbin=${xbin},ybin=${ybin},zbin=${zbin},ndiv=${ndiv},totdiv=${totdiv},year=${year},vers=${vers}"
 
-export WORKDIR=$PWD
-cd $CMSSWDIR
-source  /cvmfs/cms.cern.ch/cmsset_default.sh
-eval `scram runtime -sh`
+HOME=/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta
+SAMPLEDIR=/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta
 
-cd $WORKDIR
+module load root/6.12.06
 
-echo 'now submitting for bin ' ${bin}
-
-if [ ! -r $SAMPLEDIR/effDataset_b${bin}_${year}.root ]; then
-    echo $SAMPLEDIR/effDataset_b${bin}_${year}.root not found
+if [ ! -r $SAMPLEDIR/effDatasetTheta_b${bin}_${year}.root ]; then
+    echo $SAMPLEDIR/effDatasetTheta_b${bin}_${year}.root not found
     exit 1
 fi
 if [ ! -r $HOME/composeEff_rooKeys_parSub.cc ]; then
     echo $HOME/composeEff_rooKeys_parSub.cc not found
     exit 1
 fi
+[ -z "${vers}" ] && vers="-1"
+if [ ! -d $SAMPLEDIR/tmp_v${vers} ]; then mkdir $SAMPLEDIR/tmp_v${vers}; fi
 
-cp $SAMPLEDIR/effDataset_b${bin}_${year}.root .
-cp $HOME/composeEff_rooKeys_parSub.cc .
+echo "$HOME/composeEff_rooKeys_parSub $bin $indx $par $wid0 $wid1 $wid2 $xbin $ybin $zbin $ndiv $totdiv $year $vers" \
+     &> $HOME/logs_parSub_v${vers}/composeEff_rooKeys_parSub_${bin}_${indx}_${par}_${wid0}_${wid1}_${wid2}_${xbin}_${ybin}_${zbin}_${ndiv}_${totdiv}_${year}.out
 
-echo 'root -l -q -b composeEff_rooKeys_parSub.cc($bin,$indx,$par,$wid0,$wid1,$wid2,$xbin,$ybin,$zbin,$ndiv,$totdiv,$year)'
-root -l -q -b 'composeEff_rooKeys_parSub.cc('${bin}','${indx}','${par}','${wid0}','${wid1}','${wid2}','${xbin}','${ybin}','${zbin}','${ndiv}','${totdiv}','${year}')'
-
-if [ ! -d $HOME/tmp ]; then mkdir $HOME/tmp; fi
-cp KDEhist* $HOME/tmp/
-
-rm composeEff_rooKeys_parSub.cc
-rm effDataset_b*
-rm KDEhist*
+$HOME/composeEff_rooKeys_parSub ${bin} ${indx} ${par} ${wid0} ${wid1} ${wid2} ${xbin} ${ybin} ${zbin} ${ndiv} ${totdiv} ${year} ${vers} \
+    &>> $HOME/logs_parSub_v${vers}/composeEff_rooKeys_parSub_${bin}_${indx}_${par}_${wid0}_${wid1}_${wid2}_${xbin}_${ybin}_${zbin}_${ndiv}_${totdiv}_${year}.out

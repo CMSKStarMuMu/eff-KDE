@@ -19,6 +19,7 @@ while read -a line; do
     wid3=${line[4]}
     wid4=${line[5]}
     wid5=${line[6]}
+    vers=${line[7]}
 
     # Compose efficiency descriptions using KDE histograms tagged with scale-factor configuration
     # The first set refers to wrong-tag recoNum, the others to the other terms
@@ -29,6 +30,6 @@ ${wid0}','${wid1}','${wid2}','\
 ${wid0}','${wid1}','${wid2}','\
 ${wid0}','${wid1}','${wid2}','\
 ${xbin}','${ybin}','${zbin}','\
-${year}')'
+${year}','${vers}')'
 
 done < ../confSF/KDE_SF.list

@@ -14,7 +14,7 @@ using namespace std ;
 
 static const int nBins = 9;
 
-void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCTK = 0.5, float widthCTL = 0.5, float widthPHI = 0.5, int xbins=50, int ybins = 0, int zbins = 0, int ndiv = 0, int totdiv = 1, int year=2016)
+void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCTK = 0.5, float widthCTL = 0.5, float widthPHI = 0.5, int xbins=50, int ybins = 0, int zbins = 0, int ndiv = 0, int totdiv = 1, int year=2016, int vers=-1)
 {
   // effIndx format: [0] GEN no-filter
   //                 [1] GEN filtered
@@ -55,7 +55,8 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   datasetString = datasetString + Form((parity==0?"_ev_b%i":"_od_b%i"),q2Bin);
 
   // Load variables and dataset
-  string filename = Form("effDatasetTheta_b%i_%i.root",q2Bin,year);
+  string fileDir = "/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta/";
+  string filename = fileDir + Form("effDatasetTheta_b%i_%i.root",q2Bin,year);
   TFile* fin = TFile::Open( filename.c_str() );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -137,15 +138,21 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   t1.Stop();
   t1.Print();
   // scale the output to have the same normalisation as the input dataset (or as the full sample, with no FSR veto, for GEN-denominator)
-  if ( effIndx==0 ) KDEhist->Scale(normVal/totdiv/KDEhist->Integral());
-  else KDEhist->Scale(data->sumEntries()/KDEhist->Integral());
+  KDEhist->Scale(data->sumEntries()/KDEhist->Integral());
+  if ( effIndx==0 ) KDEhist->Scale(1.0*normVal/totNev);
 
   // save histogram to file
-  TFile* fout = TFile::Open(Form("KDEhistTheta_%s_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i_%i-frac-%i_%i.root",
-				 shortString.c_str(),widthCTK,widthCTL,widthPHI,xbins,ybins,zbins,ndiv,totdiv,year),"RECREATE");
+  string foutName = fileDir + Form("tmp_v%i/KDEhistTheta_",vers) + shortString + Form("_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i_%i-frac-%i_%i.root",widthCTK,widthCTL,widthPHI,xbins,ybins,zbins,ndiv,totdiv,year);
+  TFile* fout = TFile::Open(foutName.c_str(),"RECREATE");
   fout->cd();
   KDEhist->Write();
   fout->Close();
+
+  delete KDEfunc;
+  delete data;
+  fin->Close();  
+
+  return;
 
 }
 
@@ -164,28 +171,30 @@ int main(int argc, char** argv)
   int ndiv = 50;
   int totdiv = 1;
   int year = 2016;
+  int vers = -1;
 
-  if ( argc >= 2 ) q2Bin = atoi(argv[1]);
-  if ( argc >= 3 ) effIndx = atoi(argv[2]);
-  if ( argc >= 4 ) parity = atoi(argv[3]);
-  if ( argc >= 5 ) widthCTK = atof(argv[4]);
-  if ( argc >= 6 ) widthCTL = atof(argv[5]);
-  if ( argc >= 7 ) widthPHI = atof(argv[6]);
-  if ( argc >= 8 ) xbins = atoi(argv[7]);
-  if ( argc >= 9 ) ybins = atoi(argv[8]);
-  if ( argc >= 10 ) zbins = atoi(argv[9]);
-  if ( argc >= 11 ) ndiv = atoi(argv[10]);
-  if ( argc >= 12 ) totdiv = atoi(argv[11]);
-  if ( argc >= 13 ) year = atoi(argv[12]);
+  if ( argc > 1 ) q2Bin = atoi(argv[1]);
+  if ( argc > 2 ) effIndx = atoi(argv[2]);
+  if ( argc > 3 ) parity = atoi(argv[3]);
+  if ( argc > 4 ) widthCTK = atof(argv[4]);
+  if ( argc > 5 ) widthCTL = atof(argv[5]);
+  if ( argc > 6 ) widthPHI = atof(argv[6]);
+  if ( argc > 7 ) xbins = atoi(argv[7]);
+  if ( argc > 8 ) ybins = atoi(argv[8]);
+  if ( argc > 9 ) zbins = atoi(argv[9]);
+  if ( argc > 10 ) ndiv = atoi(argv[10]);
+  if ( argc > 11 ) totdiv = atoi(argv[11]);
+  if ( argc > 12 ) year = atoi(argv[12]);
+  if ( argc > 13 ) vers = atoi(argv[13]);
 
   if ( q2Bin   < -1 || q2Bin   >= nBins ) return 1;
   if ( parity  <  0 || parity  > 1      ) return 1;
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      composeEff_rooKeys_parSub(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, ndiv, totdiv, year);
+      composeEff_rooKeys_parSub(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, ndiv, totdiv, year, vers);
   else
-    composeEff_rooKeys_parSub(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, ndiv, totdiv, year);
+    composeEff_rooKeys_parSub(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, ndiv, totdiv, year, vers);
     
   return 0;
 

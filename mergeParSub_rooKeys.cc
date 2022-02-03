@@ -26,13 +26,13 @@ static const int nBins = 9;
 //                [1] odd
 //                [-1] for each parity recursively
 
-void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float widthCTK, float widthCTL, float widthPHI, int xbins, int ybins, int zbins, int totdiv, int year)
+void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float widthCTK, float widthCTL, float widthPHI, int xbins, int ybins, int zbins, int totdiv, int year, int vers)
 {
   string shortString = Form("b%ie%ip%i",q2Bin,effIndx,parity);
   cout<<"Conf: "<<shortString<<endl;
 
   // string containing the path and begin of the filename of output from parallel jobs
-  string confString = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/tmpTheta/KDEhistTheta_%s_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i",shortString.c_str(),widthCTK,widthCTL,widthPHI,xbins,ybins,zbins);
+  string confString = Form("/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta/tmp_v%i/KDEhistTheta_%s_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i",vers,shortString.c_str(),widthCTK,widthCTL,widthPHI,xbins,ybins,zbins);
 
   // full histogram to fill
   vector<Double_t> xboundaries (xbins+1);
@@ -136,8 +136,8 @@ void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float widthCTK, 
   // to facilitate plotting same terms with different configurations (SF and sampling bins) for comparisons, thay are saved in the same file
   // to reduce the number of files produced to ~10/20, different terms of the same efficiency are saved in the same file
   // (this also allows a single extractEff call to access a single file)
-  string dirName = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/";
-  TFile* fout = TFile::Open( Form((parity==0?"%sfiles/KDEhistTheta_b%i_ev_%i.root":"%sfiles/KDEhistTheta_b%i_od_%i.root"),dirName.c_str(),q2Bin,year), "UPDATE" );
+  string dirName = "/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta/";
+  TFile* fout = TFile::Open( Form((parity==0?"%sfiles/KDEhist_b%i_ev_%i_v%i.root":"%sfiles/KDEhist_b%i_od_%i_v%i.root"),dirName.c_str(),q2Bin,year,vers), "UPDATE" );
   KDEhist->Write( Form("histTheta_indx%i_w0-%1.2f_w1-%1.2f_w2-%1.2f_%i_%i_%i",effIndx,widthCTK,widthCTL,widthPHI,xbins,ybins,zbins), TObject::kWriteDelete );
   KDEhistFlat->Write( Form("hist_indx%i_w0-%1.2f_w1-%1.2f_w2-%1.2f_%i_%i_%i",effIndx,widthCTK,widthCTL,widthPHI,xbins,ybins,zbins), TObject::kWriteDelete );
   fout->Close();
@@ -147,25 +147,25 @@ void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float widthCTK, 
   
 }
 
-void mergeParSub_rooKeysBin2(int q2Bin, int effIndx, int parity, float widthCTK, float widthCTL, float widthPHI, int xbins, int ybins, int zbins, int totdiv, int year)
+void mergeParSub_rooKeysBin2(int q2Bin, int effIndx, int parity, float widthCTK, float widthCTL, float widthPHI, int xbins, int ybins, int zbins, int totdiv, int year, int vers)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      mergeParSub_rooKeysBin(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, totdiv, year);
+      mergeParSub_rooKeysBin(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, totdiv, year, vers);
   else
-    mergeParSub_rooKeysBin(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, totdiv, year);
+    mergeParSub_rooKeysBin(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, totdiv, year, vers);
 }
 
-void mergeParSub_rooKeysBin1(int q2Bin, int effIndx, int parity, float widthCTK, float widthCTL, float widthPHI, int xbins, int ybins, int zbins, int totdiv, int year)
+void mergeParSub_rooKeysBin1(int q2Bin, int effIndx, int parity, float widthCTK, float widthCTL, float widthPHI, int xbins, int ybins, int zbins, int totdiv, int year, int vers)
 {
   if ( effIndx==-1 )
     for (effIndx=0; effIndx<6; ++effIndx)
-      mergeParSub_rooKeysBin2(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, totdiv, year);
+      mergeParSub_rooKeysBin2(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, totdiv, year, vers);
   else
-    mergeParSub_rooKeysBin2(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, totdiv, year);
+    mergeParSub_rooKeysBin2(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, totdiv, year, vers);
 }
 
-void mergeParSub_rooKeys(int q2Bin = -1, int effIndx = -1, int parity = -1, float widthCTK = 0.3, float widthCTL = 0.3, float widthPHI = 0.3, int xbins=50, int ybins = 50, int zbins = 50, int totdiv = 50, int year = 2016)
+void mergeParSub_rooKeys(int q2Bin = -1, int effIndx = -1, int parity = -1, float widthCTK = 0.3, float widthCTL = 0.3, float widthPHI = 0.3, int xbins=50, int ybins = 50, int zbins = 50, int totdiv = 50, int year = 2016, int vers = -1)
 {
 
   if ( q2Bin<-1 || q2Bin>=nBins ) return;
@@ -190,8 +190,8 @@ void mergeParSub_rooKeys(int q2Bin = -1, int effIndx = -1, int parity = -1, floa
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      mergeParSub_rooKeysBin1(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, totdiv, year);
+      mergeParSub_rooKeysBin1(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, totdiv, year, vers);
   else
-    mergeParSub_rooKeysBin1(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, totdiv, year);
+    mergeParSub_rooKeysBin1(q2Bin, effIndx, parity, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, totdiv, year, vers);
   
 }
