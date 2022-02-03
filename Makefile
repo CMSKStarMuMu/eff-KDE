@@ -15,10 +15,12 @@ EXECUTABLE2 := preComp_Integrals_MC_Swave
 EXECUTABLE3 := fit_recoMC_singleComponent
 EXECUTABLE4 := fit_genMC
 EXECUTABLE5 := fit_recoMC_fullAngular
-EXECUTABLE6 := composeToyEff_rooKeys_parSub
-EXECUTABLE7 := plotToyEff
+EXECUTABLE6 := composeEff_rooKeys_parSub
+EXECUTABLE7 := composeToyEff_rooKeys_parSub
+EXECUTABLE8 := plotToyEff
 
-EXTRACLASS := RooDataHist.cxx
+EXTRACLASS  := RooDataHist.cxx
+EXTRACLASS2 := RooNDKeysPdf.cxx
 CLASS0     := PdfRT
 CLASS1     := PdfWT
 CLASS2     := DecayRate
@@ -55,9 +57,12 @@ $(EXECUTABLE5): $(EXECUTABLE5).cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LIBS) $(ROOTLIBS) $(ROOTFLAGS) -I$(INCLUDEDIR)
 
 $(EXECUTABLE6): $(EXECUTABLE6).cc 
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(SOURCEDIR)/$(EXTRACLASS) $(ROOTLIBS) $(ROOTFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(SOURCEDIR)/$(EXTRACLASS2) $(ROOTLIBS) $(ROOTFLAGS)
 
 $(EXECUTABLE7): $(EXECUTABLE7).cc 
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(SOURCEDIR)/$(EXTRACLASS2) $(ROOTLIBS) $(ROOTFLAGS)
+
+$(EXECUTABLE8): $(EXECUTABLE8).cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(SOURCEDIR)/$(EXTRACLASS) $(ROOTLIBS) $(ROOTFLAGS)
 
 

@@ -30,7 +30,7 @@ TCanvas* cgr2[12*nBins];
 //                [1] odd
 //                [-1] for each parity recursively
 
-void plotHistBin(int q2Bin, int effIndx, int parity, int year)
+void plotHistBin(int q2Bin, int effIndx, int parity, int year, int vers)
 {
   string shortString = Form("b%ie%ip%i",q2Bin,effIndx,parity);
   cout<<"Conf: "<<shortString<<endl;
@@ -55,11 +55,10 @@ void plotHistBin(int q2Bin, int effIndx, int parity, int year)
   case 5: longString = "Selected"            +longString;
   }
 
-  string confString = "plotHist_d/KDEhist_"+shortString;
+  string confString = "plotHist_d/KDEhist_"+shortString+Form("_v%i",vers);
 
   // Load variables and dataset
-  string filename = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/effDataset_b%i_%i.root",q2Bin,year);
-  // string filename = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/effDataset_b%i_%i.root",year,q2Bin,year);
+  string filename = Form("effDataset_b%i_%i.root",q2Bin,year);
   TFile* fin_data = TFile::Open( filename.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -101,23 +100,32 @@ void plotHistBin(int q2Bin, int effIndx, int parity, int year)
   // import KDE histograms
   vector<TH3D*> KDEhists;
   vector<TString> KDEconfs;
-  string inFileDir = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/files/";
-  string inFileName = inFileDir + Form((parity==0?"KDEhist_b%i_ev_%i.root":"KDEhist_b%i_od_%i.root"),q2Bin,year);
-  TFile* fin = TFile::Open( inFileName.c_str() );
-  if ( !fin || !fin->IsOpen() ) {
-    cout<<"File not found: "<<inFileName<<endl;
-    return;
-  }
-  TIter next(fin->GetListOfKeys());
-  TKey *key;
-  while ((key = (TKey *) next())) {
-    TString s = key->GetName();
-    if (!s.Contains( Form("indx%i",effIndx) )) continue;
-    cout<<s<<endl;
-    KDEhists.push_back( (TH3D*)key->ReadObj() );
-    KDEconfs.push_back( s(11,s.Length()-11) );
-    KDEhists.back()->SetName(s.Data());
-    // cout<<KDEhists.back()->GetName()<<"\t"<<KDEconfs.back()<<endl;
+  string inFileDir = "files/";
+  for (int iVers=0; iVers<=vers; ++iVers) {
+    string inFileName = inFileDir + Form((parity==0?"KDEhist_b%i_ev_%i_v%i.root":"KDEhist_b%i_od_%i_v%i.root"),q2Bin,year,iVers);
+    TFile* fin = TFile::Open( inFileName.c_str() );
+    if ( !fin || !fin->IsOpen() ) {
+      cout<<"File not found: "<<inFileName<<endl;
+      return;
+    }
+    TIter next(fin->GetListOfKeys());
+    TKey *key;
+    while ((key = (TKey *) next())) {
+      TString s = key->GetName();
+      if (!s.Contains( Form("hist_indx%i",effIndx) )) continue;
+      cout<<s<<endl;
+      bool isThere = false;
+      for (int i=0; i<KDEhists.size(); ++i)
+	if (s.Contains(KDEhists[i]->GetName())) {
+	  isThere=true;
+	  break;
+	}
+      if (isThere) continue;
+      KDEhists.push_back( (TH3D*)key->ReadObj() );
+      KDEconfs.push_back( s(11,s.Length()-11) );
+      KDEhists.back()->SetName(s.Data());
+      // cout<<KDEhists.back()->GetName()<<"\t"<<KDEconfs.back()<<endl;
+    }
   }
 
   gStyle->SetOptStat(0);
@@ -567,25 +575,25 @@ void plotHistBin(int q2Bin, int effIndx, int parity, int year)
 
 }
 
-void plotHistBin2(int q2Bin, int effIndx, int parity, int year)
+void plotHistBin2(int q2Bin, int effIndx, int parity, int year, int vers)
 {
   if ( parity==-1 )
     for (parity=0; parity<2; ++parity)
-      plotHistBin(q2Bin, effIndx, parity, year);
+      plotHistBin(q2Bin, effIndx, parity, year, vers);
   else
-    plotHistBin(q2Bin, effIndx, parity, year);
+    plotHistBin(q2Bin, effIndx, parity, year, vers);
 }
 
-void plotHistBin1(int q2Bin, int effIndx, int parity, int year)
+void plotHistBin1(int q2Bin, int effIndx, int parity, int year, int vers)
 {
   if ( effIndx==-1 )
     for (effIndx=0; effIndx<6; ++effIndx)
-      plotHistBin2(q2Bin, effIndx, parity, year);
+      plotHistBin2(q2Bin, effIndx, parity, year, vers);
   else
-    plotHistBin2(q2Bin, effIndx, parity, year);
+    plotHistBin2(q2Bin, effIndx, parity, year, vers);
 }
 
-void plotHist(int q2Bin = -1, int effIndx = -1, int parity = -1, int year = 2016)
+void plotHist(int q2Bin = -1, int effIndx = -1, int parity = -1, int year = 2016, int vers=-1)
 {
 
   if ( q2Bin<-1 || q2Bin>=nBins ) return;
@@ -600,8 +608,8 @@ void plotHist(int q2Bin = -1, int effIndx = -1, int parity = -1, int year = 2016
 
   if ( q2Bin==-1 )
     for (q2Bin=0; q2Bin<nBins; ++q2Bin)
-      plotHistBin1(q2Bin, effIndx, parity, year);
+      plotHistBin1(q2Bin, effIndx, parity, year, vers);
   else
-    plotHistBin1(q2Bin, effIndx, parity, year);
+    plotHistBin1(q2Bin, effIndx, parity, year, vers);
   
 }
