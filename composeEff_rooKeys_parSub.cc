@@ -119,14 +119,27 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   t.Print();
 
   // sample the KDE function to save it in a file (this is the most time-consuming process)
-  vector<Double_t> xboundaries (xbins+1);
-  vector<Double_t> yboundaries (ybins+1);
-  for (int i=0; i<=xbins; ++i)
-    xboundaries[i] = TMath::ACos(1.0-2.0*i/xbins);
-  for (int i=0; i<=ybins; ++i)
-    yboundaries[i] = TMath::ACos(1.0-2.0*i/ybins);
-  RooBinning cosBinX ( xbins, &xboundaries[0], "cosBinX" );
-  RooBinning cosBinY ( ybins, &yboundaries[0], "cosBinY" );
+  if (xbins!=ybins || xbins%2==1) {
+    cout<<"xbins!=ybins or xbins%2==1 not implemented. Abort!"<<endl;
+    return;
+  }
+  vector<Double_t> thetaCentre (xbins/2);
+  vector<Double_t> xboundaries (xbins+3);
+  // vector<Double_t> yboundaries (ybins+3);
+  xboundaries[0] = 0;
+  xboundaries[xbins+2] = TMath::Pi();
+  xboundaries[xbins/2+1] = TMath::Pi()/2;
+  for (int i=0; i<xbins/2; ++i) {
+    thetaCentre[i] = TMath::ACos((2.0*i+1)/xbins);
+    xboundaries[xbins/2+i+2] = 2*thetaCentre[i] - xboundaries[xbins/2+i+1];
+    xboundaries[xbins/2-i] = TMath::Pi() - xboundaries[xbins/2+i+2];
+  }
+  // for (int i=0; i<=xbins; ++i)
+  //   xboundaries[i] = TMath::ACos(1.0-2.0*i/xbins);
+  // for (int i=0; i<=ybins; ++i)
+  //   yboundaries[i] = TMath::ACos(1.0-2.0*i/ybins);
+  RooBinning cosBinX ( xbins+2, &xboundaries[0], "cosBinX" );
+  RooBinning cosBinY ( xbins+2, &xboundaries[0], "cosBinY" );
 
   TStopwatch t1;
   t1.Start();

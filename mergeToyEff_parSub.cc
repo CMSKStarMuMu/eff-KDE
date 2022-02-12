@@ -26,7 +26,7 @@ static const int nBins = 9;
 //                [1] odd
 //                [-1] for each parity recursively
 
-void mergeToyEff_parSub(int q2Bin, int effIndx, int parity, int seed, float widthCTK, float widthCTL, float widthPHI, int xbins, int ybins, int zbins, int totdiv, int year)
+void mergeToyEff_parSub(int q2Bin = 0, int effIndx = 0, int parity = 0, float widthCTK = 0.3, float widthCTL = 0.3, float widthPHI = 0.3, int xbins=50, int ybins = 50, int zbins = 50, int totdiv = 50, int year = 2016, int toy = 0, int vers = -1)
 {
 
   if ( q2Bin<0 || q2Bin>=nBins ) return;
@@ -34,8 +34,6 @@ void mergeToyEff_parSub(int q2Bin, int effIndx, int parity, int seed, float widt
   if ( effIndx<0 || effIndx>5 ) return;
 
   if ( parity<0 || parity>1 ) return;
-
-  if ( seed<0 ) return;
 
   if ( widthCTK<=0 ) return;
   if ( widthCTL<=0 ) return;
@@ -51,19 +49,35 @@ void mergeToyEff_parSub(int q2Bin, int effIndx, int parity, int seed, float widt
   cout<<"Conf: "<<shortString<<endl;
 
   // string containing the path and begin of the filename of output from parallel jobs
-  string folder = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/";
-  string confString = folder + Form("tmp_b%i_toy%i/KDEhist_%s_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i",q2Bin,seed,shortString.c_str(),widthCTK,widthCTL,widthPHI,xbins,ybins,zbins);
+  string confString = Form("/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta/tmptoy_v%i/KDEhistTheta_%s_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i",vers,shortString.c_str(),widthCTK,widthCTL,widthPHI,xbins,ybins,zbins);
 
   // full histogram to fill
-  TH3D* KDEhist = new TH3D(Form("KDEhist_%s",shortString.c_str()),Form("KDEhist_%s",shortString.c_str()),xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
+  vector<Double_t> xboundaries (xbins+1);
+  vector<Double_t> yboundaries (ybins+1);
+  vector<Double_t> zboundaries (zbins+1);
+  for (int i=0; i<=xbins; ++i)
+    xboundaries[i] = TMath::ACos(1.0-2.0*i/xbins);
+  for (int i=0; i<=ybins; ++i)
+    yboundaries[i] = TMath::ACos(1.0-2.0*i/ybins);
+  for (int i=0; i<=zbins; ++i)
+    zboundaries[i] = 3.141593*(2.0*i/zbins-1.0);
+  
+  TH3D* KDEhist = new TH3D(Form("KDEhist_%s",shortString.c_str()),Form("KDEhist_%s",shortString.c_str()),xbins,&xboundaries[0],ybins,&yboundaries[0],zbins,&zboundaries[0]);
   KDEhist->Sumw2();
+  // Double_t* xboundaries = new Double_t[xbins+1];
+  // Double_t* yboundaries = new Double_t[ybins+1];
+  // Double_t* zboundaries = new Double_t[zbins+1];
+  // TH3D* KDEhist = 0;
+
+  TH3D* KDEhistFlat = new TH3D(Form("KDEhistFlat_%s",shortString.c_str()),Form("KDEhist_%s",shortString.c_str()),xbins,-1,1,ybins,-1,1,zbins,-TMath::Pi(),TMath::Pi());
+  KDEhistFlat->Sumw2();
 
   // import partial histograms
   string inFileName;
   int goodHistCnt = 0;
   for (int ndiv=0; ndiv<totdiv; ++ndiv) {
     // add final part of filename and open file
-    inFileName = confString+Form("_%i-frac-%i_%i_toy%i.root",ndiv,totdiv,year,seed);
+    inFileName = confString+Form("_%i-frac-%i_%i_toy%i.root",ndiv,totdiv,year,toy);
     TFile* fin = TFile::Open( inFileName.c_str() );
     if ( !fin || !fin->IsOpen() ) {
       cout<<"File not found: "<<inFileName<<endl;
@@ -75,8 +89,41 @@ void mergeToyEff_parSub(int q2Bin, int effIndx, int parity, int seed, float widt
       cout<<"Histogram not found in file: "<<inFileName<<endl;
       continue;
     }
+    // cout<<"Part int "<<partHist->Integral()<<" "<<partHist->Integral("width")<<endl;
+    // if (!KDEhist) {
+    //   // KDEhist = (TH3D*)partHist->Clone(Form("KDEhist_%s",shortString.c_str()));
+    //   // KDEhist->Reset();
+    //   partHist->GetXaxis()->GetLowEdge(xboundaries);
+    //   partHist->GetYaxis()->GetLowEdge(yboundaries);
+    //   partHist->GetZaxis()->GetLowEdge(zboundaries);
+    //   xboundaries[xbins]=-1*zboundaries[0];
+    //   yboundaries[ybins]=-1*zboundaries[0];
+    //   zboundaries[zbins]=-1*zboundaries[0];
+    //   cout<<"x: "<<xboundaries[0]<<" "<<xboundaries[25]<<" "<<xboundaries[50]<<endl;
+    //   cout<<"y: "<<yboundaries[0]<<" "<<yboundaries[25]<<" "<<yboundaries[50]<<endl;
+    //   cout<<"z: "<<zboundaries[0]<<" "<<zboundaries[25]<<" "<<zboundaries[50]<<endl;
+    //   KDEhist = new TH3D(Form("KDEhist_%s",shortString.c_str()),Form("KDEhist_%s",shortString.c_str()),xbins,xboundaries,ybins,yboundaries,zbins,zboundaries);
+    //   KDEhist->Sumw2();
+    // }
     // add it to the full histogram
-    KDEhist->Add(partHist);
+    // KDEhist->Add(partHist);
+    for (int ix=1; ix<=xbins; ++ix)
+      for (int iy=1; iy<=ybins; ++iy)
+	for (int iz=1; iz<=zbins; ++iz) {
+	  int iBin =KDEhist    ->GetBin(ix,iy,iz);
+	  int iBinF=KDEhistFlat->GetBin(1+xbins-ix,1+ybins-iy,iz);
+	  double partVal = partHist->GetBinContent(ix,iy,iz);
+	  double volRat = ( ( KDEhist->GetXaxis()->GetBinWidth(ix) *
+			      KDEhist->GetYaxis()->GetBinWidth(iy) *
+			      KDEhist->GetZaxis()->GetBinWidth(iz) ) /
+			    ( KDEhistFlat->GetXaxis()->GetBinWidth(1+xbins-ix) *
+			      KDEhistFlat->GetYaxis()->GetBinWidth(1+ybins-iy) *
+			      KDEhistFlat->GetZaxis()->GetBinWidth(iz) ) );
+	  KDEhist    ->AddBinContent(iBin ,partVal);
+	  KDEhistFlat->AddBinContent(iBinF,partVal*volRat);
+	}
+    // cout<<"Hist int "<<KDEhist->Integral()<<" "<<KDEhist->Integral("width")<<endl;
+    // cout<<"HiFl int "<<KDEhistFlat->Integral()<<" "<<KDEhistFlat->Integral("width")<<endl;
     // count partial histogram successfully merged
     ++goodHistCnt;
     delete partHist;
@@ -87,14 +134,11 @@ void mergeToyEff_parSub(int q2Bin, int effIndx, int parity, int seed, float widt
     // if not all the partial histograms are found, give a warning and correct the normalisation
     // (or make the macro fail, in case the flag is activated)
     cout<<"Warning! Not all partial histograms found: "<<goodHistCnt<<" of "<<totdiv<<endl;
-    if (safeFilling) {
-      fstream fout("resub-mergeToyEff.list");
-      fout<<q2Bin<<","<<effIndx<<","<<parity<<","<<seed<<","<<widthCTK<<","<<widthCTL<<","<<widthPHI<<","<<xbins<<","<<ybins<<","<<zbins<<","<<totdiv<<","<<year<<endl;
-      fout.close();
-      return;
-    }
+    if (safeFilling) return;
     KDEhist->Scale(1.0*totdiv/goodHistCnt);
   }
+
+  KDEhistFlat->Scale(KDEhist->Integral()/KDEhistFlat->Integral());
 
   // check histogram against empty or negative bin contents, which would make the fit fail
   // (this is not expected from KDE description and should never happen,
@@ -109,12 +153,13 @@ void mergeToyEff_parSub(int q2Bin, int effIndx, int parity, int seed, float widt
   // to facilitate plotting same terms with different configurations (SF and sampling bins) for comparisons, thay are saved in the same file
   // to reduce the number of files produced to ~10/20, different terms of the same efficiency are saved in the same file
   // (this also allows a single extractEff call to access a single file)
-  string foutname = folder + Form((parity==0?"files/KDEhist_b%i_ev_%i_toy%i.root":"files/KDEhist_b%i_od_%i_toy%i.root"),q2Bin,year,seed);
-  TFile* fout = TFile::Open( foutname.c_str(), "UPDATE" );
-  KDEhist->Write( Form("hist_indx%i_w0-%1.2f_w1-%1.2f_w2-%1.2f_%i_%i_%i",effIndx,widthCTK,widthCTL,widthPHI,xbins,ybins,zbins), TObject::kWriteDelete );
+  string dirName = "/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta/";
+  TFile* fout = TFile::Open( Form((parity==0?"%sfiles/KDEhist_b%i_ev_%i_toy%i_v%i.root":"%sfiles/KDEhist_b%i_od_%i_toy%i_v%i.root"),dirName.c_str(),q2Bin,year,toy,vers), "UPDATE" );
+  KDEhist->Write( Form("histTheta_indx%i_w0-%1.2f_w1-%1.2f_w2-%1.2f_%i_%i_%i",effIndx,widthCTK,widthCTL,widthPHI,xbins,ybins,zbins), TObject::kWriteDelete );
+  KDEhistFlat->Write( Form("hist_indx%i_w0-%1.2f_w1-%1.2f_w2-%1.2f_%i_%i_%i",effIndx,widthCTK,widthCTL,widthPHI,xbins,ybins,zbins), TObject::kWriteDelete );
   fout->Close();
   
   // Remind user to delete partial files
-  cout<<endl<<"Please, remove partial files running:\nrm "<<confString<<Form("_*-frac-%i_%i_toy%i.root",totdiv,year,seed)<<endl<<endl;
+  cout<<endl<<"Please, remove partial files running:\nrm "<<confString<<Form("_*-frac-%i_%i_toy%i.root",totdiv,year,toy)<<endl<<endl;
   
 }

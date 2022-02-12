@@ -12,6 +12,9 @@ xbin=50
 ybin=50
 zbin=50
 
+vnjobs=(65 4 90 2 1)
+# (100 20 200 5 5) previous run
+
 if make composeEff_rooKeys_parSub; then
 
     # Use external configuration file with list of bin numbers (to be coherent with the numbers in effDataset_b*.root files)
@@ -24,6 +27,8 @@ if make composeEff_rooKeys_parSub; then
 	wid2=${line[3]}
 	vers=${line[7]}
 
+	[ "${vers}" -le 2 ] && continue
+
 	# Create directory for log files
 	[ -z "${vers}" ] && vers="-1"
 	if [ ! -d logs_parSub_v${vers} ]; then mkdir logs_parSub_v${vers}; fi
@@ -31,35 +36,23 @@ if make composeEff_rooKeys_parSub; then
 	if [ ! -d tmpdir_v${vers} ]; then mkdir tmpdir_v${vers}; fi
 	cd tmpdir_v${vers}
 
-	# Submit jobs for genDen, genNum, recoDen, and correct-tag recoNum
-	# which use the same scale-sactor configuration
-	for indx in {0..3}; do
-	    
-	    # Number of parallel jobs for each KDE description
-	    njobs=20
-	    if [ ${indx} -eq 0 ]; then njobs=100; fi
-	    if [ ${indx} -eq 2 ]; then njobs=200; fi
-	    if [ ${indx} -eq 3 ]; then njobs=5; fi
-	    
+	for indx in {0..4}
+	do
+
+	    njobs=${vnjobs[$indx]}
+	    if [ $indx == 4 ]
+	    then
+		wid0=${line[4]}
+		wid1=${line[5]}
+		wid2=${line[6]}
+	    fi
+
 	    sbatch -a 0-$((${njobs}-1)) \
 		   --mem 2900 \
 		   --export=bin=${bin},indx=${indx},par=${par},wid0=${wid0},wid1=${wid1},wid2=${wid2},xbin=${xbin},ybin=${ybin},zbin=${zbin},totdiv=${njobs},year=${year},vers=${vers} \
 		   ../run_composeEff_rooKeys.sh
 	    
 	done
-
-	# Submit jobs for wrong-tag recoNum
-	# which uses a specific scale-factor configuration
-	indx=4
-	wid0=${line[4]}
-	wid1=${line[5]}
-	wid2=${line[6]}
-	njobs=5
-	
-	sbatch -a 0-$((${njobs}-1)) \
-	       --mem 2900 \
-	       --export=bin=${bin},indx=${indx},par=${par},wid0=${wid0},wid1=${wid1},wid2=${wid2},xbin=${xbin},ybin=${ybin},zbin=${zbin},totdiv=${njobs},year=${year},vers=${vers} \
-	       ../run_composeEff_rooKeys.sh
 
 	cd ..
 

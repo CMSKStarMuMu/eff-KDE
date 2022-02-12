@@ -19,6 +19,7 @@ while read -a line; do
     wid3=${line[4]}
     wid4=${line[5]}
     wid5=${line[6]}
+    vers=${line[7]}
 
     for seed in {0..9}
     do
@@ -31,7 +32,7 @@ ${wid0}','${wid1}','${wid2}','\
 ${wid0}','${wid1}','${wid2}','\
 ${wid0}','${wid1}','${wid2}','\
 ${xbin}','${ybin}','${zbin}','\
-${year}')'
+${year}','${vers}')'
 
     done
 

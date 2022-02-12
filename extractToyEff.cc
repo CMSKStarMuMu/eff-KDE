@@ -24,7 +24,7 @@ void extractToyEff(int q2Bin, int parity, int seed,
 		   float width20, float width21, float width22,
 		   float width10, float width11, float width12,
 		   float width00, float width01, float width02,
-		   int xbins=50, int ybins = 0, int zbins = 0, int year=2016)
+		   int xbins=50, int ybins = 0, int zbins = 0, int year=2016, int vers = -1)
 {
 
   if ( q2Bin<0 || q2Bin>=nBins ) return;
@@ -66,14 +66,15 @@ void extractToyEff(int q2Bin, int parity, int seed,
   histoName[3] = Form("hist_indx3_w0-%1.2f_w1-%1.2f_w2-%1.2f_%i_%i_%i",width30,width31,width32,xbins,ybins,zbins);
   histoName[4] = Form("hist_indx4_w0-%1.2f_w1-%1.2f_w2-%1.2f_%i_%i_%i",width40,width41,width42,xbins,ybins,zbins);
 
-  string folder = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/files";
-  string inFileName = folder + Form((parity==0?"/KDEhist_b%i_ev_%i_toy%i.root":"/KDEhist_b%i_od_%i_toy%i.root"),q2Bin,year,seed);
+  string folder = "/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta/files";
+  string inFileName = folder + Form((parity==0?"/KDEhist_b%i_ev_%i_toy%i_v%i.root":"/KDEhist_b%i_od_%i_toy%i_v%i.root"),q2Bin,year,seed,vers);
   TFile* fin = TFile::Open( inFileName.c_str() );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<inFileName<<endl;
     return;
   }
-  for (int effIndx=0; effIndx<5; ++effIndx) {
+  for (int effIndx=1; effIndx<5; ++effIndx) {
+    if (effIndx==2) continue;
     KDEhist[effIndx] = (TH3D*)fin->Get(histoName[effIndx].c_str());
     if ( !KDEhist[effIndx] || KDEhist[effIndx]->IsZombie() ) {
       cout<<"Histogram "<<histoName[effIndx]<<" not found in file: "<<inFileName<<endl;
@@ -81,6 +82,19 @@ void extractToyEff(int q2Bin, int parity, int seed,
       if (effIndx==3) doCT = false;
       else if (effIndx==4) doWT = false;
       else return;
+    }
+  }
+  string inFileName2 = folder + Form((parity==0?"/KDEhist_b%i_ev_%i_v%i.root":"/KDEhist_b%i_od_%i_v%i.root"),q2Bin,year,vers);
+  TFile* fin2 = TFile::Open( inFileName2.c_str() );
+  if ( !fin2 || !fin2->IsOpen() ) {
+    cout<<"File not found: "<<inFileName2<<endl;
+    return;
+  }
+  for (int effIndx=0; effIndx<3; effIndx+=2) {
+    KDEhist[effIndx] = (TH3D*)fin2->Get(histoName[effIndx].c_str());
+    if ( !KDEhist[effIndx] || KDEhist[effIndx]->IsZombie() ) {
+      cout<<"Histogram "<<histoName[effIndx]<<" not found in file: "<<inFileName2<<endl;
+      return;
     }
   }
   if ( !doCT && !doWT ) return;
@@ -129,7 +143,7 @@ void extractToyEff(int q2Bin, int parity, int seed,
   // save histograms in file
   // from this point on the names of files and objects will only contain information about bin number, parity, and tag condition
   // in this way, there in the rest of the code there is no need to specify the KDE configuration any time it is run
-  TFile* fout = TFile::Open( Form((parity==0?"%s/KDEeff_b%i_ev_%i_toy%i.root":"%s/KDEeff_b%i_od_%i_toy%i.root"),folder.c_str(),q2Bin,year,seed), "UPDATE" );
+  TFile* fout = TFile::Open( Form((parity==0?"%s/KDEeff_b%i_ev_%i_toy%i_v%i.root":"%s/KDEeff_b%i_od_%i_toy%i_v%i.root"),folder.c_str(),q2Bin,year,seed,vers), "UPDATE" );
   if (doCT) effCHist->Write(0,TObject::kWriteDelete);
   if (doWT) effWHist->Write(0,TObject::kWriteDelete);
   fout->Close();

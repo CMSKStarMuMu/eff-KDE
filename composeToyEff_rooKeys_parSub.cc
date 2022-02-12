@@ -17,13 +17,14 @@
 #include <RooDataHist.h>
 #include <RooRandom.h>
 #include <RooNDKeysPdf.h>
+#include <RooBinning.h>
 
 using namespace RooFit;
 using namespace std;
 
 static const int nBins = 9;
 
-void composeToyEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, int seed, float widthCTK, float widthCTL, float widthPHI, int xbins, int ybins, int zbins, int ndiv, int totdiv, int year)
+void composeToyEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, int seed, float widthCTK, float widthCTL, float widthPHI, int xbins, int ybins, int zbins, int ndiv, int totdiv, int year, int vers)
 {
   string shortString = Form("b%ie%ip%i",q2Bin,effIndx,parity);
   cout<<"Conf: "<<shortString<<endl;
@@ -39,8 +40,8 @@ void composeToyEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, int seed, 
   datasetString = datasetString + Form((parity==0?"_ev_b%i":"_od_b%i"),q2Bin);
 
   // Load variables and dataset
-  // string filename_data = Form("/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/effDataset_b%i_%i.root",q2Bin,year);
-  string filename_data = Form("effDataset_b%i_%i.root",q2Bin,year);
+  string fileDir = "/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta/";
+  string filename_data = fileDir + Form("effDatasetTheta_b%i_%i.root",q2Bin,year);
   TFile* fin_data = TFile::Open( filename_data.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;
@@ -75,15 +76,14 @@ void composeToyEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, int seed, 
   // import KDE histograms
   vector<TH3D*> KDEhists;
   vector<TString> KDEconfs;
-  // string inFileDir = "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/files/";
-  // string inFileName = inFileDir + Form((parity==0?"KDEhist_b%i_ev_%i.root":"KDEhist_b%i_od_%i.root"),q2Bin,year);
-  string inFileName = Form((parity==0?"KDEhist_b%i_ev_%i.root":"KDEhist_b%i_od_%i.root"),q2Bin,year);
+  string inFileDir = "/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta/files/";
+  string inFileName = inFileDir + Form((parity==0?"KDEhist_b%i_ev_%i_v%i.root":"KDEhist_b%i_od_%i_v%i.root"),q2Bin,year,vers);
   TFile* fin = TFile::Open( inFileName.c_str() );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<inFileName<<endl;
     return;
   }
-  auto inFunc = (TH3D*)fin->Get( Form("hist_indx%i_w0-%1.2f_w1-%1.2f_w2-%1.2f_%i_%i_%i",effIndx,widthCTK,widthCTL,widthPHI,xbins,ybins,zbins) );
+  auto inFunc = (TH3D*)fin->Get( Form("histTheta_indx%i_w0-%1.2f_w1-%1.2f_w2-%1.2f_%i_%i_%i",effIndx,widthCTK,widthCTL,widthPHI,xbins,ybins,zbins) );
 
   auto inFunc_dh = new RooDataHist("inFunc_dh","inFunc_dh",vars,inFunc);
   auto inFunc_hp = new RooHistPdf("inFunc_hp","inFunc_hp",vars,*inFunc_dh,1);
@@ -107,12 +107,21 @@ void composeToyEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, int seed, 
   t.Stop();
   t.Print();
 
+  vector<Double_t> xboundaries (xbins+1);
+  vector<Double_t> yboundaries (ybins+1);
+  for (int i=0; i<=xbins; ++i)
+    xboundaries[i] = TMath::ACos(1.0-2.0*i/xbins);
+  for (int i=0; i<=ybins; ++i)
+    yboundaries[i] = TMath::ACos(1.0-2.0*i/ybins);
+  RooBinning cosBinX ( xbins, &xboundaries[0], "cosBinX" );
+  RooBinning cosBinY ( ybins, &yboundaries[0], "cosBinY" );
+
   // sample the KDE function to save it in a file (this is the most time-consuming process)
   TStopwatch t1;
   t1.Start();
   TH3D* KDEhist = (TH3D*)KDEfunc->createHistogram( ("KDEhist_"+shortString).c_str(),
-  						   *ctK,     Binning(xbins,-1,1) ,
-  						   YVar(*ctL,Binning(ybins,-1,1)),
+  						   *ctK,     Binning(cosBinX) ,
+  						   YVar(*ctL,Binning(cosBinY)),
   						   ZVar(*phi,Binning(zbins,-TMath::Pi(),TMath::Pi())),
 						   Scaling(false) );
   t1.Stop();
@@ -122,12 +131,26 @@ void composeToyEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, int seed, 
   else KDEhist->Scale(data->sumEntries()/KDEhist->Integral());
 
   // save histogram to file
-  TFile* fout = TFile::Open(Form("KDEhist_%s_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i_%i-frac-%i_%i_toy%i.root",
-				 shortString.c_str(),widthCTK,widthCTL,widthPHI,xbins,ybins,zbins,ndiv,totdiv,year,seed),"RECREATE");
+  cout<<"out open"<<endl;
+  string foutName = fileDir + Form("tmptoy_v%i/KDEhistTheta_",vers) + shortString + Form("_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i_%i-frac-%i_%i_toy%i.root",widthCTK,widthCTL,widthPHI,xbins,ybins,zbins,ndiv,totdiv,year,seed);
+  TFile* fout = TFile::Open(foutName.c_str(),"RECREATE");
   fout->cd();
+  cout<<"out write"<<endl;
   KDEhist->Write();
+  cout<<"out close"<<endl;
   fout->Close();
 
+  cout<<"del KDEfunc"<<endl;
+  delete KDEfunc;
+  cout<<"del data"<<endl;
+  delete data;
+  cout<<"in close"<<endl;
+  fin->Close();  
+  cout<<"data close"<<endl;
+  fin_data->Close();  
+  cout<<"done"<<endl;
+
+  return;
   
 }
 
@@ -152,20 +175,25 @@ int main(int argc, char** argv)
   int ndiv = 0;
   int totdiv = 1;
   int year   = 2016;
+  int vers   = -1;
 
   if ( argc > 1 ) q2Bin    = atoi(argv[1]);
   if ( argc > 2 ) effIndx  = atoi(argv[2]);
   if ( argc > 3 ) parity   = atoi(argv[3]);
-  if ( argc > 4 ) seed     = atoi(argv[4]);
-  if ( argc > 5 ) widthCTK = atof(argv[5]);
-  if ( argc > 6 ) widthCTL = atof(argv[6]);
-  if ( argc > 7 ) widthPHI = atof(argv[7]);
-  if ( argc > 8 ) xbins    = atoi(argv[8]);
-  if ( argc > 9 ) ybins    = atoi(argv[9]);
-  if ( argc > 10 ) zbins   = atoi(argv[10]);
-  if ( argc > 11 ) ndiv    = atoi(argv[11]);
-  if ( argc > 12 ) totdiv  = atoi(argv[12]);
-  if ( argc > 13 ) year    = atoi(argv[13]);
+  if ( argc > 4 ) widthCTK = atof(argv[4]);
+  if ( argc > 5 ) widthCTL = atof(argv[5]);
+  if ( argc > 6 ) widthPHI = atof(argv[6]);
+  if ( argc > 7 ) xbins    = atoi(argv[7]);
+  if ( argc > 8 ) ybins    = atoi(argv[8]);
+  if ( argc > 9 ) zbins    = atoi(argv[9]);
+  if ( argc > 11 ) totdiv  = atoi(argv[11]);
+  if ( argc > 12 ) year    = atoi(argv[12]);
+  if ( argc > 13 ) vers    = atoi(argv[13]);
+
+  if ( argc > 10 ) {
+    ndiv = atoi(argv[10]) % totdiv;
+    seed = atoi(argv[10]) / totdiv;
+  }
 
   if ( seed<0 ) return 1;
 
@@ -185,7 +213,7 @@ int main(int argc, char** argv)
 
   if ( parity<0 || parity>1 ) return 1;
 
-  composeToyEff_rooKeys_parSub(q2Bin, effIndx, parity, seed, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, ndiv, totdiv, year);
+  composeToyEff_rooKeys_parSub(q2Bin, effIndx, parity, seed, widthCTK, widthCTL, widthPHI, xbins, ybins, zbins, ndiv, totdiv, year, vers);
 
   return 0;
 

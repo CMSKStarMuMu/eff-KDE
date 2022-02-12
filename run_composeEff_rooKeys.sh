@@ -1,6 +1,7 @@
 #!/bin/bash
 
 #SBATCH -p lipq
+#SBATCH -t 240
 
 ndiv=$SLURM_ARRAY_TASK_ID
 
