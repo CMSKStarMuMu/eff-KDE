@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #SBATCH -p lipq
-#SBATCH -t 240
+#SBATCH -t 1200
 
 ndiv=$SLURM_ARRAY_TASK_ID
 
@@ -12,8 +12,12 @@ SAMPLEDIR=/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta
 
 module load root/6.12.06
 
-if [ ! -r $SAMPLEDIR/effDatasetTheta_b${bin}_${year}.root ]; then
-    echo $SAMPLEDIR/effDatasetTheta_b${bin}_${year}.root not found
+if [ $vers -ge "10" ]; then
+    XGBv="_XGBv$(($vers / 10))"
+fi
+
+if [ ! -r $SAMPLEDIR/effDatasetTheta_b${bin}_${year}${XGBv}.root ]; then
+    echo $SAMPLEDIR/effDatasetTheta_b${bin}_${year}${XGBv}.root not found
     exit 1
 fi
 if [ ! -r $HOME/composeEff_rooKeys_parSub.cc ]; then

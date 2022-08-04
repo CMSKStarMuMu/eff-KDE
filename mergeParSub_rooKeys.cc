@@ -35,17 +35,32 @@ void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float widthCTK, 
   string confString = Form("/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta/tmp_v%i/KDEhistTheta_%s_rooKeys_m_w0-%.2f_w1-%.2f_w2-%.2f_%i_%i_%i",vers,shortString.c_str(),widthCTK,widthCTL,widthPHI,xbins,ybins,zbins);
 
   // full histogram to fill
-  vector<Double_t> xboundaries (xbins+1);
-  vector<Double_t> yboundaries (ybins+1);
+  if (xbins!=ybins || xbins%2==1) {
+    cout<<"xbins!=ybins or xbins%2==1 not implemented. Abort!"<<endl;
+    return;
+  }
+  vector<Double_t> thetaCentre (xbins/2);
+  vector<Double_t> thetaboundaries (xbins+3);
+  // vector<Double_t> yboundaries (ybins+3);
+  thetaboundaries[0] = 0;
+  thetaboundaries[xbins+2] = TMath::Pi();
+  thetaboundaries[xbins/2+1] = TMath::Pi()/2;
+  for (int i=0; i<xbins/2; ++i) {
+    thetaCentre[i] = TMath::ACos(-1.0*(2.0*i+1)/xbins);
+    thetaboundaries[xbins/2+i+2] = 2*thetaCentre[i] - thetaboundaries[xbins/2+i+1];
+    thetaboundaries[xbins/2-i] = TMath::Pi() - thetaboundaries[xbins/2+i+2];
+  }
+  // vector<Double_t> xboundaries (xbins+1);
+  // vector<Double_t> yboundaries (ybins+1);
   vector<Double_t> zboundaries (zbins+1);
-  for (int i=0; i<=xbins; ++i)
-    xboundaries[i] = TMath::ACos(1.0-2.0*i/xbins);
-  for (int i=0; i<=ybins; ++i)
-    yboundaries[i] = TMath::ACos(1.0-2.0*i/ybins);
+  // for (int i=0; i<=xbins; ++i)
+  //   xboundaries[i] = TMath::ACos(1.0-2.0*i/xbins);
+  // for (int i=0; i<=ybins; ++i)
+  //   yboundaries[i] = TMath::ACos(1.0-2.0*i/ybins);
   for (int i=0; i<=zbins; ++i)
     zboundaries[i] = 3.141593*(2.0*i/zbins-1.0);
   
-  TH3D* KDEhist = new TH3D(Form("KDEhist_%s",shortString.c_str()),Form("KDEhist_%s",shortString.c_str()),xbins,&xboundaries[0],ybins,&yboundaries[0],zbins,&zboundaries[0]);
+  TH3D* KDEhist = new TH3D(Form("KDEhist_%s",shortString.c_str()),Form("KDEhist_%s",shortString.c_str()),xbins+2,&thetaboundaries[0],ybins+2,&thetaboundaries[0],zbins,&zboundaries[0]);
   KDEhist->Sumw2();
   // Double_t* xboundaries = new Double_t[xbins+1];
   // Double_t* yboundaries = new Double_t[ybins+1];
@@ -67,7 +82,8 @@ void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float widthCTK, 
       continue;
     }
     // extract and check output histogram from parallel job
-    TH3D* partHist = (TH3D*)fin->Get(("KDEhist_"+shortString+"__ctK_ctL_phi").c_str());
+    TH3D* partHist = (TH3D*)fin->Get(("KDEhist_"+shortString+"__tK_tL_phi").c_str());
+    if (!partHist) partHist = (TH3D*)fin->Get(("KDEhist_"+shortString+"__ctK_ctL_phi").c_str());
     if ( !partHist || partHist->IsZombie() ) {
       cout<<"Histogram not found in file: "<<inFileName<<endl;
       continue;
@@ -90,20 +106,27 @@ void mergeParSub_rooKeysBin(int q2Bin, int effIndx, int parity, float widthCTK, 
     // }
     // add it to the full histogram
     // KDEhist->Add(partHist);
-    for (int ix=1; ix<=xbins; ++ix)
-      for (int iy=1; iy<=ybins; ++iy)
+    for (int ix=1; ix<=xbins+2; ++ix)
+      for (int iy=1; iy<=ybins+2; ++iy)
 	for (int iz=1; iz<=zbins; ++iz) {
-	  int iBin =KDEhist    ->GetBin(ix,iy,iz);
-	  int iBinF=KDEhistFlat->GetBin(1+xbins-ix,1+ybins-iy,iz);
+	  int iBin =KDEhist->GetBin(ix,iy,iz);
 	  double partVal = partHist->GetBinContent(ix,iy,iz);
-	  double volRat = ( ( KDEhist->GetXaxis()->GetBinWidth(ix) *
-			      KDEhist->GetYaxis()->GetBinWidth(iy) *
-			      KDEhist->GetZaxis()->GetBinWidth(iz) ) /
-			    ( KDEhistFlat->GetXaxis()->GetBinWidth(1+xbins-ix) *
-			      KDEhistFlat->GetYaxis()->GetBinWidth(1+ybins-iy) *
-			      KDEhistFlat->GetZaxis()->GetBinWidth(iz) ) );
-	  KDEhist    ->AddBinContent(iBin ,partVal);
-	  KDEhistFlat->AddBinContent(iBinF,partVal*volRat);
+	  KDEhist->AddBinContent(iBin,partVal);
+	  if (ix>1 && ix<xbins+2 && iy>1 && iy<ybins+2) {
+	    int iBinF=KDEhistFlat->GetBin(2+xbins-ix,2+ybins-iy,iz);
+	    double volRat =
+	      TMath::Sin(ix==2||ix==xbins+1?0.21:partHist->GetXaxis()->GetBinCenter(ix)) *
+	      TMath::Sin(iy==2||iy==ybins+1?0.21:partHist->GetYaxis()->GetBinCenter(iy));
+	      // TMath::Sin(0.97*partHist->GetXaxis()->GetBinCenter(ix)+0.015*TMath::Pi()) *
+	      // TMath::Sin(0.97*partHist->GetYaxis()->GetBinCenter(iy)+0.015*TMath::Pi());
+	    // double volRat = ( ( KDEhist->GetXaxis()->GetBinWidth(ix) *
+	    // 		      KDEhist->GetYaxis()->GetBinWidth(iy) *
+	    // 		      KDEhist->GetZaxis()->GetBinWidth(iz) ) /
+	    // 		    ( KDEhistFlat->GetXaxis()->GetBinWidth(1+xbins-ix) *
+	    // 		      KDEhistFlat->GetYaxis()->GetBinWidth(1+ybins-iy) *
+	    // 		      KDEhistFlat->GetZaxis()->GetBinWidth(iz) ) );
+	    KDEhistFlat->AddBinContent(iBinF,partVal/volRat);
+	  }
 	}
     // cout<<"Hist int "<<KDEhist->Integral()<<" "<<KDEhist->Integral("width")<<endl;
     // cout<<"HiFl int "<<KDEhistFlat->Integral()<<" "<<KDEhistFlat->Integral("width")<<endl;

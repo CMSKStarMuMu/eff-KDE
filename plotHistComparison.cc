@@ -55,7 +55,7 @@ void plotHistBin(int q2Bin, int effIndx, int parity, int year, int vers)
   case 5: longString = "Selected"            +longString;
   }
 
-  string confString = "plotHist_d/KDEhist_"+shortString+Form("_v%i",vers);
+  string confString = "plotHist_d/KDEhistComp_"+shortString+Form("_v%i",vers);
 
   // Load variables and dataset
   string XGBstr = "";
@@ -111,7 +111,7 @@ void plotHistBin(int q2Bin, int effIndx, int parity, int year, int vers)
   vector<TH3D*> KDEhists;
   vector<TString> KDEconfs;
   string inFileDir = "files/";
-  for (int iVers=vers; iVers<=vers; ++iVers) {
+  for (int iVers=vers; iVers<40; iVers+=10) {
   // { int iVers=vers;
     string inFileName = inFileDir + Form((parity==0?"KDEhist_b%i_ev_%i_v%i.root":"KDEhist_b%i_od_%i_v%i.root"),q2Bin,year,iVers);
     TFile* fin = TFile::Open( inFileName.c_str() );
@@ -136,6 +136,8 @@ void plotHistBin(int q2Bin, int effIndx, int parity, int year, int vers)
       KDEconfs.push_back( s(11,s.Length()-11) + Form("_v%i",iVers) );
       KDEhists.back()->SetName(s.Append(Form("_v%i",iVers)).Data());
       // cout<<KDEhists.back()->GetName()<<"\t"<<KDEconfs.back()<<endl;
+      if (KDEhists.size()>1)
+	KDEhists.back()->Scale(KDEhists[0]->Integral()/KDEhists.back()->Integral());
     }
   }
 
@@ -239,37 +241,34 @@ void plotHistBin(int q2Bin, int effIndx, int parity, int year, int vers)
       csx[confIndex]->cd(5*j+i+1);
       // gPad->SetLeftMargin(0.18);
       distSliceX[5*i+j]->GetYaxis()->SetTitleOffset(1.4);
-      distSliceX[5*i+j]->Draw();
+      distSliceX[5*i+j]->Draw("AXIS");
       for (int iHist=0; iHist<KDEhists.size(); ++iHist) {
 	histSliceX[5*i+j].at(iHist)->SetLineWidth(2);
 	histSliceX[5*i+j].at(iHist)->SetLineColor(1+iHist);
 	histSliceX[5*i+j].at(iHist)->Draw("sameLHIST");
       }
-      distSliceX[5*i+j]->Draw("same");
       legSl.Draw("same");
 
       csy[confIndex]->cd(5*j+i+1);
       // gPad->SetLeftMargin(0.18);
       distSliceY[5*i+j]->GetYaxis()->SetTitleOffset(1.4);
-      distSliceY[5*i+j]->Draw();
+      distSliceY[5*i+j]->Draw("AXIS");
       for (int iHist=0; iHist<KDEhists.size(); ++iHist) {
 	(histSliceY[5*i+j])[iHist]->SetLineWidth(2);
 	(histSliceY[5*i+j])[iHist]->SetLineColor(1+iHist);
 	(histSliceY[5*i+j])[iHist]->Draw("sameLHIST");
       }
-      distSliceY[5*i+j]->Draw("same");
       legSl.Draw("same");
 
       csz[confIndex]->cd(5*j+i+1);
       // gPad->SetLeftMargin(0.18);
       distSliceZ[5*i+j]->GetYaxis()->SetTitleOffset(1.4);
-      distSliceZ[5*i+j]->Draw();
+      distSliceZ[5*i+j]->Draw("AXIS");
       for (int iHist=0; iHist<KDEhists.size(); ++iHist) {
 	(histSliceZ[5*i+j])[iHist]->SetLineWidth(2);
 	(histSliceZ[5*i+j])[iHist]->SetLineColor(1+iHist);
 	(histSliceZ[5*i+j])[iHist]->Draw("sameLHIST");
       }
-      distSliceZ[5*i+j]->Draw("same");
       legSl.Draw("same");
 
       // checking maximum value
@@ -412,37 +411,34 @@ void plotHistBin(int q2Bin, int effIndx, int parity, int year, int vers)
   gPad->SetLeftMargin(0.11);
   distProj1X->GetYaxis()->SetTitleOffset(1.7);
   distProj1X->SetMinimum(0);
-  distProj1X->Draw();
+  distProj1X->Draw("AXIS");
   for (int iHist=0; iHist<histProj1X.size(); ++iHist) {
     histProj1X[iHist]->SetLineWidth(2);
     histProj1X[iHist]->SetLineColor(1+iHist);
     histProj1X[iHist]->Draw("sameLHIST");
   }
-  distProj1X->Draw("same");
   leg1Pr.Draw("same");
   cp1[confIndex]->cd(2);
   gPad->SetLeftMargin(0.11);
   distProj1Y->GetYaxis()->SetTitleOffset(1.7);
   distProj1Y->SetMinimum(0);
-  distProj1Y->Draw();
+  distProj1Y->Draw("AXIS");
   for (int iHist=0; iHist<histProj1Y.size(); ++iHist) {
     histProj1Y[iHist]->SetLineWidth(2);
     histProj1Y[iHist]->SetLineColor(1+iHist);
     histProj1Y[iHist]->Draw("sameLHIST");
   }
-  distProj1Y->Draw("same");
   leg2Pr.Draw("same");
   cp1[confIndex]->cd(3);
   gPad->SetLeftMargin(0.11);
   distProj1Z->GetYaxis()->SetTitleOffset(1.7);
   distProj1Z->SetMinimum(0);
-  distProj1Z->Draw();
+  distProj1Z->Draw("AXIS");
   for (int iHist=0; iHist<histProj1Z.size(); ++iHist) {
     histProj1Z[iHist]->SetLineWidth(2);
     histProj1Z[iHist]->SetLineColor(1+iHist);
     histProj1Z[iHist]->Draw("sameLHIST");
   }
-  distProj1Z->Draw("same");
   leg3Pr.Draw("same");
   cp1[confIndex]->SaveAs( (confString+Form("_Proj1D_%i.pdf", year)).c_str() );
 
@@ -496,94 +492,6 @@ void plotHistBin(int q2Bin, int effIndx, int parity, int year, int vers)
   delete histProj2XZ;
   delete histProj2YZ;
 
-  gStyle->SetPadLeftMargin(0.1);
-  gStyle->SetPadRightMargin(0.13);
-
-  // Plot 2D gradient map + distribution
-  cgr2[confIndex] = new TCanvas(("cgr2"+shortString).c_str(),(longString+" - 2D Gradient and distribution").c_str(),1500,500*KDEhists.size()) ;
-  cgr2[confIndex]->Divide(3,KDEhists.size());
-  for (int iHist=0; iHist<KDEhists.size(); ++iHist) {
-    if ( iHist >= KDEconfs.size() ) {
-      cout<<"ERROR: histo vector and name vector have different sizes"<<endl;
-      return;
-    }
-    TH3D* KDEhist = KDEhists[iHist];
-    histProj2XY = (TH2D*)KDEhist->Project3D( "xy" );
-    histProj2XZ = (TH2D*)KDEhist->Project3D( "xz" );
-    histProj2YZ = (TH2D*)KDEhist->Project3D( "yz" );
-    histProj2XY->SetName( Form("histGrad2XY_%s_%s",shortString.c_str(),KDEconfs[iHist].Data()) );
-    histProj2XZ->SetName( Form("histGrad2XZ_%s_%s",shortString.c_str(),KDEconfs[iHist].Data()) );
-    histProj2YZ->SetName( Form("histGrad2YZ_%s_%s",shortString.c_str(),KDEconfs[iHist].Data()) );
-    histProj2XY->SetTitle( Form("%s %s;cos(#theta_{L});cos(#theta_{K});",longString.c_str(),KDEconfs[iHist].Data()) );
-    histProj2XZ->SetTitle( Form("%s %s;#phi;cos(#theta_{K});",longString.c_str(),KDEconfs[iHist].Data()) );
-    histProj2YZ->SetTitle( Form("%s %s;#phi;cos(#theta_{L});",longString.c_str(),KDEconfs[iHist].Data()) );
-    // histProj2XY->GetXaxis()->SetTitleOffset(1.4);
-    histProj2XY->GetYaxis()->SetTitleOffset(1.4);
-    // histProj2XZ->GetXaxis()->SetTitleOffset(1.4);
-    histProj2XZ->GetYaxis()->SetTitleOffset(1.4);
-    // histProj2YZ->GetXaxis()->SetTitleOffset(1.4);
-    histProj2YZ->GetYaxis()->SetTitleOffset(1.4);
-
-    // auto frame = new RooPlot(*ctK,*ctL);
-    // frame->Print();
-    // data->plotOn(frame);
-
-    distProj2XY = (TH2D*)data->createHistogram(Form("distProj2XY_%s",shortString.c_str()),
-						    *ctL, Binning(20,-1,1),
-						    YVar(*ctK, Binning(20,-1,1)));
-    distProj2XZ = (TH2D*)data->createHistogram(Form("distProj2XZ_%s",shortString.c_str()),
-						    *phi, Binning(20,-TMath::Pi(),TMath::Pi()),
-						    YVar(*ctK, Binning(20,-1,1)));
-    distProj2YZ = (TH2D*)data->createHistogram(Form("distProj2YZ_%s",shortString.c_str()),
-						    *phi, Binning(20,-TMath::Pi(),TMath::Pi()),
-						    YVar(*ctL, Binning(20,-1,1)));
-
-
-    distProj2XY->SetLineColor(2);
-    distProj2XZ->SetLineColor(2);
-    distProj2YZ->SetLineColor(2);
-    distProj2XY->SetLineWidth(1);
-    distProj2XZ->SetLineWidth(1);
-    distProj2YZ->SetLineWidth(1);
-    distProj2XY->SetLineStyle(1);
-    distProj2XZ->SetLineStyle(1);
-    distProj2YZ->SetLineStyle(1);
-    // distProj2XY->SetFillColor(2);
-    // distProj2XZ->SetFillColor(2);
-    // distProj2YZ->SetFillColor(2);
-    distProj2XY->SetFillStyle(0);
-    distProj2XZ->SetFillStyle(0);
-    distProj2YZ->SetFillStyle(0);
-    // distProj2XY->Scale(0.75*histProj2XY->GetMaximum()/distProj2XY->GetMaximum());
-    // distProj2XZ->Scale(0.75*histProj2XZ->GetMaximum()/distProj2XZ->GetMaximum());
-    // distProj2YZ->Scale(0.75*histProj2YZ->GetMaximum()/distProj2YZ->GetMaximum());
-    histProj2XY->Scale(distProj2XY->GetMaximum()/histProj2XY->GetMaximum());
-    histProj2XZ->Scale(distProj2XZ->GetMaximum()/histProj2XZ->GetMaximum());
-    histProj2YZ->Scale(distProj2YZ->GetMaximum()/histProj2YZ->GetMaximum());
-    distProj2XY->Scale(0.75);
-    distProj2XZ->Scale(0.75);
-    distProj2YZ->Scale(0.75);
-
-    cgr2[confIndex]->cd(1+3*iHist);
-    histProj2XY->Draw("COLZ");
-    distProj2XY->Draw("box same");
-    cgr2[confIndex]->cd(2+3*iHist);
-    histProj2XZ->Draw("COLZ");
-    distProj2XZ->Draw("box same");
-    cgr2[confIndex]->cd(3+3*iHist);
-    histProj2YZ->Draw("COLZ");
-    distProj2YZ->Draw("box same");
-
-  }
-  cgr2[confIndex]->SaveAs( (confString+Form("_Grad2D_%i.pdf", year)).c_str() );
-  delete cgr2[confIndex];
-  delete histProj2XY;
-  delete histProj2XZ;
-  delete histProj2YZ;
-  delete distProj2XY;
-  delete distProj2XZ;
-  delete distProj2YZ;
-
 }
 
 void plotHistBin2(int q2Bin, int effIndx, int parity, int year, int vers)
@@ -604,7 +512,7 @@ void plotHistBin1(int q2Bin, int effIndx, int parity, int year, int vers)
     plotHistBin2(q2Bin, effIndx, parity, year, vers);
 }
 
-void plotHist(int q2Bin = -1, int effIndx = -1, int parity = -1, int year = 2016, int vers=-1)
+void plotHistComparison(int q2Bin = -1, int effIndx = -1, int parity = -1, int year = 2016, int vers=-1)
 {
 
   if ( q2Bin<-1 || q2Bin>=nBins ) return;

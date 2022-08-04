@@ -22,8 +22,6 @@ while read -a line; do
     wid1=${line[2]}
     wid2=${line[3]}
     vers=${line[7]}
-    
-    [ "${vers}" -le 2 ] && continue
 
     for indx in {0..4}; do
 

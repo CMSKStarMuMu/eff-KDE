@@ -27,8 +27,6 @@ if make composeEff_rooKeys_parSub; then
 	wid2=${line[3]}
 	vers=${line[7]}
 
-	[ "${vers}" -le 2 ] && continue
-
 	# Create directory for log files
 	[ -z "${vers}" ] && vers="-1"
 	if [ ! -d logs_parSub_v${vers} ]; then mkdir logs_parSub_v${vers}; fi
@@ -48,9 +46,10 @@ if make composeEff_rooKeys_parSub; then
 	    fi
 
 	    sbatch -a 0-$((${njobs}-1)) \
-		   --mem 2900 \
+		   --mem 3900 \
 		   --export=bin=${bin},indx=${indx},par=${par},wid0=${wid0},wid1=${wid1},wid2=${wid2},xbin=${xbin},ybin=${ybin},zbin=${zbin},totdiv=${njobs},year=${year},vers=${vers} \
 		   ../run_composeEff_rooKeys.sh
+		   # -x "wn155" \
 	    
 	done
 

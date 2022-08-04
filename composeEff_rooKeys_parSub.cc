@@ -44,6 +44,9 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   string shortString = Form("b%ie%ip%i",q2Bin,effIndx,parity);
   cout<<"Conf: "<<shortString<<endl;
 
+  string XGBstr = "";
+  if (vers>9) XGBstr = Form("_XGBv%i",vers/10);
+
   string datasetString = "data_";
   switch (effIndx) {
   case 0:  datasetString = datasetString+"genDen"; break;
@@ -56,19 +59,22 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
 
   // Load variables and dataset
   string fileDir = "/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta/";
-  string filename = fileDir + Form("effDatasetTheta_b%i_%i.root",q2Bin,year);
+  string filename = fileDir + Form("effDatasetTheta_b%i_%i%s.root",q2Bin,year,XGBstr.c_str());
+  if (q2Bin==4 && effIndx==2)
+    filename = fileDir + Form("effDatasetTheta_b%i_%i%s_den.root",q2Bin,year,XGBstr.c_str());
   TFile* fin = TFile::Open( filename.c_str() );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
     return;
   }
   RooWorkspace* wsp = (RooWorkspace*)fin->Get(Form("ws_b%ip%i",q2Bin,parity));
+  RooWorkspace* wsp2= (RooWorkspace*)fin->Get(Form("ws2_b%ip%i",q2Bin,parity));
   if ( !wsp || wsp->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename<<endl;
     return;
   }
-  RooRealVar* ctK = wsp->var("ctK");
-  RooRealVar* ctL = wsp->var("ctL");
+  RooRealVar* ctK = wsp->var("tK");
+  RooRealVar* ctL = wsp->var("tL");
   RooRealVar* phi = wsp->var("phi");
   if ( !ctK || !ctL || !phi || ctK->IsZombie() || ctL->IsZombie() || phi->IsZombie() ) {
     cout<<"Variables not found in file: "<<filename<<endl;
@@ -79,6 +85,11 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
     cout<<"Dataset "<<datasetString<<" not found in file: "<<filename<<endl;
     return;
   }
+  if (effIndx==2 && wsp2) {
+    totdata->append(*((RooDataSet*)wsp2->data(Form((parity==0?"data_den2_ev_b%i":"data_den2_od_b%i"),q2Bin))));
+  }
+  auto den2ds = (RooDataSet*)wsp->data(Form((parity==0?"data_den2_ev_b%i":"data_den2_od_b%i"),q2Bin));
+  if (effIndx==2 && den2ds) totdata->append(*den2ds);
   // full reconstructed sample is obtained appending wrong-tag and correct-tag events
   if ( effIndx==5 ) {
     RooDataSet* extradata = (RooDataSet*)wsp->data(Form((parity==0?"data_ctRECO_ev_b%i":"data_ctRECO_od_b%i"),q2Bin));
@@ -130,7 +141,7 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   xboundaries[xbins+2] = TMath::Pi();
   xboundaries[xbins/2+1] = TMath::Pi()/2;
   for (int i=0; i<xbins/2; ++i) {
-    thetaCentre[i] = TMath::ACos((2.0*i+1)/xbins);
+    thetaCentre[i] = TMath::ACos(-1.0*(2.0*i+1)/xbins);
     xboundaries[xbins/2+i+2] = 2*thetaCentre[i] - xboundaries[xbins/2+i+1];
     xboundaries[xbins/2-i] = TMath::Pi() - xboundaries[xbins/2+i+2];
   }
@@ -151,7 +162,7 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   t1.Stop();
   t1.Print();
   // scale the output to have the same normalisation as the input dataset (or as the full sample, with no FSR veto, for GEN-denominator)
-  KDEhist->Scale(data->sumEntries()/KDEhist->Integral());
+  KDEhist->Scale(data->numEntries()/KDEhist->Integral());
   if ( effIndx==0 ) KDEhist->Scale(1.0*normVal/totNev);
 
   // save histogram to file

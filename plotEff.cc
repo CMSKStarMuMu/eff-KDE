@@ -34,12 +34,12 @@ TCanvas* cctW [2*nBins];
 
 TH1D* Invert1Dhist(TH1D* hin, string hname);
 
-void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
+void plotEffBin(int q2Bin, int parity, bool doClosure, int year, int vers)
 {
   string shortString = Form("b%ip%i",q2Bin,parity);
   cout<<"Conf: "<<shortString<<endl;
 
-  string confString = "plotEff_d/effKDE_test_"+shortString;
+  string confString = "plotEff_d/effKDE_"+shortString+Form("_v%i",vers);
   gStyle->SetOptStat(0);
 
   bool doCT = true;
@@ -60,22 +60,34 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
   varNames[2] = "phi";
 
   // Load variables and dataset
-  string filename_data = Form("/eos/cms/store/user/fiorendi/p5prime/effKDE/%i/lmnr/effDataset_b%i_%i.root",year,q2Bin,year);
+  string XGBstr = "";
+  if (vers>9) XGBstr = Form("_XGBv%i",vers/10);
+  string filename_data = Form("effDataset_b%i_%i%s.root",q2Bin,year,XGBstr.c_str());
+  string filename_data2 = Form("effDataset_b%i_%i%s_den.root",q2Bin,year,XGBstr.c_str());
   TFile* fin_data = TFile::Open( filename_data.c_str() );
+  TFile* fin_data2 = TFile::Open( filename_data2.c_str() );
   if ( !fin_data || !fin_data->IsOpen() ) {
     cout<<"File not found: "<<filename_data<<endl;
     return;
   }
   // import both datasets (correlated and uncorrelated statistics)
   RooWorkspace* wsp = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,1-parity));
+  RooWorkspace* wsp2 = (RooWorkspace*)fin_data->Get(Form("ws2_b%ip%i",q2Bin,1-parity));
+  RooWorkspace* wsp3 = 0;
+  RooWorkspace* wsp_corr3 = 0;
   if ( !wsp || wsp->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename_data<<endl;
     return;
   }
   RooWorkspace* wsp_corr = (RooWorkspace*)fin_data->Get(Form("ws_b%ip%i",q2Bin,parity));
+  RooWorkspace* wsp_corr2 = (RooWorkspace*)fin_data->Get(Form("ws2_b%ip%i",q2Bin,parity));
   if ( !wsp_corr || wsp_corr->IsZombie() ) {
     cout<<"Workspace not found in file: "<<filename_data<<endl;
     return;
+  }
+  if (fin_data2) {
+    wsp3      = (RooWorkspace*)fin_data2->Get(Form("ws_b%ip%i",q2Bin,1-parity));
+    wsp_corr3 = (RooWorkspace*)fin_data2->Get(Form("ws_b%ip%i",q2Bin,parity));
   }
   RooRealVar* ctK = wsp->var("ctK");
   RooRealVar* ctL = wsp->var("ctL");
@@ -95,12 +107,25 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
   RooDataSet* data_den    = (RooDataSet*)wsp->data(("data_den"   +datasetString).c_str());
   RooDataSet* data_ctRECO = (RooDataSet*)wsp->data(("data_ctRECO"+datasetString).c_str());
   RooDataSet* data_wtRECO = (RooDataSet*)wsp->data(("data_wtRECO"+datasetString).c_str());
+  if (!data_den)
+    data_den = (RooDataSet*)wsp3->data(("data_den"+datasetString).c_str());
+  else if (wsp2)
+    data_den->append(*((RooDataSet*)wsp2->data(("data_den2"+datasetString).c_str())));
+  auto den2ds = (RooDataSet*)wsp->data(("data_den2"+datasetString).c_str());
+  if (den2ds) data_den->append(*den2ds);
   datasetString = Form((parity==0?"_ev_b%i":"_od_b%i"),q2Bin);
   RooDataSet* data_genDen_corr = (RooDataSet*)wsp_corr->data(("data_genDen"+datasetString).c_str());
   RooDataSet* data_genNum_corr = (RooDataSet*)wsp_corr->data(("data_genNum"+datasetString).c_str());
   RooDataSet* data_den_corr    = (RooDataSet*)wsp_corr->data(("data_den"   +datasetString).c_str());
   RooDataSet* data_ctRECO_corr = (RooDataSet*)wsp_corr->data(("data_ctRECO"+datasetString).c_str());
   RooDataSet* data_wtRECO_corr = (RooDataSet*)wsp_corr->data(("data_wtRECO"+datasetString).c_str());
+  if (!data_den_corr)
+    data_den_corr = (RooDataSet*)wsp_corr3->data(("data_den"+datasetString).c_str());
+  else if (wsp_corr2)
+    data_den_corr->append(*((RooDataSet*)wsp_corr2->data(("data_den2"+datasetString).c_str())));
+  auto den2ds_corr = (RooDataSet*)wsp_corr->data(("data_den2"+datasetString).c_str());
+  if (den2ds_corr) data_den_corr->append(*den2ds_corr);
+
  
   // import number of total genDen statistics, before FSR-veto
   // normVal = num GEN events tot / num GEN events w/o FSR ( > 1)
@@ -114,7 +139,7 @@ void plotEffBin(int q2Bin, int parity, bool doClosure, int year)
   }
   
   // import KDE efficiency histograms
-  string filename = Form((parity==0?"files/KDEeff_b%i_ev_%i.root":"files/KDEeff_b%i_od_%i.root"),q2Bin, year);
+  string filename = Form((parity==0?"files/KDEeff_b%i_ev_%i_v%i.root":"files/KDEeff_b%i_od_%i_v%i.root"),q2Bin, year, vers);
   TFile* fin = new TFile( filename.c_str(), "READ" );
   if ( !fin || !fin->IsOpen() ) {
     cout<<"File not found: "<<filename<<endl;
@@ -721,33 +746,35 @@ int main(int argc, char** argv)
   int q2Bin  = -1;
   int parity = -1; 
   int year   = 2016;
+  int vers   = -1;
 
-  if ( argc >= 2 ) q2Bin  = atoi(argv[1]);
-  if ( argc >= 3 ) parity = atoi(argv[2]);
+  if ( argc > 1 ) q2Bin  = atoi(argv[1]);
+  if ( argc > 2 ) parity = atoi(argv[2]);
 
   if ( q2Bin  < -1 || q2Bin  >= nBins ) return 1;
   if ( parity < -1 || parity > 1      ) return 1;
 
   bool doClosure = true;
-  if ( argc >= 4 && atoi(argv[3]) == 0 ) doClosure = false;
-  if ( argc >= 5 ) year = atoi(argv[4]);
+  if ( argc > 3 && atoi(argv[3]) == 0 ) doClosure = false;
+  if ( argc > 4 ) year = atoi(argv[4]);
+  if ( argc > 5 ) vers = atoi(argv[5]);
 
   if ( q2Bin > -1 ) {
     if ( parity > -1 ) {
       cout<<"Plotting efficiency for q2 bin "<<q2Bin<<(parity==1?" - odd":" - even")<<" events"<<endl;
-      plotEffBin( q2Bin, parity, doClosure, year );
+      plotEffBin( q2Bin, parity, doClosure, year, vers );
     } else {
       cout<<"Plotting efficiency for q2 bin "<<q2Bin<<" - both event parities"<<endl;
-      plotEffBin( q2Bin, 0, doClosure, year );
-      plotEffBin( q2Bin, 1, doClosure, year );
+      plotEffBin( q2Bin, 0, doClosure, year, vers );
+      plotEffBin( q2Bin, 1, doClosure, year, vers );
     }
   } else {
     cout<<"Plotting efficiency for all q2 bins - "<<(parity==1?"odd events":(parity==0?"even events":"both event parities"))<<endl;
     for (q2Bin=0; q2Bin<nBins; ++q2Bin) {
-      if ( parity > -1 ) plotEffBin( q2Bin, parity, doClosure, year );
+      if ( parity > -1 ) plotEffBin( q2Bin, parity, doClosure, year, vers );
       else {
-	plotEffBin( q2Bin, 0, doClosure, year );
-	plotEffBin( q2Bin, 1, doClosure, year );
+	plotEffBin( q2Bin, 0, doClosure, year, vers );
+	plotEffBin( q2Bin, 1, doClosure, year, vers );
       }
     }
   }

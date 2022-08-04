@@ -14,7 +14,7 @@ if [ ! -d logs_plot ]; then mkdir logs_plot; fi
 if [ ! -d plotEff_d ]; then mkdir plotEff_d; fi
 
 # Compile macro
-if make plotEff
+if make plotEffComparison
 then
     
     while read -a line; do
@@ -23,8 +23,8 @@ then
 	# [ "${line[7]}" != "${vers}" ] && continue
 	# [ $bin != 0 ] && continue
     
-	./plotEff ${bin} ${par} ${closure} ${year} ${vers} \
-	    &> logs_plot/plotEff_${bin}_${par}_${year}_${vers}.out &
+	./plotEffComparison ${bin} ${par} ${closure} ${year} ${vers} \
+	    &> logs_plot/plotEffComparison_${bin}_${par}_${year}_${vers}.out &
     
     done < ../confSF/KDE_SF.list
 

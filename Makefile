@@ -19,6 +19,7 @@ EXECUTABLE6 := composeEff_rooKeys_parSub
 EXECUTABLE7 := composeToyEff_rooKeys_parSub
 EXECUTABLE8 := plotToyEff
 EXECUTABLE9 := preComp_toyIntegrals_MC
+EXECUTABLE10 := plotEffComparison
 
 EXTRACLASS  := RooDataHist.cxx
 EXTRACLASS2 := RooNDKeysPdf.cxx
@@ -67,6 +68,9 @@ $(EXECUTABLE8): $(EXECUTABLE8).cc
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(SOURCEDIR)/$(EXTRACLASS) $(ROOTLIBS) $(ROOTFLAGS)
 
 $(EXECUTABLE9): $(EXECUTABLE9).cc
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(SOURCEDIR)/$(EXTRACLASS) $(ROOTLIBS) $(ROOTFLAGS)
+
+$(EXECUTABLE10): $(EXECUTABLE10).cc 
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(SOURCEDIR)/$(EXTRACLASS) $(ROOTLIBS) $(ROOTFLAGS)
 
 

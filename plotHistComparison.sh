@@ -23,11 +23,11 @@ then
 	# [ "${line[7]}" != "${vers}" ] && continue
 	# [ $bin != 4 ] && continue
 
-	for indx in {0..4}; do
+	for indx in {3..4}; do
 
 	    # Plot KDE histograms
-	    root -b -q 'plotHist.cc('${bin}','${indx}','${par}','${year}','${vers}')' \
-		&> logs_plot/plotHist_${bin}_${indx}_${par}_${year}_${vers}.out &
+	    root -b -q 'plotHistComparison.cc('${bin}','${indx}','${par}','${year}','${vers}')' \
+		&> logs_plot/plotHistComparison_${bin}_${indx}_${par}_${year}_${vers}.out &
 	
 	done
 
@@ -37,11 +37,11 @@ else
 
     bin=$qbin
 
-    for indx in {0..4}; do
+    for indx in {3..4}; do
 
 	# Plot KDE histograms
-	root -b -q 'plotHist.cc('${bin}','${indx}','${par}','${year}','${vers}')' \
-	    &> logs_plot/plotHist_${bin}_${indx}_${par}_${year}_${vers}.out &
+	root -b -q 'plotHistComparison.cc('${bin}','${indx}','${par}','${year}','${vers}')' \
+	    &> logs_plot/plotHistComparison_${bin}_${indx}_${par}_${year}_${vers}.out &
 	
     done
 
