@@ -13,8 +13,6 @@ while [ ${tag} -ge 0 ]; do
 	bin=${line[0]}
 	vers=${line[7]}
 
-	# [ "${vers}" -ge 3 ] && continue
-
 	for toy in {0..9}
 	do
 	    root -q -b 'mergeParSub_preComp_toyIntegrals_MC.cc('${bin}','${par}','${tag}',5,1,'${year}','${toy}','${vers}')'

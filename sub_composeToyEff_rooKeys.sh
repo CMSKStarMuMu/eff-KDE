@@ -14,7 +14,7 @@ zbin=50
 
 ntoys=10
 vindx=(1 3 4)
-vnjobs=(1 6 1 2 1)
+vnjobs=(1 4 1 2 1)
 
 if make composeToyEff_rooKeys_parSub; then
 

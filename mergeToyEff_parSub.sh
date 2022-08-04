@@ -11,7 +11,7 @@ ybin=50
 zbin=50
 
 vindx=(1 3 4)
-vnjobs=(1 6 1 2 1)
+vnjobs=(1 4 1 2 1)
 
 # Create directory for KDE and efficiency histograms
 if [ ! -d files ]; then mkdir files; fi
