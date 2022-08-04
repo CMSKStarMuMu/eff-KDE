@@ -19,33 +19,30 @@ git clone -b working-basicMacroImplementation git@github.com:CMSKStarMuMu/eff-KD
 cd eff-KDE
 ```
 ## Create datasets
-If needed, change the [location of the ntuples](createDataset.cc#L49-L60), which need to be produced with the code in the [B0KstMuMuNtuple repository](https://github.com/CMSKStarMuMu/B0KstMuMuNtuple).
-Then produce files with all the needed datasets (example for 2017 ntuples):
+If needed, change the [location of the ntuples](createDataset.cc#L76-L149), which need to be produced with the code in the [B0KstMuMuNtuple repository](https://github.com/CMSKStarMuMu/B0KstMuMuNtuple).
+Then produce files with all the needed datasets (example for 2017 ntuples, XGBoost reweighting v4):
 ```sh
-root -q -b 'createDataset.cc(7)'
+root -q -b 'createDataset.cc(7,-1,-1,true,4)'
 ```
 
 ## Produce KDE description of numerators and denominators
-This code is configured to submit parallel computation of the KDE, using HTCondor (available at CERN and accessible from lxplus machines).
+This code is configured to submit parallel computation of the KDE, using HTCondor (available at CERN and accessible from lxplus machines) or SLURM.
 Feel free to adapt the code to run on other kind of infrastructure or, discouraged, to run it locally.
-Before running, you need to create a file `../confSF/KDE_SF.list`, containing the q2-bins to process and the corresponding KDE scale factors.
+Before running, you need to create a file `../confSF/KDE_SF.list`, containing the q2-bins to process, the corresponding KDE scale factors (for ctK-RT, ctL-RT, phi-RT, ctK-WT, ctL-WT, phi-WT, respectively), and a global version number, composed by the KDE configuration version (4 in the example here) plus ten times the XGBoost reweighting version (4 in the example):
 ```sh
 if [ ! -d ../confSF ]; then mkdir ../confSF; fi
 cat << EOF > ../confSF/KDE_SF.list
-0       0.50    1.00    1.00    0.50    1.00    1.00
-1       0.30    1.00    0.70    0.30    0.80    0.30
-2       0.40    0.80    0.50    0.40    0.80    0.50
-3       0.60    1.00    0.80    0.40    1.00    0.50
-5       0.40    1.00    0.50    0.40    1.20    1.10
-7       0.60    1.00    0.60    0.40    0.60    0.40
+0	0.50	0.60	1.00	0.80	0.70	1.00	44
+1	0.30	0.60	0.70	0.60	0.70	0.70	44
+2	0.40	0.50	0.50	0.60	0.50	0.60	44
+3	0.60	0.60	0.80	0.80	0.60	0.90	44
+4	0.60	0.60	0.80	0.80	0.60	0.80	44
+5	0.40	0.60	0.50	0.50	0.60	0.60	44
+6	0.60	0.60	0.60	0.80	0.60	0.60	44
+7	0.60	0.60	0.60	0.70	0.60	0.60	44
 EOF
 ```
-The KDE scale factors that have been used for the normalisation channels are
-```
-4       0.60    1.00    0.80    0.40    1.00    0.50
-6       0.60    1.00    0.60    0.40    1.00    1.00
-```
-Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh#L16-L19).
+Adapt the paths to CMSSW area, working directory and directory for output files in [run_composeEff_rooKeys.sh](run_composeEff_rooKeys.sh).
 Submit 4200 jobs by running:
 ```sh
 source sub_composeEff_rooKeys.sh <parity> <year>
