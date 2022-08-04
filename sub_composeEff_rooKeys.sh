@@ -12,49 +12,94 @@ xbin=50
 ybin=50
 zbin=50
 
-vnjobs=(65 4 90 2 1)
-# (100 20 200 5 5) previous run
+# Create directory for log files
+if [ ! -d logs_parSub ]; then mkdir logs_parSub; fi
 
-if make composeEff_rooKeys_parSub; then
-
-    # Use external configuration file with list of bin numbers (to be coherent with the numbers in effDataset_b*.root files)
-    # and corresponding scale factor configuration
-    while read -a line; do
+# Use external configuration file with list of bin numbers (to be coherent with the numbers in effDataset_b*.root files)
+# and corresponding scale factor configuration
+while read -a line; do
+    
+    bin=${line[0]}
+    wid0=${line[1]}
+    wid1=${line[2]}
+    wid2=${line[3]}
+    
+    # Submit jobs for genDen, genNum, recoDen, and correct-tag recoNum
+    # which use the same scale-sactor configuration
+    for indx in {0..3}; do
 	
-	bin=${line[0]}
-	wid0=${line[1]}
-	wid1=${line[2]}
-	wid2=${line[3]}
-	vers=${line[7]}
+	# Number of parallel jobs for each KDE description
+	njobs=50
+	if [ ${indx} -eq 2 ]; then njobs=500; fi # recoDen sample has very large statistics
+	
+	# Creation of the submit HTCondor file
+	cat << EOF > temp_sub_composeEff_rooKeys_oneBin.sub
+Executable  = run_composeEff_rooKeys.sh
+bin         = ${bin}
+indx        = ${indx}
+par	    = ${par}
+wid0        = ${wid0}
+wid1        = ${wid1}
+wid2        = ${wid2}
+xbin        = ${xbin}
+ybin        = ${ybin}
+zbin        = ${zbin}
+ndiv        = \$(ProcId)
+totdiv      = ${njobs}
+year        = ${year}
+Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT(xbin) \$INT(ybin) \$INT(zbin) \$INT(ndiv) \$INT(totdiv) \$INT(year)
+Log         = logs_parSub/sub_\$(ClusterId).log
+Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).out
+Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).err
++JobFlavour = "testmatch"
+EOF
+        if [ "${USER}" == "fiorendi" ]; then
+            echo '+AccountingGroup = "group_u_CMST3.all"'>>temp_sub_composeEff_rooKeys_oneBin.sub
+        fi
+        echo "Queue ${njobs}">>temp_sub_composeEff_rooKeys_oneBin.sub
 
-	# Create directory for log files
-	[ -z "${vers}" ] && vers="-1"
-	if [ ! -d logs_parSub_v${vers} ]; then mkdir logs_parSub_v${vers}; fi
+        # Submission and file removal
+        condor_submit temp_sub_composeEff_rooKeys_oneBin.sub
+	rm temp_sub_composeEff_rooKeys_oneBin.sub
+	
+    done
 
-	if [ ! -d tmpdir_v${vers} ]; then mkdir tmpdir_v${vers}; fi
-	cd tmpdir_v${vers}
+    # Submit jobs for wrong-tag recoNum
+    # which uses a specific scale-factor configuration
+    indx=4
+    wid0=${line[4]}
+    wid1=${line[5]}
+    wid2=${line[6]}
+    njobs=50
+    
+    # Creation of the submit HTCondor file
+    cat << EOF > temp_sub_composeEff_rooKeys_oneBin.sub
+Executable  = run_composeEff_rooKeys.sh
+bin         = ${bin}
+indx        = ${indx}
+par	    = ${par}
+wid0        = ${wid0}
+wid1        = ${wid1}
+wid2        = ${wid2}
+xbin        = ${xbin}
+ybin        = ${ybin}
+zbin        = ${zbin}
+ndiv        = \$(ProcId)
+totdiv      = ${njobs}
+year        = ${year}
+Arguments   = \$INT(bin) \$INT(indx) \$INT(par) \$(wid0) \$(wid1) \$(wid2) \$INT(xbin) \$INT(ybin) \$INT(zbin) \$INT(ndiv) \$INT(totdiv) \$INT(year)
+Log         = logs_parSub/sub_\$(ClusterId).log
+Output      = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).out
+Error       = logs_parSub/composeEff_rooKeys_\$INT(bin)_\$INT(indx)_\$INT(par)_\$(wid0)_\$(wid1)_\$(wid2)_\$INT(xbin)_\$INT(ybin)_\$INT(zbin)_\$INT(ndiv)_\$INT(totdiv)_\$INT(year).err
++JobFlavour = "testmatch"
+EOF
+    if [ "${USER}" == "fiorendi" ]; then
+        echo '+AccountingGroup = "group_u_CMST3.all"'>>temp_sub_composeEff_rooKeys_oneBin.sub
+    fi
+    echo "Queue ${njobs}">>temp_sub_composeEff_rooKeys_oneBin.sub
 
-	for indx in {0..4}
-	do
+    # Submission and file removal
+    condor_submit temp_sub_composeEff_rooKeys_oneBin.sub
+    rm temp_sub_composeEff_rooKeys_oneBin.sub
 
-	    njobs=${vnjobs[$indx]}
-	    if [ $indx == 4 ]
-	    then
-		wid0=${line[4]}
-		wid1=${line[5]}
-		wid2=${line[6]}
-	    fi
-
-	    sbatch -a 0-$((${njobs}-1)) \
-		   --mem 3900 \
-		   --export=bin=${bin},indx=${indx},par=${par},wid0=${wid0},wid1=${wid1},wid2=${wid2},xbin=${xbin},ybin=${ybin},zbin=${zbin},totdiv=${njobs},year=${year},vers=${vers} \
-		   ../run_composeEff_rooKeys.sh
-		   # -x "wn155" \
-	    
-	done
-
-	cd ..
-
-    done < ../confSF/KDE_SF.list #File containing scale-factor configuration
-
-fi
+done < ../confSF/KDE_SF.list #File containing scale-factor configuration

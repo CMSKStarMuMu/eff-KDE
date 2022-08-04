@@ -5,37 +5,44 @@ par=${1}
 year=${2}
 [ -z "${year}" ] && year=2016	# set default
 
+# Create directory for log files
+if [ ! -d logs_preComp ]; then mkdir logs_preComp; fi
+
 # Compile file
-if make preComp_Integrals_MC; then
+make preComp_Integrals_MC
 
-    tag=1
+tag=1
 
-    while [ ${tag} -ge 0 ]; do
-	while read -a line; do
+while [ ${tag} -ge 0 ]; do
+    while read -a line; do
 
-	    bin=${line[0]}
-	    vers=${line[7]}
+	bin=${line[0]}
 
-	    # Create directory for log files
-	    if [ ! -d logs_preComp_v${vers} ]; then mkdir logs_preComp_v${vers}; fi
-	    if [ ! -d tmpint_v${vers} ]; then mkdir tmpint_v${vers}; fi
+	cat << EOF > temp_sub_preComp_Integrals_MC.sub
+Executable  = run_preComp_Integrals_MC.sh
+bin         = ${bin}
+par	    = ${par}
+tag         = ${tag}
+cnt_hit     = 10000000
+seed        = \$(ProcId) + 1
+year        = ${year}
+Arguments   = \$INT(bin) \$INT(par) \$INT(tag) \$INT(cnt_hit) \$INT(seed) \$INT(year)
+Log         = logs_preComp/sub_\$(ClusterId).log
+Output      = logs_preComp/preComp_Integrals_MC_\$INT(bin)_\$INT(par)_\$INT(tag)_\$INT(cnt_hit)_\$INT(seed)_\$INT(year).out
+Error       = logs_preComp/preComp_Integrals_MC_\$INT(bin)_\$INT(par)_\$INT(tag)_\$INT(cnt_hit)_\$INT(seed)_\$INT(year).err
++JobFlavour = "tomorrow"
+EOF
 
-	    if [ ! -d tmpdir-precom_v${vers} ]; then mkdir tmpdir-precom_v${vers}; fi
-	    cd tmpdir-precom_v${vers}
+        if [ "${USER}" == "fiorendi" ]; then
+            echo '+AccountingGroup = "group_u_CMST3.all"'>>temp_sub_preComp_Integrals_MC.sub
+        fi
 
-	    echo "Submitting tag ${tag}, bin ${bin}, vers ${vers}"
+        echo 'Queue 500'>>temp_sub_preComp_Integrals_MC.sub
 
-	    sbatch -a 0-49 \
-		   --export=bin=${bin},par=${par},tag=${tag},cnt_hit=100000000,year=${year},vers=${vers} \
-		   ../run_preComp_Integrals_MC.sh
-
-	    # sbatch -a 0-499 \
-	    # 	   --export=bin=${bin},par=${par},tag=${tag},cnt_hit=10000000,year=${year},vers=${vers} \
-	    # 	   ../run_preComp_Integrals_MC.sh
-
-	    cd ..
+        echo "Submit par: "${par}" tag:"${tag}" bin:"${bin} " year:"${year}
+	condor_submit temp_sub_preComp_Integrals_MC.sub
+	rm temp_sub_preComp_Integrals_MC.sub
 	    
-	done < ../confSF/KDE_SF.list
-	tag=$(( ${tag} - 1 ))
-    done
-fi
+    done < ../confSF/KDE_SF.list
+    tag=$(( ${tag} - 1 ))
+done
