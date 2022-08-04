@@ -11,7 +11,7 @@ double PDGKstMass = 0.896;
 
 TCanvas* c [nBins];
 
-void createDataset(int year, int q2Bin = -1, bool plot = false)
+void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = true, int XGBv = 2, bool plot = false)
 {
   // year format: [6] for 2016
   //              [7] for 2017
@@ -22,6 +22,9 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   if ( q2Bin<-1 || q2Bin>=nBins ) return;
 
   if ( year<6 || year>8 ) return;
+
+  string XGBstr = "";
+  if (XGBv>0) XGBstr = Form("_XGBv%i",XGBv);
 
   bool isJpsi = false;
   bool isPsi  = false;
@@ -36,14 +39,21 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   if (q2Bin==4) saveDen = false;
 
   // define angular variables and variable for PU-reweighting
-  RooRealVar ctK ("ctK","cos(#theta_{K})",-1,1);
-  RooRealVar ctL ("ctL","cos(#theta_{L})",-1,1);
-  RooRealVar phi ("phi","#phi",-TMath::Pi(),TMath::Pi());
-  RooArgSet vars (ctK, ctL, phi);
+  RooRealVar* ctK = 0;
+  RooRealVar* ctL = 0;
+  if (useTheta) {
+    ctK = new RooRealVar("tK","#theta_{K}",0,TMath::Pi());
+    ctL = new RooRealVar("tL","#theta_{L}",0,TMath::Pi());
+  } else {
+    ctK = new RooRealVar("ctK","cos(#theta_{K})",-1,1);
+    ctL = new RooRealVar("ctL","cos(#theta_{L})",-1,1);
+  }
+  RooRealVar* phi = new RooRealVar("phi","#phi",-TMath::Pi(),TMath::Pi());
+  RooArgSet vars (*ctK, *ctL, *phi);
   RooRealVar wei ("weight","weight",1);
   RooRealVar rand("rand", "rand", 0,1);
   TRandom rand_gen(1029);
-  RooArgSet all_vars (ctK, ctL, phi, rand);
+  RooArgSet all_vars (*ctK, *ctL, *phi, rand);
 
   // flags to mark which q2 bins should be filled
   bool runBin [nBins];
@@ -52,6 +62,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   for (int i=0; i<nBins; ++i) {
     runBin [i] = false;
     if ( q2Bin!=-1 && q2Bin!=i ) continue;
+    if ( q2Bin==-1 && ( i==4 || i==6 ) ) continue;
     runBin [i] = true;
     shortString [i] = Form("b%i",i);
     longString  [i] = Form("q2 bin %i",i);
@@ -61,21 +72,29 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   TChain* t_gen = new TChain();
   TChain* t_den = new TChain();
   TChain* t_num = new TChain();
-  //first for 2017
+
   if (isLMNR){
     t_gen->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/newphi/GEN_BFilter_B0MuMuKstar_p*.root/ntuple");
     if ( year==6 ) {
       // 2016
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_LMNR.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_LMNR.root/ntuple");
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_LMNR.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
     } else if ( year==7 ) {
       // 2017
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_LMNR.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_LMNR.root/ntuple");
-    } else if ( year==8 ) {
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_LMNR.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
+   } else if ( year==8 ) {
       // 2018
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_LMNR.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_LMNR.root/ntuple");
+      if (XGBv==2) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV2/2018MC_LMNR_withMCw_v2_addxcutvariable.root/ntuple");
+      else if (XGBv==3) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV3/2018MC_LMNR_v3_MCw_addxcutvariable.root/ntuple");
+      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple");
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_LMNR.root/ntuple");
     }
   }
   else if (isJpsi){
@@ -83,15 +102,24 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     if ( year==6 ) {
       // 2016
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_JPSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_JPSI.root/ntuple");
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_JPSI.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
     } else if ( year==7 ) {
       // 2017
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_JPSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_JPSI.root/ntuple");
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_JPSI.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
     } else if ( year==8 ) {
       // 2018
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_JPSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_JPSI.root/ntuple");
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_JPSI.root/ntuple");
+      if (XGBv==2) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV2/2018MC_JPSI_withMCw_v2_addxcutvariable.root/ntuple");
+      else if (XGBv==3) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV3/2018MC_JPSI_v3_MCw_addxcutvariable.root/ntuple");
+      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple");
+      // t_num->Add("/eos/user/x/xuqin/workdir/B0KstMuMu/reweight/Tree/final/gitv1/Foreff/recoMCDataset_rw_b4_2018_p1.root/ntuple");
     }  
   }
   else if (isPsi){
@@ -99,15 +127,24 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     if ( year==6 ) {
       // 2016
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_PSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_PSI.root/ntuple");
-    } else if ( year==7 ) {
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_PSI.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
+   } else if ( year==7 ) {
       // 2017
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_PSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_PSI.root/ntuple");
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_PSI.root/ntuple");
+      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
     } else if ( year==8 ) {
       // 2018
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_PSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_PSI.root/ntuple");
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_PSI.root/ntuple");
+      if (XGBv==2) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV2/2018MC_PSI_withMCw_v2_addxcutvariable.root/ntuple");
+      else if (XGBv==3) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV3/2018MC_PSI_v3_MCw_addxcutvariable.root/ntuple");
+      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple");
+      // t_num->Add("/eos/user/x/xuqin/workdir/B0KstMuMu/reweight/Tree/final/gitv1/Foreff/recoMCDataset_rw_b6_2018_p1.root/ntuple");
     }  
   }
   else 
@@ -150,7 +187,7 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 
   // B0 mass variable
   double recoB0Mass;
-  bool passB0Psi_lmnr, passB0Psi_jpsi, passB0Psi_psip;
+  int passB0Psi_lmnr, passB0Psi_jpsi, passB0Psi_psip;
   t_num->SetBranchAddress( "tagged_mass", &recoB0Mass );
   t_num->SetBranchAddress( "passB0Psi_lmnr", &passB0Psi_lmnr );
   t_num->SetBranchAddress( "passB0Psi_jpsi", &passB0Psi_jpsi );
@@ -181,11 +218,26 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   t_num->SetBranchAddress( "eventN", &eventN     );
 
   // event pileup weight
-  double PUweight = 1;
-  double fPUweight = 1;
-  
-  t_den->SetBranchAddress( "weight", &fPUweight );
-  t_num->SetBranchAddress( "weight", &PUweight );
+  double PUweight = 1; 	// nj6, np6, dp6
+  float fPUweight = 1;	// nj7, nj8, np7, np8, dj6, dj7, dp7, dj8, dp8
+
+  bool isNumWeightFloat = true;
+  bool isDenWeightFloat = true;
+  if (year==6) isNumWeightFloat = false;
+  if (year==6 && (isPsi || isLMNR)) isDenWeightFloat = false;
+
+  if (isDenWeightFloat)
+    t_den->SetBranchAddress( "weight", &fPUweight );
+  else
+    t_den->SetBranchAddress( "weight", &PUweight );
+  if (isNumWeightFloat)
+    t_num->SetBranchAddress( "weight", &fPUweight );
+  else
+    t_num->SetBranchAddress( "weight", &PUweight );
+
+  // XGB MC weight
+  float XGBweight = 1;
+  if (XGBv>0) t_num->SetBranchAddress( "sf_to_data", &XGBweight );
 
   // final state radiation flag
   double genSignHasFSR;
@@ -196,28 +248,31 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   // will be a boolean in ntuples in the future
   // keep it here for now since not finalized
   // as from https://github.com/CMSKStarMuMu/RooSideBand/blob/master/testSidebandFit.cc#L2592-L2661
-  double wt_mass, wt_kstarmass, kaonPt, pionPt, mmpiMass, mmkMass;
-  t_num->SetBranchAddress( "wt_mass",      &wt_mass      );
-  t_num->SetBranchAddress( "wt_kstarmass", &wt_kstarmass );
-  t_num->SetBranchAddress( "kaonPt",       &kaonPt       );
-  t_num->SetBranchAddress( "pionPt",       &pionPt       );
-  t_num->SetBranchAddress( "mmpiMass",     &mmpiMass     );
-  t_num->SetBranchAddress( "mmkMass",      &mmkMass      );
+  // double wt_mass, wt_kstarmass, kaonPt, pionPt, mmpiMass, mmkMass;
+  // t_num->SetBranchAddress( "wt_mass",      &wt_mass      );
+  // t_num->SetBranchAddress( "wt_kstarmass", &wt_kstarmass );
+  // t_num->SetBranchAddress( "kaonPt",       &kaonPt       );
+  // t_num->SetBranchAddress( "pionPt",       &pionPt       );
+  // t_num->SetBranchAddress( "mmpiMass",     &mmpiMass     );
+  // t_num->SetBranchAddress( "mmkMass",      &mmkMass      );
 
-  double x0Cut=-0.4;
-  double y0Cut= 0.3;
-  double x1Cut= 0.6;
-  double y1Cut=-0.1;
+  int XCut;
+  t_num->SetBranchAddress( "xcut", &XCut );
+
+  // double x0Cut=-0.4;
+  // double y0Cut= 0.3;
+  // double x1Cut= 0.6;
+  // double y1Cut=-0.1;
   
-  double x_0Cut=3;
-  double y_0Cut=3.8;
-  double x_1Cut=3.6;
-  double y_1Cut=4.8;
+  // double x_0Cut=3;
+  // double y_0Cut=3.8;
+  // double x_1Cut=3.6;
+  // double y_1Cut=4.8;
   
-  double CutX1=3.2;
-  double CutX2=3.6;
-  double CutY1=4.7;
-  double CutY2=4.9;
+  // double CutX1=3.2;
+  // double CutX2=3.6;
+  // double CutY1=4.7;
+  // double CutY2=4.9;
 
 
   // Define datasets for five efficiency terms
@@ -227,6 +282,8 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   RooDataSet* data_genNum_od [nBins];
   RooDataSet* data_den_ev    [nBins];
   RooDataSet* data_den_od    [nBins];
+  RooDataSet* data_den2_ev    [nBins];
+  RooDataSet* data_den2_od    [nBins];
   RooDataSet* data_ctRECO_ev [nBins];
   RooDataSet* data_ctRECO_od [nBins];
   RooDataSet* data_wtRECO_ev [nBins];
@@ -241,17 +298,21 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       data_genNum_od [i] = new RooDataSet( ("data_genNum_od_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (odd)",
 					   vars );
       data_den_ev    [i] = new RooDataSet( ("data_den_ev_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (even)",
-					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+					   RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
       data_den_od    [i] = new RooDataSet( ("data_den_od_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (odd)",
-					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+					   RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
+      data_den2_ev   [i] = new RooDataSet( ("data_den2_ev_"  +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (even)",
+					   RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
+      data_den2_od   [i] = new RooDataSet( ("data_den2_od_"  +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (odd)",
+					   RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
       data_ctRECO_ev [i] = new RooDataSet( ("data_ctRECO_ev_"+shortString[i]).c_str(), "Correctly-tagged reconstructed candidates after selections (even)",
-					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+					   RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
       data_ctRECO_od [i] = new RooDataSet( ("data_ctRECO_od_"+shortString[i]).c_str(), "Correctly-tagged reconstructed candidates after selections (odd)",
-					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+					   RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
       data_wtRECO_ev [i] = new RooDataSet( ("data_wtRECO_ev_"+shortString[i]).c_str(), "Wrongly-tagged reconstructed candidates after selections (even)",
-					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+					   RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
       data_wtRECO_od [i] = new RooDataSet( ("data_wtRECO_od_"+shortString[i]).c_str(), "Wrongly-tagged reconstructed candidates after selections (odd)",
-					   RooArgSet(ctK,ctL,phi,wei), "weight" );
+					   RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
     }
 
   // Define counter of total genDen events (w/o FSR veto) for correct efficiency normalisation
@@ -283,9 +344,14 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       cout<<counter<<"%"<<endl;
       counter += 10;
     }
-    ctK.setVal(genCosThetaK);
-    ctL.setVal(genCosThetaL);
-    phi.setVal(genPhi);
+    if (useTheta) {
+      ctK->setVal(TMath::ACos(genCosThetaK));
+      ctL->setVal(TMath::ACos(genCosThetaL));
+    } else {
+      ctK->setVal(genCosThetaK);
+      ctL->setVal(genCosThetaL);
+    }
+    phi->setVal(genPhi);
     rand.setVal(rand_gen.Uniform(1));
     // fill genDen dataset
     n_genDen[xBin]->Fill((eventN)%2);
@@ -327,11 +393,24 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       counter += 10;
     }
     // fill dataset
-    ctK.setVal(genCosThetaK);
-    ctL.setVal(genCosThetaL);
-    phi.setVal(genPhi);
-    if (eventN%2==0) data_den_ev[xBin]->add(vars,fPUweight);
-    else data_den_od[xBin]->add(vars,fPUweight);
+    if (useTheta) {
+      ctK->setVal(TMath::ACos(genCosThetaK));
+      ctL->setVal(TMath::ACos(genCosThetaL));
+    } else {
+      ctK->setVal(genCosThetaK);
+      ctL->setVal(genCosThetaL);
+    }
+    phi->setVal(genPhi);
+    if (isDenWeightFloat)
+      if (eventN%4==0) data_den_ev[xBin]->add(vars,fPUweight);
+      else if (eventN%4==2) data_den2_ev[xBin]->add(vars,fPUweight);
+      else if (eventN%4==1) data_den_od[xBin]->add(vars,fPUweight);
+      else data_den2_od[xBin]->add(vars,fPUweight);
+    else
+      if (eventN%4==0) data_den_ev[xBin]->add(vars,PUweight);
+      else if (eventN%4==2) data_den2_ev[xBin]->add(vars,PUweight);
+      else if (eventN%4==1) data_den_od[xBin]->add(vars,PUweight);
+      else data_den2_od[xBin]->add(vars,PUweight);
   }
 
   delete t_den;
@@ -358,14 +437,14 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
     if (xBin<0) continue;
 
     // apply cut for bin 4 
-    bool XCut= (( (PDGB0Mass - wt_mass) - y0Cut ) / (y1Cut-y0Cut)) < (((wt_kstarmass-PDGKstMass)-x0Cut) / (x1Cut-x0Cut)) && \
-                  kaonPt > pionPt && \
-                  (wt_kstarmass-PDGKstMass)>0 && \
-                  (mmpiMass > CutX1 && mmpiMass < CutX2) && \
-                  (mmkMass >  CutY1 && mmkMass  < CutY2) && \
-                  ((mmkMass - y_0Cut) / (y_1Cut - y_0Cut)) > ((mmpiMass-x_0Cut)/(x_1Cut-x_0Cut));
+    // bool XCut= (( (PDGB0Mass - wt_mass) - y0Cut ) / (y1Cut-y0Cut)) < (((wt_kstarmass-PDGKstMass)-x0Cut) / (x1Cut-x0Cut)) && \
+    //               kaonPt > pionPt && \
+    //               (wt_kstarmass-PDGKstMass)>0 && \
+    //               (mmpiMass > CutX1 && mmpiMass < CutX2) && \
+    //               (mmkMass >  CutY1 && mmkMass  < CutY2) && \
+    //               ((mmkMass - y_0Cut) / (y_1Cut - y_0Cut)) > ((mmpiMass-x_0Cut)/(x_1Cut-x_0Cut));
   
-    if (XCut && xBin == 4) continue;
+    if (XCut>0 && xBin == 4) continue;
 
     // status display
     if ( iCand > 1.0*counter*numEntries/100 ) {
@@ -373,16 +452,30 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
       counter += 10;
     }
     // fill dataset
-    ctK.setVal(recoCosThetaK);
-    ctL.setVal(recoCosThetaL);
-    phi.setVal(recoPhi);
-    if (genSignal != tagB0+1) { // correctly tagged events
-      if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,PUweight);
-      else data_ctRECO_od[xBin]->add(vars,PUweight);
-    } else { // wrongly tagged events
-      if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,PUweight);
-      else data_wtRECO_od[xBin]->add(vars,PUweight);
+    if (useTheta) {
+      ctK->setVal(TMath::ACos(recoCosThetaK));
+      ctL->setVal(TMath::ACos(recoCosThetaL));
+    } else {
+      ctK->setVal(recoCosThetaK);
+      ctL->setVal(recoCosThetaL);
     }
+    phi->setVal(recoPhi);
+    if (isNumWeightFloat)
+      if (genSignal != tagB0+1) { // correctly tagged events
+	if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,fPUweight*XGBweight);
+	else data_ctRECO_od[xBin]->add(vars,fPUweight*XGBweight);
+      } else { // wrongly tagged events
+	if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,fPUweight*XGBweight);
+	else data_wtRECO_od[xBin]->add(vars,fPUweight*XGBweight);
+      }
+    else
+      if (genSignal != tagB0+1) { // correctly tagged events
+	if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,PUweight*XGBweight);
+	else data_ctRECO_od[xBin]->add(vars,PUweight*XGBweight);
+      } else { // wrongly tagged events
+	if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,PUweight*XGBweight);
+	else data_wtRECO_od[xBin]->add(vars,PUweight*XGBweight);
+      }
   }
   delete t_num;
   cout<<"Dataset prepared"<<endl;
@@ -390,50 +483,80 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
   // Save datasets in workspaces
   RooWorkspace *ws_ev [nBins];
   RooWorkspace *ws_od [nBins];
+  RooWorkspace *ws2_ev [nBins];
+  RooWorkspace *ws2_od [nBins];
   for (int i=0; i<nBins; ++i) if (runBin[i]) {
       // Skip the creation of a file when the correct-tag efficiency cannot be computed (empty numerators)
       // which usually means that either you are using a resonant MC, which does not fill signal q2 bins,
       // or using a bin too fine, or out of range
       // If correct-tag numerator is filled and wrong-tag is not, a warning is returned
-      if ( data_genNum_ev[i]->numEntries()==0 || data_genNum_od[i]->numEntries()==0 ) {
+      if ( ( parity!=1 && data_genNum_ev[i]->numEntries()==0 ) ||
+	   ( parity!=0 && data_genNum_od[i]->numEntries()==0 ) ) {
 	cout<<"Error: genNum is empty in q2 bin "<<i<<endl;
 	continue;
       }
-      if ( data_ctRECO_ev[i]->numEntries()==0 || data_ctRECO_od[i]->numEntries()==0 ) {
+      if ( ( parity!=1 && data_ctRECO_ev[i]->numEntries()==0 ) ||
+	   ( parity!=0 && data_ctRECO_od[i]->numEntries()==0 ) ) {
 	cout<<"Error: ctRECO is empty in q2 bin "<<i<<endl;
 	continue;
       }
-      if ( data_wtRECO_ev[i]->numEntries()==0 || data_wtRECO_od[i]->numEntries()==0 ) {
+      if ( ( parity!=1 && data_wtRECO_ev[i]->numEntries()==0 ) ||
+	   ( parity!=0 && data_wtRECO_od[i]->numEntries()==0 ) ) {
 	cout<<"Warning: wtRECO is empty in q2 bin "<<i<<endl;
       }
-      ws_ev[i] = new RooWorkspace(("ws_"+shortString[i]+"p0").c_str(),"Workspace with single-bin even datasets");
-      ws_od[i] = new RooWorkspace(("ws_"+shortString[i]+"p1").c_str(),"Workspace with single-bin odd datasets");
-      ws_ev[i]->import( *data_genDen_ev[i] );
-      ws_od[i]->import( *data_genDen_od[i] );
-      ws_ev[i]->import( *data_genNum_ev[i] );
-      ws_od[i]->import( *data_genNum_od[i] );
-      if (saveDen){
-        ws_ev[i]->import( *data_den_ev[i] );
-        ws_od[i]->import( *data_den_od[i] );
-      }  
-      ws_ev[i]->import( *data_ctRECO_ev[i] );
-      ws_od[i]->import( *data_ctRECO_od[i] );
-      ws_ev[i]->import( *data_wtRECO_ev[i] );
-      ws_od[i]->import( *data_wtRECO_od[i] );
-      TFile* fout = new TFile( ( "effDataset_"+shortString[i]+Form("_201%i.root",year) ).c_str(), "RECREATE" );
-      ws_ev[i]->Write();
-      ws_od[i]->Write();
+      TFile* fout = 0;
+      if (useTheta)
+	fout = new TFile( ( "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/effDatasetTheta_"+shortString[i]+Form("_201%i%s.root",year,XGBstr.c_str()) ).c_str(), "RECREATE" );
+      else
+	fout = new TFile( ( "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/effDataset_"+shortString[i]+Form("_201%i%s.root",year,XGBstr.c_str()) ).c_str(), "RECREATE" );
+      if (parity!=1) {
+	ws_ev[i] = new RooWorkspace(("ws_"+shortString[i]+"p0").c_str(),"Workspace with single-bin even datasets");
+	ws_ev[i]->import( *data_genDen_ev[i] );
+	ws_ev[i]->import( *data_genNum_ev[i] );
+	if (saveDen){
+	  ws_ev[i]->import( *data_den_ev[i] );
+	  ws_ev[i]->import( *data_den2_ev[i] );
+	}  
+	ws_ev[i]->import( *data_ctRECO_ev[i] );
+	ws_ev[i]->import( *data_wtRECO_ev[i] );
+	ws_ev[i]->Write();
+      }
+      if (parity!=0) {
+	ws_od[i] = new RooWorkspace(("ws_"+shortString[i]+"p1").c_str(),"Workspace with single-bin odd datasets");
+	ws_od[i]->import( *data_genDen_od[i] );
+	ws_od[i]->import( *data_genNum_od[i] );
+	if (saveDen){
+	  ws_od[i]->import( *data_den_od[i] );
+	  ws_od[i]->import( *data_den2_od[i] );
+	}  
+	ws_od[i]->import( *data_ctRECO_od[i] );
+	ws_od[i]->import( *data_wtRECO_od[i] );
+	ws_od[i]->Write();
+      }
       n_genDen[i]->Write();
       fout->Close();
 
       if (!saveDen){
-        TFile* fout = new TFile( ( "effDataset_"+shortString[i]+Form("_201%i_den.root",year) ).c_str(), "RECREATE" );
-        ws_ev[i] = new RooWorkspace(("ws_"+shortString[i]+"p0").c_str(),"Workspace with single-bin even datasets");
-        ws_od[i] = new RooWorkspace(("ws_"+shortString[i]+"p1").c_str(),"Workspace with single-bin odd datasets");
-        ws_ev[i]->import( *data_den_ev[i] );
-        ws_od[i]->import( *data_den_od[i] );
-        ws_ev[i]->Write();
-        ws_od[i]->Write();
+	if (useTheta)
+	  fout = new TFile( ( "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/effDatasetTheta_"+shortString[i]+Form("_201%i%s_den.root",year,XGBstr.c_str()) ).c_str(), "RECREATE" );
+	else
+	  fout = new TFile( ( "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/effDataset_"+shortString[i]+Form("_201%i%s_den.root",year,XGBstr.c_str()) ).c_str(), "RECREATE" );
+	if (parity!=1) {
+	  ws_ev[i] = new RooWorkspace(("ws_"+shortString[i]+"p0").c_str(),"Workspace with single-bin even datasets");
+	  ws2_ev[i] = new RooWorkspace(("ws2_"+shortString[i]+"p0").c_str(),"Workspace with single-bin even datasets");
+	  ws_ev[i]->import( *data_den_ev[i] );
+	  ws2_ev[i]->import( *data_den2_ev[i] );
+	  ws_ev[i]->Write();
+	  ws2_ev[i]->Write();
+	}
+	if (parity!=0) {
+	  ws_od[i] = new RooWorkspace(("ws_"+shortString[i]+"p1").c_str(),"Workspace with single-bin odd datasets");
+	  ws2_od[i] = new RooWorkspace(("ws2_"+shortString[i]+"p1").c_str(),"Workspace with single-bin odd datasets");
+	  ws_od[i]->import( *data_den_od[i] );
+	  ws2_od[i]->import( *data_den2_od[i] );
+	  ws_od[i]->Write();
+	  ws2_od[i]->Write();
+	}
         n_genDen[i]->Write();
         fout->Close();
       }
@@ -441,8 +564,8 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 
   // compute and print average efficiency (merged and individual tag configurations) and mistag fraction
   for (int i=0; i<nBins; ++i) if (runBin[i]) {
-      double den_ev = data_genNum_ev[i]->sumEntries() / data_genDen_ev[i]->sumEntries() / data_den_ev[i]->sumEntries();
-      double den_od = data_genNum_od[i]->sumEntries() / data_genDen_od[i]->sumEntries() / data_den_od[i]->sumEntries();
+      double den_ev = data_genNum_ev[i]->sumEntries() / data_genDen_ev[i]->sumEntries() / ( data_den_ev[i]->sumEntries() + data_den2_ev[i]->sumEntries() );
+      double den_od = data_genNum_od[i]->sumEntries() / data_genDen_od[i]->sumEntries() / ( data_den_od[i]->sumEntries() + data_den2_od[i]->sumEntries() );
       double avgEff_ct_ev = data_ctRECO_ev[i]->sumEntries() * den_ev;
       double avgEff_ct_od = data_ctRECO_od[i]->sumEntries() * den_od;
       double avgEff_wt_ev = data_wtRECO_ev[i]->sumEntries() * den_ev;
@@ -486,12 +609,12 @@ void createDataset(int year, int q2Bin = -1, bool plot = false)
 
 	// create frames (one for each bin/parity/variable, but all the six efficiency terms are plotted together)
 	c [i] = new TCanvas(("c_"+shortString[i]).c_str(),("Num and Den 1D projections - "+longString[i]).c_str(),2000,1400);
-	xframe_ev [i] = ctK.frame(Title((longString[i]+" cos(#theta_{K}) distributions (even)").c_str()));
-	yframe_ev [i] = ctL.frame(Title((longString[i]+" cos(#theta_{L}) distributions (even)").c_str()));
-	zframe_ev [i] = phi.frame(Title((longString[i]+" #phi distributions (even)").c_str()));
-	xframe_od [i] = ctK.frame(Title((longString[i]+" cos(#theta_{K}) distributions (odd)").c_str()));
-	yframe_od [i] = ctL.frame(Title((longString[i]+" cos(#theta_{L}) distributions (odd)").c_str()));
-	zframe_od [i] = phi.frame(Title((longString[i]+" #phi distributions (odd)").c_str()));
+	xframe_ev [i] = ctK->frame(Title((longString[i]+" cos(#theta_{K}) distributions (even)").c_str()));
+	yframe_ev [i] = ctL->frame(Title((longString[i]+" cos(#theta_{L}) distributions (even)").c_str()));
+	zframe_ev [i] = phi->frame(Title((longString[i]+" #phi distributions (even)").c_str()));
+	xframe_od [i] = ctK->frame(Title((longString[i]+" cos(#theta_{K}) distributions (odd)").c_str()));
+	yframe_od [i] = ctL->frame(Title((longString[i]+" cos(#theta_{L}) distributions (odd)").c_str()));
+	zframe_od [i] = phi->frame(Title((longString[i]+" #phi distributions (odd)").c_str()));
 
 	// plot datasets on frames
 	if (!legFilled) { // the first time assign names to tag them in the legend
