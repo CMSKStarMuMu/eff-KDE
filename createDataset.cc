@@ -92,6 +92,7 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_LMNR.root/ntuple");
       if (XGBv==2) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV2/2018MC_LMNR_withMCw_v2_addxcutvariable.root/ntuple");
       else if (XGBv==3) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV3/2018MC_LMNR_v3_MCw_addxcutvariable.root/ntuple");
+      else if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV4/2018MC_LMNR_v4_MCw_addxcutvariable.root/ntuple");
       else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple");
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_LMNR.root/ntuple");
@@ -117,6 +118,7 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_JPSI.root/ntuple");
       if (XGBv==2) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV2/2018MC_JPSI_withMCw_v2_addxcutvariable.root/ntuple");
       else if (XGBv==3) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV3/2018MC_JPSI_v3_MCw_addxcutvariable.root/ntuple");
+      else if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV4/2018MC_JPSI_v4_MCw_addxcutvariable.root/ntuple");
       else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple");
       // t_num->Add("/eos/user/x/xuqin/workdir/B0KstMuMu/reweight/Tree/final/gitv1/Foreff/recoMCDataset_rw_b4_2018_p1.root/ntuple");
@@ -142,6 +144,7 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_PSI.root/ntuple");
       if (XGBv==2) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV2/2018MC_PSI_withMCw_v2_addxcutvariable.root/ntuple");
       else if (XGBv==3) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV3/2018MC_PSI_v3_MCw_addxcutvariable.root/ntuple");
+      else if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV4/2018MC_PSI_v4_MCw_addxcutvariable.root/ntuple");
       else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple");
       // t_num->Add("/eos/user/x/xuqin/workdir/B0KstMuMu/reweight/Tree/final/gitv1/Foreff/recoMCDataset_rw_b6_2018_p1.root/ntuple");
@@ -240,8 +243,10 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   if (XGBv>0) t_num->SetBranchAddress( "sf_to_data", &XGBweight );
 
   // final state radiation flag
-  double genSignHasFSR;
+  double genSignHasFSR, genSignKstHasFSR, genSignPsiHasFSR;
   t_gen->SetBranchAddress( "genSignHasFSR", &genSignHasFSR );
+  t_gen->SetBranchAddress( "genSignKstHasFSR", &genSignKstHasFSR );
+  t_gen->SetBranchAddress( "genSignPsiHasFSR", &genSignPsiHasFSR );
 
   
   // cut to remove B+->Psi(2S)K->Jpsi pi pi K
@@ -355,7 +360,7 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
     rand.setVal(rand_gen.Uniform(1));
     // fill genDen dataset
     n_genDen[xBin]->Fill((eventN)%2);
-    if ( genSignHasFSR<0.5 ) {
+    if ( genSignHasFSR<0.5 && genSignKstHasFSR<0.5 && genSignPsiHasFSR<0.5 ) {
       if ((eventN)%2==0) data_genDen_ev[xBin]->add(all_vars);
       else data_genDen_od[xBin]->add(all_vars);
     }
@@ -576,6 +581,11 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
       double avgMis_od = avgEff_wt_od / avgEff_od;
       cout<<"Averages bin "<<i<<" (even): eps="<<avgEff_ev<<"\tm="<<avgMis_ev<<"\teps_c="<<avgEff_ct_ev<<"\teps_m="<<avgEff_wt_ev<<endl;
       cout<<"Averages bin "<<i<<" (odd) : eps="<<avgEff_od<<"\tm="<<avgMis_od<<"\teps_c="<<avgEff_ct_od<<"\teps_m="<<avgEff_wt_od<<endl;
+      cout<<"b"<<i
+	  <<": genNum="<< data_genNum_ev[i]->sumEntries() + data_genNum_od[i]->sumEntries()
+	  <<" genDen="<< data_genDen_ev[i]->sumEntries() + data_genDen_od[i]->sumEntries()
+	  <<" den="<< data_den_ev[i]->sumEntries() + data_den2_ev[i]->sumEntries() + data_den_od[i]->sumEntries() + data_den2_od[i]->sumEntries()
+	  <<" num="<< data_ctRECO_ev[i]->sumEntries() + data_ctRECO_od[i]->sumEntries() + data_wtRECO_ev[i]->sumEntries() + data_wtRECO_od[i]->sumEntries() <<endl;
     }
 
   // Plot 1D distributions of datasets
