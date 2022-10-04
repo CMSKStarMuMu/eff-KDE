@@ -139,7 +139,7 @@ void plotToyEffBin(int q2Bin, int parity, bool doClosure, int year)
       doCT = false;
     }
     if ( !effWHistToy[iToy] || effWHistToy[iToy]->IsZombie() ) {
-      cout<<"Wrong-tag efficiency histograms not found in file: "<<filenameToy[iToy]<<endl;
+      cout<<"Mistag efficiency histograms not found in file: "<<filenameToy[iToy]<<endl;
       doWT = false;
     }
     // create efficiency functions
@@ -168,7 +168,7 @@ void plotToyEffBin(int q2Bin, int parity, bool doClosure, int year)
     doCT = false;
   }
   if ( !effWHist || effWHist->IsZombie() ) {
-    cout<<"Wrong-tag efficiency histograms not found in file: "<<filename<<endl;
+    cout<<"Mistag efficiency histograms not found in file: "<<filename<<endl;
     doWT = false;
   }
   if ( !doCT && !doWT ) return;
@@ -360,9 +360,9 @@ void plotToyEffBin(int q2Bin, int parity, bool doClosure, int year)
 	effCDist[2]->SetTitle( Form("Correct-tag efficiency (q2-bin %i, %s) slice ctK=%1.2f ctL=%1.2f;#phi;Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB) );
       }
       if (doWT) {
-	effWDist[0]->SetTitle( Form("Wrong-tag efficiency (q2-bin %i, %s) slice ctL=%1.2f phi=%1.2f;cos(#theta_{K});Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
-	effWDist[1]->SetTitle( Form("Wrong-tag efficiency (q2-bin %i, %s) slice ctK=%1.2f phi=%1.2f;cos(#theta_{L});Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
-	effWDist[2]->SetTitle( Form("Wrong-tag efficiency (q2-bin %i, %s) slice ctK=%1.2f ctL=%1.2f;#phi;Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB) );
+	effWDist[0]->SetTitle( Form("Mistag efficiency (q2-bin %i, %s) slice ctL=%1.2f phi=%1.2f;cos(#theta_{K});Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
+	effWDist[1]->SetTitle( Form("Mistag efficiency (q2-bin %i, %s) slice ctK=%1.2f phi=%1.2f;cos(#theta_{L});Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB*TMath::Pi()) );
+	effWDist[2]->SetTitle( Form("Mistag efficiency (q2-bin %i, %s) slice ctK=%1.2f ctL=%1.2f;#phi;Efficiency",q2Bin,(parity==0?"even":"odd"),centA,centB) );
       }
 
       for (int ivar = 0; ivar < 3; ivar++){
@@ -510,9 +510,9 @@ void plotToyEffBin(int q2Bin, int parity, bool doClosure, int year)
   }
   if (doWT) {
     cp1W[confIndex] = new TCanvas(Form("cp1W_%s",shortString.c_str()),Form("cp1W_%s",shortString.c_str()),1800,800);
-    effWProj_x->SetTitle( Form("Wrong-tag efficiency projection (q2-bin %i, %s);cos(#theta_{K})",q2Bin,(parity==0?"even":"odd")) );
-    effWProj_y->SetTitle( Form("Wrong-tag efficiency projection (q2-bin %i, %s);cos(#theta_{L})",q2Bin,(parity==0?"even":"odd")) );
-    effWProj_z->SetTitle( Form("Wrong-tag efficiency projection (q2-bin %i, %s);#phi",q2Bin,(parity==0?"even":"odd")) );
+    effWProj_x->SetTitle( Form("Mistag efficiency projection (q2-bin %i, %s);cos(#theta_{K})",q2Bin,(parity==0?"even":"odd")) );
+    effWProj_y->SetTitle( Form("Mistag efficiency projection (q2-bin %i, %s);cos(#theta_{L})",q2Bin,(parity==0?"even":"odd")) );
+    effWProj_z->SetTitle( Form("Mistag efficiency projection (q2-bin %i, %s);#phi",q2Bin,(parity==0?"even":"odd")) );
     effWProj_x->Scale(1.0/2500);
     effWProj_y->Scale(1.0/2500);
     effWProj_z->Scale(1.0/2500);
@@ -557,9 +557,9 @@ void plotToyEffBin(int q2Bin, int parity, bool doClosure, int year)
   }
   if (doWT) {
     cp2W[confIndex] = new TCanvas(Form("cp2W_%s",shortString.c_str()),Form("cp2W_%s",shortString.c_str()),1800,800);
-    effWProj_xy->SetTitle( Form("Wrong-tag efficiency projection (q2-bin %i, %s);cos(#theta_{L});cos(#theta_{K})",q2Bin,(parity==0?"even":"odd")) );
-    effWProj_xz->SetTitle( Form("Wrong-tag efficiency projection (q2-bin %i, %s);#phi;cos(#theta_{K})",q2Bin,(parity==0?"even":"odd")) );
-    effWProj_yz->SetTitle( Form("Wrong-tag efficiency projection (q2-bin %i, %s);#phi;cos(#theta_{L})",q2Bin,(parity==0?"even":"odd")) );
+    effWProj_xy->SetTitle( Form("Mistag efficiency projection (q2-bin %i, %s);cos(#theta_{L});cos(#theta_{K})",q2Bin,(parity==0?"even":"odd")) );
+    effWProj_xz->SetTitle( Form("Mistag efficiency projection (q2-bin %i, %s);#phi;cos(#theta_{K})",q2Bin,(parity==0?"even":"odd")) );
+    effWProj_yz->SetTitle( Form("Mistag efficiency projection (q2-bin %i, %s);#phi;cos(#theta_{L})",q2Bin,(parity==0?"even":"odd")) );
     effWProj_xy->Scale(1.0/50);
     effWProj_xz->Scale(1.0/50);
     effWProj_yz->Scale(1.0/50);
@@ -675,9 +675,9 @@ void plotToyEffBin(int q2Bin, int parity, bool doClosure, int year)
     hZctREC_effC->SetLineWidth(2);
   }
   if (doWT) {
-    hXctGEN_effW->SetTitle( Form(  "Closure test of wrong-tag efficiency (q2-bin %i, %s);cos(#theta_{K});Events",q2Bin,(parity==0?"even":"odd")) );
-    hYctGEN_effW->SetTitle( Form(  "Closure test of wrong-tag efficiency (q2-bin %i, %s);cos(#theta_{L});Events",q2Bin,(parity==0?"even":"odd")) );
-    hZctGEN_effW->SetTitle( Form(  "Closure test of wrong-tag efficiency (q2-bin %i, %s);#phi;Events",q2Bin,(parity==0?"even":"odd")) );
+    hXctGEN_effW->SetTitle( Form(  "Closure test of mistag efficiency (q2-bin %i, %s);cos(#theta_{K});Events",q2Bin,(parity==0?"even":"odd")) );
+    hYctGEN_effW->SetTitle( Form(  "Closure test of mistag efficiency (q2-bin %i, %s);cos(#theta_{L});Events",q2Bin,(parity==0?"even":"odd")) );
+    hZctGEN_effW->SetTitle( Form(  "Closure test of mistag efficiency (q2-bin %i, %s);#phi;Events",q2Bin,(parity==0?"even":"odd")) );
     hXctGEN_effW->Scale( hXctREC_effW->Integral() / hXctGEN_effW->Integral() );
     hYctGEN_effW->Scale( hYctREC_effW->Integral() / hYctGEN_effW->Integral() );
     hZctGEN_effW->Scale( hZctREC_effW->Integral() / hZctGEN_effW->Integral() );
