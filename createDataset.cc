@@ -24,7 +24,7 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   if ( year<6 || year>8 ) return;
 
   string XGBstr = "";
-  if (XGBv>0) XGBstr = Form("_XGBv%i",XGBv);
+  if (XGBv>0 && XGBv<100) XGBstr = Form("_XGBv%i",XGBv);
 
   bool isJpsi = false;
   bool isPsi  = false;
@@ -69,30 +69,40 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   }
 
   // Load ntuples
-  TChain* t_gen = new TChain();
-  TChain* t_den = new TChain();
-  TChain* t_num = new TChain();
+  TChain* t_gen = new TChain("ntuple");
+  // TChain* t_den = new TChain("ntuple");
+  // TChain* t_num = new TChain("ntuple");
+  t_gen->Add(Form("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/newphi/GEN_BFilter_%s.root",isJpsi?"B0JpsiKstar":(isPsi?"B0PsiKstar":"B0MuMuKstar_p*")));
+  auto f_den = TFile::Open(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/201%iGEN_MC_%s.root",year,year,isJpsi?"JPSI":(isPsi?"PSI":"LMNR")));
+  auto t_den = (TTree*)f_den->Get("ntuple");
+  auto f_num = TFile::Open(Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-%s%s/201%i.root",isJpsi?"Jpsi":(isPsi?"Psi":"LMNR"),XGBstr.c_str(),year));
+  auto t_num = (TTree*)f_num->Get("ntuple");
+  if (XGBv>99) {
+    t_num->AddFriend("wTree",Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-%s-TMVAv%i/201%i.root",isJpsi?"Jpsi":(isPsi?"Psi":"LMNR"),XGBv-100,year));
+    XGBstr = Form("_TMVAv%i",XGBv-100);
+  }
 
-  if (isLMNR){
+  /*  if (isLMNR){
     t_gen->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/newphi/GEN_BFilter_B0MuMuKstar_p*.root/ntuple");
     if ( year==6 ) {
       // 2016
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_LMNR.root/ntuple");
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_LMNR.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/reweightV4/2016MC_LMNR_v4_MCw_addxcutvariable.root/ntuple");
+      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
     } else if ( year==7 ) {
       // 2017
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_LMNR.root/ntuple");
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_LMNR.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/reweightV4/2017MC_LMNR_v4_MCw_addxcutvariable.root/ntuple");
+      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
    } else if ( year==8 ) {
       // 2018
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_LMNR.root/ntuple");
       if (XGBv==2) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV2/2018MC_LMNR_withMCw_v2_addxcutvariable.root/ntuple");
-      else if (XGBv==3) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV3/2018MC_LMNR_v3_MCw_addxcutvariable.root/ntuple");
-      else if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV4/2018MC_LMNR_v4_MCw_addxcutvariable.root/ntuple");
+      else if (XGBv>2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV%i/2018MC_LMNR_v%i_MCw_addxcutvariable.root/ntuple",XGBv,XGBv));
       else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple");
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_LMNR.root/ntuple");
@@ -104,21 +114,22 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
       // 2016
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_JPSI.root/ntuple");
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_JPSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/reweightV4/2016MC_JPSI_v4_MCw_addxcutvariable.root/ntuple");
+      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
     } else if ( year==7 ) {
       // 2017
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_JPSI.root/ntuple");
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_JPSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/reweightV4/2017MC_JPSI_v4_MCw_addxcutvariable.root/ntuple");
+      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
     } else if ( year==8 ) {
       // 2018
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_JPSI.root/ntuple");
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_JPSI.root/ntuple");
       if (XGBv==2) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV2/2018MC_JPSI_withMCw_v2_addxcutvariable.root/ntuple");
-      else if (XGBv==3) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV3/2018MC_JPSI_v3_MCw_addxcutvariable.root/ntuple");
-      else if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV4/2018MC_JPSI_v4_MCw_addxcutvariable.root/ntuple");
+      else if (XGBv>2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV%i/2018MC_JPSI_v%i_MCw_addxcutvariable.root/ntuple",XGBv,XGBv));
       else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple");
       // t_num->Add("/eos/user/x/xuqin/workdir/B0KstMuMu/reweight/Tree/final/gitv1/Foreff/recoMCDataset_rw_b4_2018_p1.root/ntuple");
@@ -130,21 +141,22 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
       // 2016
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_PSI.root/ntuple");
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_PSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/reweightV4/2016MC_PSI_v4_MCw_addxcutvariable.root/ntuple");
+      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
    } else if ( year==7 ) {
       // 2017
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_PSI.root/ntuple");
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_PSI.root/ntuple");
-      t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
+      if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/reweightV4/2016MC_PSI_v4_MCw_addxcutvariable.root/ntuple");
+      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
     } else if ( year==8 ) {
       // 2018
       t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_PSI.root/ntuple");
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_PSI.root/ntuple");
       if (XGBv==2) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV2/2018MC_PSI_withMCw_v2_addxcutvariable.root/ntuple");
-      else if (XGBv==3) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV3/2018MC_PSI_v3_MCw_addxcutvariable.root/ntuple");
-      else if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV4/2018MC_PSI_v4_MCw_addxcutvariable.root/ntuple");
+      else if (XGBv>2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV%i/2018MC_PSI_v%i_MCw_addxcutvariable.root/ntuple",XGBv,XGBv));
       else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
       // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple");
       // t_num->Add("/eos/user/x/xuqin/workdir/B0KstMuMu/reweight/Tree/final/gitv1/Foreff/recoMCDataset_rw_b6_2018_p1.root/ntuple");
@@ -152,10 +164,24 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   }
   else 
     return;
+  */
+
   int genEntries = t_gen->GetEntries();
   int denEntries = t_den->GetEntries();
   int numEntries = t_num->GetEntries();
   int counter;
+  if (genEntries==0) {
+    cout<<"Gen dataset not found"<<endl;
+    return;
+  }
+  if (denEntries==0) {
+    cout<<"Den dataset not found"<<endl;
+    return;
+  }
+  if (numEntries==0) {
+    cout<<"Num dataset not found"<<endl;
+    return;
+  }
 
   // Import branches from ntuples:
   // angular variables
@@ -226,8 +252,22 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
 
   bool isNumWeightFloat = true;
   bool isDenWeightFloat = true;
-  if (year==6) isNumWeightFloat = false;
-  if (year==6 && (isPsi || isLMNR)) isDenWeightFloat = false;
+  EDataType expectedType;
+  TClass* expClass;
+  t_num->GetBranch("weight")->GetExpectedType(expClass,expectedType);
+  if (expectedType==EDataType::kDouble_t) isNumWeightFloat = false;
+  else if (expectedType!=EDataType::kFloat_t) {
+    cout<<"Type not recognised for weight branch in numerator ntuple"<<endl;
+    return;
+  }
+  t_den->GetBranch("weight")->GetExpectedType(expClass,expectedType);
+  if (expectedType==EDataType::kDouble_t) isDenWeightFloat = false;
+  else if (expectedType!=EDataType::kFloat_t) {
+    cout<<"Type not recognised for weight branch in denominator ntuple"<<endl;
+    return;
+  }
+  // if (year==6) isNumWeightFloat = false;
+  // if (year==6 && (isPsi || isLMNR)) isDenWeightFloat = false;
 
   if (isDenWeightFloat)
     t_den->SetBranchAddress( "weight", &fPUweight );
@@ -238,9 +278,11 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   else
     t_num->SetBranchAddress( "weight", &PUweight );
 
-  // XGB MC weight
-  float XGBweight = 1;
-  if (XGBv>0) t_num->SetBranchAddress( "sf_to_data", &XGBweight );
+  // MC weights
+  double XGBweight = 1;
+  float fXGBweight = 1;
+  if (XGBv>0 && XGBv<100) t_num->SetBranchAddress( "sf_to_data", &fXGBweight );
+  if (XGBv>99) t_num->SetBranchAddress( "MCw", &XGBweight );
 
   // final state radiation flag
   double genSignHasFSR, genSignKstHasFSR, genSignPsiHasFSR;
@@ -417,7 +459,6 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
       else if (eventN%4==1) data_den_od[xBin]->add(vars,PUweight);
       else data_den2_od[xBin]->add(vars,PUweight);
   }
-
   delete t_den;
 
   // Prepare numerator dataset
@@ -467,19 +508,19 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
     phi->setVal(recoPhi);
     if (isNumWeightFloat)
       if (genSignal != tagB0+1) { // correctly tagged events
-	if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,fPUweight*XGBweight);
-	else data_ctRECO_od[xBin]->add(vars,fPUweight*XGBweight);
+	if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,fPUweight*XGBweight*fXGBweight);
+	else data_ctRECO_od[xBin]->add(vars,fPUweight*XGBweight*fXGBweight);
       } else { // wrongly tagged events
-	if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,fPUweight*XGBweight);
-	else data_wtRECO_od[xBin]->add(vars,fPUweight*XGBweight);
+	if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,fPUweight*XGBweight*fXGBweight);
+	else data_wtRECO_od[xBin]->add(vars,fPUweight*XGBweight*fXGBweight);
       }
     else
       if (genSignal != tagB0+1) { // correctly tagged events
-	if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,PUweight*XGBweight);
-	else data_ctRECO_od[xBin]->add(vars,PUweight*XGBweight);
+	if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,PUweight*XGBweight*fXGBweight);
+	else data_ctRECO_od[xBin]->add(vars,PUweight*XGBweight*fXGBweight);
       } else { // wrongly tagged events
-	if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,PUweight*XGBweight);
-	else data_wtRECO_od[xBin]->add(vars,PUweight*XGBweight);
+	if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,PUweight*XGBweight*fXGBweight);
+	else data_wtRECO_od[xBin]->add(vars,PUweight*XGBweight*fXGBweight);
       }
   }
   delete t_num;
