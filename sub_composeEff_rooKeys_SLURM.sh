@@ -55,6 +55,13 @@ if make composeEff_rooKeys_parSub; then
 
 	cd ..
 
+	if [ ! -d versfiles ]; then mkdir versfiles; fi
+	if [ -r "effDatasetVers_${year}_${bin}_${par}_true_$(($vers/10)).log" ]; then
+	    cp  "effDatasetVers_${year}_${bin}_${par}_true_$(($vers/10)).log" versfiles/sub_composeEff_${year}_${bin}_${par}_${vers}.log
+	else
+	    echo "Warning, version file not found: effDatasetVers_${year}_${bin}_${par}_true_$(($vers/10)).log"
+	fi
+
     done < ../confSF/KDE_SF.list #File containing scale-factor configuration
 
 fi

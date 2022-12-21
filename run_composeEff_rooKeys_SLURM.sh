@@ -12,7 +12,9 @@ SAMPLEDIR=/lstore/cms/boletti/Run2-BdToKstarMuMu/eff-KDE-theta
 
 module load root/6.12.06
 
-if [ $vers -ge "10" ]; then
+if [ $vers -ge "100" ]; then
+    XGBv="_TMVAv$(($vers / 10 - 10))"
+elif [ $vers -ge "10" ]; then
     XGBv="_XGBv$(($vers / 10))"
 fi
 

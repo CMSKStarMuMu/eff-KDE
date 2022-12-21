@@ -39,4 +39,11 @@ while read -a line; do
 	
     done
 
+    if [ ! -d versfiles ]; then mkdir versfiles; fi
+    if [ -r versfiles/sub_composeEff_${year}_${bin}_${par}_${vers}.log ]; then
+	cp  versfiles/sub_composeEff_${year}_${bin}_${par}_${vers}.log versfiles/merge_composeEff_${year}_${bin}_${par}_${vers}.log
+    else
+	echo "Warning, version file not found: versfiles/sub_composeEff_${year}_${bin}_${par}_${vers}.log"
+    fi
+
 done < ../confSF/KDE_SF.list

@@ -32,4 +32,10 @@ ${wid0}','${wid1}','${wid2}','\
 ${xbin}','${ybin}','${zbin}','\
 ${year}','${vers}')'
 
+    if [ -r versfiles/merge_composeEff_${year}_${bin}_${par}_${vers}.log ]; then
+	cp  versfiles/merge_composeEff_${year}_${bin}_${par}_${vers}.log files/KDEeffVers_${year}_${bin}_${par}_${vers}.log
+    else
+	echo "Warning, version file not found: versfiles/merge_composeEff_${year}_${bin}_${par}_${vers}.log"
+    fi
+
 done < ../confSF/KDE_SF.list

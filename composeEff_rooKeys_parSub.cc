@@ -45,7 +45,8 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   cout<<"Conf: "<<shortString<<endl;
 
   string XGBstr = "";
-  if (vers>9) XGBstr = Form("_XGBv%i",vers/10);
+  if (vers>9 && vers<100) XGBstr = Form("_XGBv%i",vers/10);
+  else if (vers>99) XGBstr = Form("_TMVAv%i",(vers-100)/10);
 
   string datasetString = "data_";
   switch (effIndx) {

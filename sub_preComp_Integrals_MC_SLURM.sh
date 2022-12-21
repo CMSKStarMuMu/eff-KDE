@@ -34,6 +34,13 @@ if make preComp_Integrals_MC; then
 	    # 	   ../run_preComp_Integrals_MC_SLURM.sh
 
 	    cd ..
+
+	    if [ ! -d versfiles ]; then mkdir versfiles; fi
+	    if [ -r files/KDEeffVers_${year}_${bin}_${par}_${vers}.log ]; then
+		cp files/KDEeffVers_${year}_${bin}_${par}_${vers}.log versfiles/sub_preComp_${year}_${bin}_${par}_${vers}.log
+	    else
+		echo "Warning, version file not found: files/KDEeffVers_${year}_${bin}_${par}_${vers}.log"
+	    fi
 	    
 	done < ../confSF/KDE_SF.list
 	tag=$(( ${tag} - 1 ))
