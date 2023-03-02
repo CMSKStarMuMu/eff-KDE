@@ -163,7 +163,8 @@ void composeEff_rooKeys_parSub(int q2Bin, int effIndx, int parity, float widthCT
   t1.Stop();
   t1.Print();
   // scale the output to have the same normalisation as the input dataset (or as the full sample, with no FSR veto, for GEN-denominator)
-  KDEhist->Scale(data->numEntries()/KDEhist->Integral());
+  cout<<"Normalizations: numEntries = "<<data->numEntries()<<" sumEntries = "<<data->sumEntries()<<" raw hist integral = "<<KDEhist->Integral()<<endl;
+  KDEhist->Scale(data->sumEntries()/KDEhist->Integral());
   if ( effIndx==0 ) KDEhist->Scale(1.0*normVal/totNev);
 
   // save histogram to file

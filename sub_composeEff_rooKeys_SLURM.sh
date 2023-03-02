@@ -37,7 +37,10 @@ if make composeEff_rooKeys_parSub; then
 	for indx in {0..4}
 	do
 
+	    [ $vers -ge 10 ] && [ $indx -le 2 ] && continue
 	    njobs=${vnjobs[$indx]}
+	    [ $vers -ge 10 ] && njobs=50
+
 	    if [ $indx == 4 ]
 	    then
 		wid0=${line[4]}
