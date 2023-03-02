@@ -24,7 +24,7 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   if ( year<6 || year>8 ) return;
 
   string XGBstr = "";
-  if (XGBv>0 && XGBv<100) XGBstr = Form("_XGBv%i",XGBv);
+  if (XGBv>0 && XGBv<6) XGBstr = Form("_XGBv%i",XGBv);
 
   bool isJpsi = false;
   bool isPsi  = false;
@@ -37,6 +37,9 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   // define if need to split into more files due to workspace memory 
   bool saveDen = true;
   if (q2Bin==4) saveDen = false;
+
+  bool onlyNum = true;
+  if (XGBv==0) onlyNum = false;
 
   // define angular variables and variable for PU-reweighting
   RooRealVar* ctK = 0;
@@ -72,14 +75,19 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   TChain* t_gen = new TChain("ntuple");
   // TChain* t_den = new TChain("ntuple");
   // TChain* t_num = new TChain("ntuple");
-  t_gen->Add(Form("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/newphi/GEN_BFilter_%s.root",isJpsi?"B0JpsiKstar":(isPsi?"B0PsiKstar":"B0MuMuKstar_p*")));
+
+  if (!onlyNum) t_gen->Add(Form("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/newphi/GEN_BFilter_%s.root",isJpsi?"B0JpsiKstar":(isPsi?"B0PsiKstar":"B0MuMuKstar_p*")));
+
   auto f_den = TFile::Open(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/201%iGEN_MC_%s.root",year,year,isJpsi?"JPSI":(isPsi?"PSI":"LMNR")));
   auto t_den = (TTree*)f_den->Get("ntuple");
   auto f_num = TFile::Open(Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-%s%s/201%i.root",isJpsi?"Jpsi":(isPsi?"Psi":"LMNR"),XGBstr.c_str(),year));
   auto t_num = (TTree*)f_num->Get("ntuple");
-  if (XGBv>99) {
-    t_num->AddFriend("wTree",Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-%s-TMVAv%i/201%i.root",isJpsi?"Jpsi":(isPsi?"Psi":"LMNR"),XGBv-100,year));
-    XGBstr = Form("_TMVAv%i",XGBv-100);
+  if (XGBv>9) {
+    t_num->AddFriend("wTree",Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-%s-TMVAv%i/201%i.root",isJpsi?"Jpsi":(isPsi?"Psi":"LMNR"),XGBv-10,year));
+    XGBstr = Form("_TMVAv%i",XGBv-10);
+  } else if (XGBv>5) {
+    t_num->AddFriend("wTree",Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-%s-XGBv%i/201%i.root",isJpsi?"Jpsi":(isPsi?"Psi":"LMNR"),XGBv,year));
+    XGBstr = Form("_XGBv%i",XGBv);
   }
 
   /*  if (isLMNR){
@@ -166,11 +174,13 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
     return;
   */
 
-  int genEntries = t_gen->GetEntries();
+  int genEntries = 0;
+  if (!onlyNum) genEntries = t_gen->GetEntries();
   int denEntries = t_den->GetEntries();
   int numEntries = t_num->GetEntries();
   int counter;
-  if (genEntries==0) {
+  int xBin;
+  if (!onlyNum && genEntries==0) {
     cout<<"Gen dataset not found"<<endl;
     return;
   }
@@ -183,68 +193,29 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
     return;
   }
 
+  if (!onlyNum) t_gen->SetBranchStatus("*",0);
+  t_den->SetBranchStatus("*",0);
+  t_num->SetBranchStatus("*",0);
   // Import branches from ntuples:
-  // angular variables
-  double genCosThetaK, genCosThetaL, genPhi;
-  double recoCosThetaK, recoCosThetaL, recoPhi;
-  t_gen->SetBranchAddress( "cos_theta_k"     , &genCosThetaK  );
-  t_gen->SetBranchAddress( "cos_theta_l"     , &genCosThetaL  );
-  t_gen->SetBranchAddress( "phi_kst_mumu"    , &genPhi        );
-  t_den->SetBranchAddress( "gen_cos_theta_k" , &genCosThetaK  );
-  t_den->SetBranchAddress( "gen_cos_theta_l" , &genCosThetaL  );
-  t_den->SetBranchAddress( "gen_phi_kst_mumu", &genPhi        );
-  t_num->SetBranchAddress( "cos_theta_k"     , &recoCosThetaK );
-  t_num->SetBranchAddress( "cos_theta_l"     , &recoCosThetaL );
-  t_num->SetBranchAddress( "phi_kst_mumu"    , &recoPhi       );
-
-  // variables for applying GEN-filter
-  double genmupEta, genmumEta, genkstTrkpEta, genkstTrkmEta, genmupPt, genmumPt, genkstTrkpPt, genkstTrkmPt;
-  t_gen->SetBranchAddress( "genmupEta", &genmupEta );
-  t_gen->SetBranchAddress( "genmumEta", &genmumEta );
-  t_gen->SetBranchAddress( "genkstTrkpEta", &genkstTrkpEta );
-  t_gen->SetBranchAddress( "genkstTrkmEta", &genkstTrkmEta );
-  t_gen->SetBranchAddress( "genmupPt", &genmupPt );
-  t_gen->SetBranchAddress( "genmumPt", &genmumPt );
-  t_gen->SetBranchAddress( "genkstTrkpPt", &genkstTrkpPt );
-  t_gen->SetBranchAddress( "genkstTrkmPt", &genkstTrkmPt );
+  // event number for even/odd splitting
+  // double eventN_Dou;
+  Long64_t eventN;
+  if (!onlyNum) t_gen->SetBranchStatus("eventN",1);
+  t_den->SetBranchStatus("eventN",1);
+  t_num->SetBranchStatus("eventN",1);
+  if (!onlyNum) t_gen->SetBranchAddress( "eventN", &eventN     );
+  // t_gen->SetBranchAddress( "eventN", &eventN_Dou );
+  t_den->SetBranchAddress( "eventN", &eventN     );
+  t_num->SetBranchAddress( "eventN", &eventN     );
 
   // dimuon mass variables
   double genDimuMass2, recoDimuMass;
-  t_gen->SetBranchAddress( "genQ2"   , &genDimuMass2 );
+  if (!onlyNum) t_gen->SetBranchStatus("genQ2",1);
+  t_den->SetBranchStatus("genQ2",1);
+  t_num->SetBranchStatus("mumuMass",1);
+  if (!onlyNum) t_gen->SetBranchAddress( "genQ2"   , &genDimuMass2 );
   t_den->SetBranchAddress( "genQ2"   , &genDimuMass2 );
   t_num->SetBranchAddress( "mumuMass", &recoDimuMass );
-
-  // B0 mass variable
-  double recoB0Mass;
-  int passB0Psi_lmnr, passB0Psi_jpsi, passB0Psi_psip;
-  t_num->SetBranchAddress( "tagged_mass", &recoB0Mass );
-  t_num->SetBranchAddress( "passB0Psi_lmnr", &passB0Psi_lmnr );
-  t_num->SetBranchAddress( "passB0Psi_jpsi", &passB0Psi_jpsi );
-  t_num->SetBranchAddress( "passB0Psi_psip", &passB0Psi_psip );
-  
-  
-  // B0-kinematic variables
-  // double genB0pT, genB0eta;
-  // double recoB0pT, recoB0eta;
-  // t_gen->SetBranchAddress( "genbPt" , &genB0pT   );
-  // t_gen->SetBranchAddress( "genbEta", &genB0eta  );
-  // t_den->SetBranchAddress( "genbPt" , &genB0pT   );
-  // t_den->SetBranchAddress( "genbEta", &genB0eta  );
-  // t_num->SetBranchAddress( "bPt"    , &recoB0pT  );
-  // t_num->SetBranchAddress( "bEta"   , &recoB0eta );
-
-  // flavour tagging variables
-  double genSignal, tagB0;
-  t_num->SetBranchAddress( "genSignal", &genSignal );
-  t_num->SetBranchAddress( "tagB0"    , &tagB0     );
-
-  // event number for even/odd splitting
-//   double eventN_Dou;
-  Long64_t eventN;
-  t_gen->SetBranchAddress( "eventN", &eventN     );
-//   t_gen->SetBranchAddress( "eventN", &eventN_Dou );
-  t_den->SetBranchAddress( "eventN", &eventN     );
-  t_num->SetBranchAddress( "eventN", &eventN     );
 
   // event pileup weight
   double PUweight = 1; 	// nj6, np6, dp6
@@ -269,6 +240,8 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   // if (year==6) isNumWeightFloat = false;
   // if (year==6 && (isPsi || isLMNR)) isDenWeightFloat = false;
 
+  t_den->SetBranchStatus("weight",1);
+  t_num->SetBranchStatus("weight",1);
   if (isDenWeightFloat)
     t_den->SetBranchAddress( "weight", &fPUweight );
   else
@@ -278,17 +251,201 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   else
     t_num->SetBranchAddress( "weight", &PUweight );
 
+  vector<double> sumPUw_ev(nBins, 0.);
+  vector<double> sumPUw_od(nBins, 0.);
+  vector<int> numPUw_ev(nBins, 0);
+  vector<int> numPUw_od(nBins, 0);
+  cout<<"Starting PUw average computation..."<<endl;
+  counter=0;
+  for (int iCand=0; iCand<denEntries; ++iCand) {
+    t_den->GetEntry(iCand);
+    // find q2 bin of current candidate
+    xBin=-1;
+    for (int i=0; i<nBins; ++i)
+      if ( runBin[i] )
+	if ( ( genDimuMass2 < binBorders[i+1] ) &&
+	     ( genDimuMass2 > binBorders[i]   ) ) {
+	  xBin = i;
+	  break;
+	}
+    if (xBin<0) continue;
+    // status display
+    if ( iCand > 1.0*counter*denEntries/100 ) {
+      cout<<counter<<"%"<<endl;
+      counter += 10;
+    }
+    if (eventN%2==0) {
+      sumPUw_ev[xBin] += (isDenWeightFloat?fPUweight:PUweight);
+      numPUw_ev[xBin] += 1;
+    } else {
+      sumPUw_od[xBin] += (isDenWeightFloat?fPUweight:PUweight);
+      numPUw_od[xBin] += 1;
+    }
+  }
+  if (onlyNum) denEntries = 0;
+
+  // Anti-radiation variables
+  int passB0Psi_lmnr, passB0Psi_jpsi, passB0Psi_psip;
+  t_num->SetBranchStatus("tagged_mass",1);
+  t_num->SetBranchStatus("passB0Psi_lmnr",1);
+  t_num->SetBranchStatus("passB0Psi_jpsi",1);
+  t_num->SetBranchStatus("passB0Psi_psip",1);
+  t_num->SetBranchAddress( "passB0Psi_lmnr", &passB0Psi_lmnr );
+  t_num->SetBranchAddress( "passB0Psi_jpsi", &passB0Psi_jpsi );
+  t_num->SetBranchAddress( "passB0Psi_psip", &passB0Psi_psip );
+  
+  int XCut = 0;
+  if (isJpsi) {
+    t_num->SetBranchStatus("xcut",1);
+    t_num->SetBranchAddress( "xcut", &XCut );
+  }
+
   // MC weights
   double XGBweight = 1;
   float fXGBweight = 1;
-  if (XGBv>0 && XGBv<100) t_num->SetBranchAddress( "sf_to_data", &fXGBweight );
-  if (XGBv>99) t_num->SetBranchAddress( "MCw", &XGBweight );
+  if (XGBv>9) {
+    t_num->SetBranchStatus("MCw",1);
+    t_num->SetBranchAddress( "MCw", &XGBweight );
+  }
+  else if (XGBv>5) {
+    t_num->SetBranchStatus("MCw",1);
+    t_num->SetBranchAddress( "MCw", &fXGBweight );
+  }
+  else if (XGBv>0) {
+    t_num->SetBranchStatus("sf_to_data",1);
+    t_num->SetBranchAddress( "sf_to_data", &fXGBweight );
+  }
+
+  vector<double> sumMCw_ev(nBins, 0.);
+  vector<double> sumMCw_od(nBins, 0.);
+  vector<int> numMCw_ev(nBins, 0);
+  vector<int> numMCw_od(nBins, 0);
+  if (XGBv>0) {
+    // Prepare numerator dataset
+    cout<<"Starting MCw average computation..."<<endl;
+    counter=0;
+    for (int iCand=0; iCand<numEntries; ++iCand) {
+      t_num->GetEntry(iCand);
+      // anti-radiation cut
+      if (isLMNR && passB0Psi_lmnr == 0) continue;
+      else if (isJpsi && passB0Psi_jpsi == 0) continue;
+      else if (isPsi  && passB0Psi_psip == 0)  continue;
+
+      // find q2 bin of current candidate
+      xBin=-1;
+      for (int i=0; i<nBins; ++i)
+	if ( runBin[i] )
+	  if ( ( pow(recoDimuMass,2) < binBorders[i+1] ) &&
+	       ( pow(recoDimuMass,2) > binBorders[i]   ) ) {
+	    xBin = i;
+	    break;
+	  }
+      if (xBin<0) continue;
+
+      if (isJpsi && XCut>0) continue;
+
+      // status display
+      if ( iCand > 1.0*counter*numEntries/100 ) {
+	cout<<counter<<"%"<<endl;
+	counter += 10;
+      }
+
+      if (eventN%2==0) {
+	sumMCw_ev[xBin] += XGBweight*fXGBweight;
+	numMCw_ev[xBin] += 1;
+      } else {
+	sumMCw_od[xBin] += XGBweight*fXGBweight;
+	numMCw_od[xBin] += 1;
+      }
+    }
+  }
+
+  for (int i=0; i<nBins; ++i) if (runBin[i]) {
+      if (sumPUw_ev[i] == 0) {
+	numPUw_ev[i] = 1;
+	sumPUw_ev[i] = 1.;
+      }
+      if (sumPUw_od[i] == 0) {
+	numPUw_od[i] = 1;
+	sumPUw_od[i] = 1.;
+      }
+      if (sumMCw_ev[i] == 0) {
+	numMCw_ev[i] = 1;
+	sumMCw_ev[i] = 1.;
+      }
+      if (sumMCw_od[i] == 0) {
+	numMCw_od[i] = 1;
+	sumMCw_od[i] = 1.;
+      }
+    }
+
+  // angular variables
+  double genCosThetaK, genCosThetaL, genPhi;
+  double recoCosThetaK, recoCosThetaL, recoPhi;
+  if (!onlyNum) t_gen->SetBranchStatus("cos_theta_k",1);
+  if (!onlyNum) t_gen->SetBranchStatus("cos_theta_l",1);
+  if (!onlyNum) t_gen->SetBranchStatus("phi_kst_mumu",1);
+  t_den->SetBranchStatus("gen_cos_theta_k",1);
+  t_den->SetBranchStatus("gen_cos_theta_l",1);
+  t_den->SetBranchStatus("gen_phi_kst_mumu",1);
+  t_num->SetBranchStatus("cos_theta_k",1);
+  t_num->SetBranchStatus("cos_theta_l",1);
+  t_num->SetBranchStatus("phi_kst_mumu",1);
+  if (!onlyNum) t_gen->SetBranchAddress( "cos_theta_k"     , &genCosThetaK  );
+  if (!onlyNum) t_gen->SetBranchAddress( "cos_theta_l"     , &genCosThetaL  );
+  if (!onlyNum) t_gen->SetBranchAddress( "phi_kst_mumu"    , &genPhi        );
+  t_den->SetBranchAddress( "gen_cos_theta_k" , &genCosThetaK  );
+  t_den->SetBranchAddress( "gen_cos_theta_l" , &genCosThetaL  );
+  t_den->SetBranchAddress( "gen_phi_kst_mumu", &genPhi        );
+  t_num->SetBranchAddress( "cos_theta_k"     , &recoCosThetaK );
+  t_num->SetBranchAddress( "cos_theta_l"     , &recoCosThetaL );
+  t_num->SetBranchAddress( "phi_kst_mumu"    , &recoPhi       );
+
+  // variables for applying GEN-filter
+  double genmupEta, genmumEta, genkstTrkpEta, genkstTrkmEta, genmupPt, genmumPt, genkstTrkpPt, genkstTrkmPt;
+  if (!onlyNum) t_gen->SetBranchStatus("genmupEta",1);
+  if (!onlyNum) t_gen->SetBranchStatus("genmumEta",1);
+  if (!onlyNum) t_gen->SetBranchStatus("genkstTrkpEta",1);
+  if (!onlyNum) t_gen->SetBranchStatus("genkstTrkmEta",1);
+  if (!onlyNum) t_gen->SetBranchStatus("genmupPt",1);
+  if (!onlyNum) t_gen->SetBranchStatus("genmumPt",1);
+  if (!onlyNum) t_gen->SetBranchStatus("genkstTrkpPt",1);
+  if (!onlyNum) t_gen->SetBranchStatus("genkstTrkmPt",1);
+  if (!onlyNum) t_gen->SetBranchAddress( "genmupEta", &genmupEta );
+  if (!onlyNum) t_gen->SetBranchAddress( "genmumEta", &genmumEta );
+  if (!onlyNum) t_gen->SetBranchAddress( "genkstTrkpEta", &genkstTrkpEta );
+  if (!onlyNum) t_gen->SetBranchAddress( "genkstTrkmEta", &genkstTrkmEta );
+  if (!onlyNum) t_gen->SetBranchAddress( "genmupPt", &genmupPt );
+  if (!onlyNum) t_gen->SetBranchAddress( "genmumPt", &genmumPt );
+  if (!onlyNum) t_gen->SetBranchAddress( "genkstTrkpPt", &genkstTrkpPt );
+  if (!onlyNum) t_gen->SetBranchAddress( "genkstTrkmPt", &genkstTrkmPt );
+
+  
+  // B0-kinematic variables
+  // double genB0pT, genB0eta;
+  // double recoB0pT, recoB0eta;
+  // t_gen->SetBranchAddress( "genbPt" , &genB0pT   );
+  // t_gen->SetBranchAddress( "genbEta", &genB0eta  );
+  // t_den->SetBranchAddress( "genbPt" , &genB0pT   );
+  // t_den->SetBranchAddress( "genbEta", &genB0eta  );
+  // t_num->SetBranchAddress( "bPt"    , &recoB0pT  );
+  // t_num->SetBranchAddress( "bEta"   , &recoB0eta );
+
+  // flavour tagging variables
+  double genSignal, tagB0;
+  t_num->SetBranchStatus("genSignal",1);
+  t_num->SetBranchStatus("tagB0",1);
+  t_num->SetBranchAddress( "genSignal", &genSignal );
+  t_num->SetBranchAddress( "tagB0"    , &tagB0     );
 
   // final state radiation flag
   double genSignHasFSR, genSignKstHasFSR, genSignPsiHasFSR;
-  t_gen->SetBranchAddress( "genSignHasFSR", &genSignHasFSR );
-  t_gen->SetBranchAddress( "genSignKstHasFSR", &genSignKstHasFSR );
-  t_gen->SetBranchAddress( "genSignPsiHasFSR", &genSignPsiHasFSR );
+  if (!onlyNum) t_gen->SetBranchStatus("genSignHasFSR",1);
+  if (!onlyNum) t_gen->SetBranchStatus("genSignKstHasFSR",1);
+  if (!onlyNum) t_gen->SetBranchStatus("genSignPsiHasFSR",1);
+  if (!onlyNum) t_gen->SetBranchAddress( "genSignHasFSR", &genSignHasFSR );
+  if (!onlyNum) t_gen->SetBranchAddress( "genSignKstHasFSR", &genSignKstHasFSR );
+  if (!onlyNum) t_gen->SetBranchAddress( "genSignPsiHasFSR", &genSignPsiHasFSR );
 
   
   // cut to remove B+->Psi(2S)K->Jpsi pi pi K
@@ -302,9 +459,6 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   // t_num->SetBranchAddress( "pionPt",       &pionPt       );
   // t_num->SetBranchAddress( "mmpiMass",     &mmpiMass     );
   // t_num->SetBranchAddress( "mmkMass",      &mmkMass      );
-
-  int XCut;
-  t_num->SetBranchAddress( "xcut", &XCut );
 
   // double x0Cut=-0.4;
   // double y0Cut= 0.3;
@@ -336,22 +490,25 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   RooDataSet* data_wtRECO_ev [nBins];
   RooDataSet* data_wtRECO_od [nBins];
   for (int i=0; i<nBins; ++i) if (runBin[i]) {
-      data_genDen_ev [i] = new RooDataSet( ("data_genDen_ev_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (even)",
-					   all_vars );
-      data_genDen_od [i] = new RooDataSet( ("data_genDen_od_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (odd)",
-					   all_vars );
-      data_genNum_ev [i] = new RooDataSet( ("data_genNum_ev_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (even)",
-					   vars );
-      data_genNum_od [i] = new RooDataSet( ("data_genNum_od_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (odd)",
-					   vars );
-      data_den_ev    [i] = new RooDataSet( ("data_den_ev_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (even)",
-					   RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
-      data_den_od    [i] = new RooDataSet( ("data_den_od_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (odd)",
-					   RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
-      data_den2_ev   [i] = new RooDataSet( ("data_den2_ev_"  +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (even)",
-					   RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
-      data_den2_od   [i] = new RooDataSet( ("data_den2_od_"  +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (odd)",
-					   RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
+      if (!onlyNum) {
+	data_genDen_ev [i] = new RooDataSet( ("data_genDen_ev_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (even)",
+					     all_vars );
+	data_genDen_od [i] = new RooDataSet( ("data_genDen_od_"+shortString[i]).c_str(), "GEN distribution before GEN-filter (odd)",
+					     all_vars );
+	data_genNum_ev [i] = new RooDataSet( ("data_genNum_ev_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (even)",
+					     vars );
+	data_genNum_od [i] = new RooDataSet( ("data_genNum_od_"+shortString[i]).c_str(), "GEN distribution after GEN-filter (odd)",
+					     vars );
+	data_den_ev    [i] = new RooDataSet( ("data_den_ev_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (even)",
+					     RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
+	data_den_od    [i] = new RooDataSet( ("data_den_od_"   +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (odd)",
+					     RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
+	data_den2_ev   [i] = new RooDataSet( ("data_den2_ev_"  +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (even)",
+					     RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
+	data_den2_od   [i] = new RooDataSet( ("data_den2_od_"  +shortString[i]).c_str(), "GEN candidates after GEN-filter in full MC sample (odd)",
+					     RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
+      }
+
       data_ctRECO_ev [i] = new RooDataSet( ("data_ctRECO_ev_"+shortString[i]).c_str(), "Correctly-tagged reconstructed candidates after selections (even)",
 					   RooArgSet(*ctK,*ctL,*phi,wei), "weight" );
       data_ctRECO_od [i] = new RooDataSet( ("data_ctRECO_od_"+shortString[i]).c_str(), "Correctly-tagged reconstructed candidates after selections (odd)",
@@ -373,7 +530,6 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   // Prepare GEN-level datasets
   cout<<"Starting GEN datasets filling..."<<endl;
   counter=0;
-  int xBin;
   for (int iCand=0; iCand<genEntries; ++iCand) {
     t_gen->GetEntry(iCand);
     // find q2 bin of current candidate
@@ -448,16 +604,22 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
       ctL->setVal(genCosThetaL);
     }
     phi->setVal(genPhi);
+
+    double weig = 1.;
     if (isDenWeightFloat)
-      if (eventN%4==0) data_den_ev[xBin]->add(vars,fPUweight);
-      else if (eventN%4==2) data_den2_ev[xBin]->add(vars,fPUweight);
-      else if (eventN%4==1) data_den_od[xBin]->add(vars,fPUweight);
-      else data_den2_od[xBin]->add(vars,fPUweight);
+      weig *= fPUweight;
     else
-      if (eventN%4==0) data_den_ev[xBin]->add(vars,PUweight);
-      else if (eventN%4==2) data_den2_ev[xBin]->add(vars,PUweight);
-      else if (eventN%4==1) data_den_od[xBin]->add(vars,PUweight);
-      else data_den2_od[xBin]->add(vars,PUweight);
+      weig *= PUweight;
+    if (eventN%2==0)
+      weig *= numPUw_ev[xBin]/sumPUw_ev[xBin];
+    else
+      weig *= numPUw_od[xBin]/sumPUw_od[xBin];
+      
+    if (eventN%4==0) data_den_ev[xBin]->add(vars,weig);
+    else if (eventN%4==2) data_den2_ev[xBin]->add(vars,weig);
+    else if (eventN%4==1) data_den_od[xBin]->add(vars,weig);
+    else data_den2_od[xBin]->add(vars,weig);
+
   }
   delete t_den;
 
@@ -490,7 +652,7 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
     //               (mmkMass >  CutY1 && mmkMass  < CutY2) && \
     //               ((mmkMass - y_0Cut) / (y_1Cut - y_0Cut)) > ((mmpiMass-x_0Cut)/(x_1Cut-x_0Cut));
   
-    if (XCut>0 && xBin == 4) continue;
+    if (isJpsi && XCut>0) continue;
 
     // status display
     if ( iCand > 1.0*counter*numEntries/100 ) {
@@ -506,22 +668,25 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
       ctL->setVal(recoCosThetaL);
     }
     phi->setVal(recoPhi);
+
+    double weig = XGBweight*fXGBweight;
     if (isNumWeightFloat)
-      if (genSignal != tagB0+1) { // correctly tagged events
-	if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,fPUweight*XGBweight*fXGBweight);
-	else data_ctRECO_od[xBin]->add(vars,fPUweight*XGBweight*fXGBweight);
-      } else { // wrongly tagged events
-	if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,fPUweight*XGBweight*fXGBweight);
-	else data_wtRECO_od[xBin]->add(vars,fPUweight*XGBweight*fXGBweight);
-      }
+      weig *= fPUweight;
     else
-      if (genSignal != tagB0+1) { // correctly tagged events
-	if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,PUweight*XGBweight*fXGBweight);
-	else data_ctRECO_od[xBin]->add(vars,PUweight*XGBweight*fXGBweight);
-      } else { // wrongly tagged events
-	if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,PUweight*XGBweight*fXGBweight);
-	else data_wtRECO_od[xBin]->add(vars,PUweight*XGBweight*fXGBweight);
-      }
+      weig *= PUweight;
+    if (eventN%2==0)
+      weig *= numPUw_ev[xBin]/sumPUw_ev[xBin]*numMCw_ev[xBin]/sumMCw_ev[xBin];
+    else
+      weig *= numPUw_od[xBin]/sumPUw_od[xBin]*numMCw_od[xBin]/sumMCw_od[xBin];
+      
+    if (genSignal != tagB0+1) { // correctly tagged events
+      if (eventN%2==0) data_ctRECO_ev[xBin]->add(vars,weig);
+      else data_ctRECO_od[xBin]->add(vars,weig);
+    } else { // wrongly tagged events
+      if (eventN%2==0) data_wtRECO_ev[xBin]->add(vars,weig);
+      else data_wtRECO_od[xBin]->add(vars,weig);
+    }
+
   }
   delete t_num;
   cout<<"Dataset prepared"<<endl;
@@ -536,8 +701,8 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
       // which usually means that either you are using a resonant MC, which does not fill signal q2 bins,
       // or using a bin too fine, or out of range
       // If correct-tag numerator is filled and wrong-tag is not, a warning is returned
-      if ( ( parity!=1 && data_genNum_ev[i]->numEntries()==0 ) ||
-	   ( parity!=0 && data_genNum_od[i]->numEntries()==0 ) ) {
+      if ( ( !onlyNum && parity!=1 && data_genNum_ev[i]->numEntries()==0 ) ||
+	   ( !onlyNum && parity!=0 && data_genNum_od[i]->numEntries()==0 ) ) {
 	cout<<"Error: genNum is empty in q2 bin "<<i<<endl;
 	continue;
       }
@@ -557,32 +722,36 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
 	fout = new TFile( ( "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/effDataset_"+shortString[i]+Form("_201%i%s.root",year,XGBstr.c_str()) ).c_str(), "RECREATE" );
       if (parity!=1) {
 	ws_ev[i] = new RooWorkspace(("ws_"+shortString[i]+"p0").c_str(),"Workspace with single-bin even datasets");
-	ws_ev[i]->import( *data_genDen_ev[i] );
-	ws_ev[i]->import( *data_genNum_ev[i] );
-	if (saveDen){
-	  ws_ev[i]->import( *data_den_ev[i] );
-	  ws_ev[i]->import( *data_den2_ev[i] );
-	}  
+	if (!onlyNum) {
+	  ws_ev[i]->import( *data_genDen_ev[i] );
+	  ws_ev[i]->import( *data_genNum_ev[i] );
+	  if (saveDen){
+	    ws_ev[i]->import( *data_den_ev[i] );
+	    ws_ev[i]->import( *data_den2_ev[i] );
+	  }
+	}
 	ws_ev[i]->import( *data_ctRECO_ev[i] );
 	ws_ev[i]->import( *data_wtRECO_ev[i] );
 	ws_ev[i]->Write();
       }
       if (parity!=0) {
 	ws_od[i] = new RooWorkspace(("ws_"+shortString[i]+"p1").c_str(),"Workspace with single-bin odd datasets");
-	ws_od[i]->import( *data_genDen_od[i] );
-	ws_od[i]->import( *data_genNum_od[i] );
-	if (saveDen){
-	  ws_od[i]->import( *data_den_od[i] );
-	  ws_od[i]->import( *data_den2_od[i] );
-	}  
+	if (!onlyNum) {
+	  ws_od[i]->import( *data_genDen_od[i] );
+	  ws_od[i]->import( *data_genNum_od[i] );
+	  if (saveDen){
+	    ws_od[i]->import( *data_den_od[i] );
+	    ws_od[i]->import( *data_den2_od[i] );
+	  }
+	}
 	ws_od[i]->import( *data_ctRECO_od[i] );
 	ws_od[i]->import( *data_wtRECO_od[i] );
 	ws_od[i]->Write();
       }
-      n_genDen[i]->Write();
+      if (!onlyNum) n_genDen[i]->Write();
       fout->Close();
 
-      if (!saveDen){
+      if (!onlyNum && !saveDen){
 	if (useTheta)
 	  fout = new TFile( ( "/eos/user/a/aboletti/BdToKstarMuMu/eff-KDE-Swave/effDatasetTheta_"+shortString[i]+Form("_201%i%s_den.root",year,XGBstr.c_str()) ).c_str(), "RECREATE" );
 	else
@@ -607,6 +776,8 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
         fout->Close();
       }
     }
+
+  if (onlyNum) return;
 
   // compute and print average efficiency (merged and individual tag configurations) and mistag fraction
   for (int i=0; i<nBins; ++i) if (runBin[i]) {

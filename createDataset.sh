@@ -11,7 +11,7 @@ elif [ ! "$rwv" -ge "0" ]
 then
     echo "Illegal reweighting version: ${rwv}"
     echo "Empty or non-negative values allowed"
-    exit 1
+    return 1
 fi
 
 if [ -z "$bopt" ]
@@ -35,7 +35,7 @@ then
 else
     echo "Illegal bin configuration: ${bopt}"
     echo 'Good values: "a" (all bins, default), "n" (non-resonant), "j" (J/psi), "p" (psi2S), "r" (both resonant bins)'
-    exit 1
+    return 1
 fi
 
 if [ -z "$yopt" -o "$yopt" == "a" ]
@@ -47,7 +47,7 @@ then
 else
     echo "Illegal year configuration: ${yopt}"
     echo 'Good values: "a" (all years, default), or a number from 6 to 8'
-    exit 1
+    return 1
 fi
 
 p="-1"
@@ -60,7 +60,7 @@ then
     ntu="$(git rev-parse --short HEAD)"
 else
     echo "Not-commited changes in file-index repo. Abort!"
-    exit 1
+    return 1
 fi
 cd -
 
