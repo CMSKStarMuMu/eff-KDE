@@ -1,17 +1,24 @@
 using namespace RooFit;
 using namespace std;
 
-static const int nBins = 9;
-float binBorders [nBins+1] = { 1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16, 19};
+double deltaR(double eta1, double phi1, double eta2, double phi2);
 
-double PDGB0Mass = 5.27958;
-double PDGJpsiMass = 3.096916;
-double PDGPsiPrimeMass = 3.686109;
-double PDGKstMass = 0.896;
+static const int nBins = 9;
+float binBorders [nBins+1] = { 1.1, 2, 4.3, 6, 8.68, 10.09, 12.86, 14.18, 16, 19};
+
+double PDGB0Mass = 5.2797;
+double PDGJpsiMass = 3.0969;
+double PDGPsiPrimeMass = 3.6861;
+double PDGKstMass = 0.8956;
+
+map<int,vector<double>> swapCut = {
+  {6, {0.13, 0.15, 0.07, 0.43, -0.45, 2.0}},
+  {7, {0.07, 0.13, 0.11, 0.45, -0.65, 1.9}},
+  {8, {0.09, 0.13, 0.07, 0.23, -0.45, 1.0}} };
 
 TCanvas* c [nBins];
 
-void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = true, int XGBv = 2, bool plot = false)
+void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = true, int XGBv = 8, bool plot = false)
 {
   // year format: [6] for 2016
   //              [7] for 2017
@@ -24,7 +31,7 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   if ( year<6 || year>8 ) return;
 
   string XGBstr = "";
-  if (XGBv>0 && XGBv<6) XGBstr = Form("_XGBv%i",XGBv);
+  if (XGBv==8 || (XGBv>0 && XGBv<6)) XGBstr = Form("_XGBv%i",XGBv);
 
   bool isJpsi = false;
   bool isPsi  = false;
@@ -80,99 +87,8 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
 
   auto f_den = TFile::Open(Form("/eos/cms/store/user/fiorendi/p5prime/201%i/skims/newphi/201%iGEN_MC_%s.root",year,year,isJpsi?"JPSI":(isPsi?"PSI":"LMNR")));
   auto t_den = (TTree*)f_den->Get("ntuple");
-  auto f_num = TFile::Open(Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-%s%s/201%i.root",isJpsi?"Jpsi":(isPsi?"Psi":"LMNR"),XGBstr.c_str(),year));
+  auto f_num = TFile::Open(Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-%s%s/201%i.root",isJpsi?"Jpsi":(isPsi?"Psi":"LMNR"),XGBv>0?Form("-XGBv%i",XGBv):"",year));
   auto t_num = (TTree*)f_num->Get("ntuple");
-  if (XGBv>9) {
-    t_num->AddFriend("wTree",Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-%s-TMVAv%i/201%i.root",isJpsi?"Jpsi":(isPsi?"Psi":"LMNR"),XGBv-10,year));
-    XGBstr = Form("_TMVAv%i",XGBv-10);
-  } else if (XGBv>5) {
-    t_num->AddFriend("wTree",Form("/eos/user/a/aboletti/BdToKstarMuMu/fileIndex/MC-%s-XGBv%i/201%i.root",isJpsi?"Jpsi":(isPsi?"Psi":"LMNR"),XGBv,year));
-    XGBstr = Form("_XGBv%i",XGBv);
-  }
-
-  /*  if (isLMNR){
-    t_gen->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/newphi/GEN_BFilter_B0MuMuKstar_p*.root/ntuple");
-    if ( year==6 ) {
-      // 2016
-      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_LMNR.root/ntuple");
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_LMNR.root/ntuple");
-      if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/reweightV4/2016MC_LMNR_v4_MCw_addxcutvariable.root/ntuple");
-      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
-    } else if ( year==7 ) {
-      // 2017
-      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_LMNR.root/ntuple");
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_LMNR.root/ntuple");
-      if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/reweightV4/2017MC_LMNR_v4_MCw_addxcutvariable.root/ntuple");
-      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
-   } else if ( year==8 ) {
-      // 2018
-      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_LMNR.root/ntuple");
-      if (XGBv==2) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV2/2018MC_LMNR_withMCw_v2_addxcutvariable.root/ntuple");
-      else if (XGBv>2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV%i/2018MC_LMNR_v%i_MCw_addxcutvariable.root/ntuple",XGBv,XGBv));
-      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_LMNR_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple");
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_LMNR.root/ntuple");
-    }
-  }
-  else if (isJpsi){
-    t_gen->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/newphi/GEN_BFilter_B0JpsiKstar.root/ntuple");
-    if ( year==6 ) {
-      // 2016
-      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_JPSI.root/ntuple");
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_JPSI.root/ntuple");
-      if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/reweightV4/2016MC_JPSI_v4_MCw_addxcutvariable.root/ntuple");
-      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
-    } else if ( year==7 ) {
-      // 2017
-      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_JPSI.root/ntuple");
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_JPSI.root/ntuple");
-      if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/reweightV4/2017MC_JPSI_v4_MCw_addxcutvariable.root/ntuple");
-      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
-    } else if ( year==8 ) {
-      // 2018
-      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_JPSI.root/ntuple");
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_JPSI.root/ntuple");
-      if (XGBv==2) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV2/2018MC_JPSI_withMCw_v2_addxcutvariable.root/ntuple");
-      else if (XGBv>2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV%i/2018MC_JPSI_v%i_MCw_addxcutvariable.root/ntuple",XGBv,XGBv));
-      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_JPSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple");
-      // t_num->Add("/eos/user/x/xuqin/workdir/B0KstMuMu/reweight/Tree/final/gitv1/Foreff/recoMCDataset_rw_b4_2018_p1.root/ntuple");
-    }  
-  }
-  else if (isPsi){
-    t_gen->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/GEN_NoFilter/newphi/GEN_BFilter_B0PsiKstar.root/ntuple");
-    if ( year==6 ) {
-      // 2016
-      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016GEN_MC_PSI.root/ntuple");
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/2016MC_PSI.root/ntuple");
-      if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/reweightV4/2016MC_PSI_v4_MCw_addxcutvariable.root/ntuple");
-      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/2016MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
-   } else if ( year==7 ) {
-      // 2017
-      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017GEN_MC_PSI.root/ntuple");
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/2017MC_PSI.root/ntuple");
-      if (XGBv==4) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2016/skims/newphi/fixBkg/reweightV4/2016MC_PSI_v4_MCw_addxcutvariable.root/ntuple");
-      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2017/skims/newphi/fixBkg/2017MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_fixPres_addxcutvariable.root/ntuple");
-    } else if ( year==8 ) {
-      // 2018
-      t_den->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018GEN_MC_PSI.root/ntuple");
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/2018MC_PSI.root/ntuple");
-      if (XGBv==2) t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV2/2018MC_PSI_withMCw_v2_addxcutvariable.root/ntuple");
-      else if (XGBv>2) t_num->Add(Form("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/reweightV%i/2018MC_PSI_v%i_MCw_addxcutvariable.root/ntuple",XGBv,XGBv));
-      else t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple"); // xcutfix version
-      // t_num->Add("/eos/cms/store/user/fiorendi/p5prime/2018/skims/newphi/fixBkg/2018MC_PSI_newphi_punzi_removeTkMu_fixBkg_B0Psicut_addxcutvariable.root/ntuple");
-      // t_num->Add("/eos/user/x/xuqin/workdir/B0KstMuMu/reweight/Tree/final/gitv1/Foreff/recoMCDataset_rw_b6_2018_p1.root/ntuple");
-    }  
-  }
-  else 
-    return;
-  */
 
   int genEntries = 0;
   if (!onlyNum) genEntries = t_gen->GetEntries();
@@ -300,10 +216,66 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
     t_num->SetBranchAddress( "xcut", &XCut );
   }
 
+  // Anti-swap cut
+  double kstTrkmPt		     = 0;
+  double kstTrkmEta		     = 0;
+  double kstTrkmPhi		     = 0;
+  double kstTrkpPt		     = 0;
+  double kstTrkpEta		     = 0;
+  double kstTrkpPhi		     = 0;
+  double mumPt			     = 0;
+  double mumEta			     = 0;
+  double mumPhi			     = 0;
+  double mupPt			     = 0;
+  double mupEta			     = 0;
+  double mupPhi			     = 0;
+  double selected_swapped_b0_mass    = 0;
+  double selected_swapped_kstar_mass = 0;
+  double selected_swapped_mumu_mass  = 0;
+  Long64_t charge_pf_swapped_track     = 0;
+
+  t_num->SetBranchStatus("kstTrkmPt",1);
+  t_num->SetBranchStatus("kstTrkmEta",1);
+  t_num->SetBranchStatus("kstTrkmPhi",1);
+  t_num->SetBranchStatus("kstTrkpPt",1);
+  t_num->SetBranchStatus("kstTrkpEta",1);
+  t_num->SetBranchStatus("kstTrkpPhi",1);
+  t_num->SetBranchStatus("mumPt",1);
+  t_num->SetBranchStatus("mumEta",1);
+  t_num->SetBranchStatus("mumPhi",1);
+  t_num->SetBranchStatus("mupPt",1);
+  t_num->SetBranchStatus("mupEta",1);
+  t_num->SetBranchStatus("mupPhi",1);
+  t_num->SetBranchStatus("selected_swapped_b0_mass",1);
+  t_num->SetBranchStatus("selected_swapped_kstar_mass",1);
+  t_num->SetBranchStatus("selected_swapped_mumu_mass",1);
+  t_num->SetBranchStatus("charge_pf_swapped_track",1);
+
+  t_num->SetBranchAddress("kstTrkmPt"		    , &kstTrkmPt		   );
+  t_num->SetBranchAddress("kstTrkmEta"		    , &kstTrkmEta		   );
+  t_num->SetBranchAddress("kstTrkmPhi"		    , &kstTrkmPhi		   );
+  t_num->SetBranchAddress("kstTrkpPt"		    , &kstTrkpPt		   );
+  t_num->SetBranchAddress("kstTrkpEta"		    , &kstTrkpEta		   );
+  t_num->SetBranchAddress("kstTrkpPhi"		    , &kstTrkpPhi		   );
+  t_num->SetBranchAddress("mumPt"		    , &mumPt			   );
+  t_num->SetBranchAddress("mumEta"       	    , &mumEta			   );
+  t_num->SetBranchAddress("mumPhi"     		    , &mumPhi			   );
+  t_num->SetBranchAddress("mupPt"		    , &mupPt			   );
+  t_num->SetBranchAddress("mupEta"		    , &mupEta			   );
+  t_num->SetBranchAddress("mupPhi"		    , &mupPhi			   );
+  t_num->SetBranchAddress("selected_swapped_b0_mass"   , &selected_swapped_b0_mass   );
+  t_num->SetBranchAddress("selected_swapped_kstar_mass", &selected_swapped_kstar_mass);
+  t_num->SetBranchAddress("selected_swapped_mumu_mass" , &selected_swapped_mumu_mass );
+  t_num->SetBranchAddress("charge_pf_swapped_track"    , &charge_pf_swapped_track    );
+
   // MC weights
   double XGBweight = 1;
   float fXGBweight = 1;
-  if (XGBv>9) {
+  if (XGBv==8) {
+    t_num->SetBranchStatus("XGBv8",1);
+    t_num->SetBranchAddress( "XGBv8", &fXGBweight );
+  }
+  else if (XGBv>9) {
     t_num->SetBranchStatus("MCw",1);
     t_num->SetBranchAddress( "MCw", &XGBweight );
   }
@@ -330,6 +302,16 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
       if (isLMNR && passB0Psi_lmnr == 0) continue;
       else if (isJpsi && passB0Psi_jpsi == 0) continue;
       else if (isPsi  && passB0Psi_psip == 0)  continue;
+      // anti-swap cut
+      if (fabs(selected_swapped_mumu_mass-PDGJpsiMass)<swapCut[year][0] &&
+	  fabs(selected_swapped_kstar_mass-PDGKstMass)<swapCut[year][1] &&
+	  fabs(selected_swapped_b0_mass-PDGB0Mass-selected_swapped_mumu_mass+PDGJpsiMass)<swapCut[year][2] &&
+	  ( ( charge_pf_swapped_track<0 && (deltaR(kstTrkmEta,kstTrkmPhi,mumEta,mumPhi)<swapCut[year][3] &&
+					    (mumPt-kstTrkmPt)/kstTrkmPt>swapCut[year][4] &&
+					    (mumPt-kstTrkmPt)/kstTrkmPt<swapCut[year][5]) ) ||
+	    ( charge_pf_swapped_track>0 && (deltaR(kstTrkpEta,kstTrkpPhi,mupEta,mupPhi)<swapCut[year][3] &&
+					    (mupPt-kstTrkpPt)/kstTrkpPt>swapCut[year][4] &&
+					    (mupPt-kstTrkpPt)/kstTrkpPt<swapCut[year][5]) ) ) ) continue;
 
       // find q2 bin of current candidate
       xBin=-1;
@@ -623,6 +605,7 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   }
   delete t_den;
 
+  vector<int> nSwapRej(nBins,0);
   // Prepare numerator dataset
   cout<<"Starting numerator dataset filling..."<<endl;
   counter=0;
@@ -653,6 +636,17 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
     //               ((mmkMass - y_0Cut) / (y_1Cut - y_0Cut)) > ((mmpiMass-x_0Cut)/(x_1Cut-x_0Cut));
   
     if (isJpsi && XCut>0) continue;
+
+    // anti-swap cut
+    if (fabs(selected_swapped_mumu_mass-PDGJpsiMass)<swapCut[year][0] &&
+	fabs(selected_swapped_kstar_mass-PDGKstMass)<swapCut[year][1] &&
+	fabs(selected_swapped_b0_mass-PDGB0Mass-selected_swapped_mumu_mass+PDGJpsiMass)<swapCut[year][2] &&
+	( ( charge_pf_swapped_track<0 && (deltaR(kstTrkmEta,kstTrkmPhi,mumEta,mumPhi)<swapCut[year][3] &&
+					  (mumPt-kstTrkmPt)/kstTrkmPt>swapCut[year][4] &&
+					  (mumPt-kstTrkmPt)/kstTrkmPt<swapCut[year][5]) ) ||
+	  ( charge_pf_swapped_track>0 && (deltaR(kstTrkpEta,kstTrkpPhi,mupEta,mupPhi)<swapCut[year][3] &&
+					  (mupPt-kstTrkpPt)/kstTrkpPt>swapCut[year][4] &&
+					  (mupPt-kstTrkpPt)/kstTrkpPt<swapCut[year][5]) ) ) ) {++nSwapRej[xBin]; continue;}
 
     // status display
     if ( iCand > 1.0*counter*numEntries/100 ) {
@@ -690,6 +684,9 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
   }
   delete t_num;
   cout<<"Dataset prepared"<<endl;
+  for (int i=0; i<nBins; ++i)
+    cout<<nSwapRej[i]<<"\t";
+  cout<<endl;
 
   // Save datasets in workspaces
   RooWorkspace *ws_ev [nBins];
@@ -943,4 +940,16 @@ void createDataset(int year, int q2Bin = -1, int parity = -1, bool useTheta = tr
       }
   }
 
+}
+
+
+double deltaR(double eta1, double phi1, double eta2, double phi2)
+{
+  float deltaPhi = phi1 - phi2;
+  if (fabs(deltaPhi)>TMath::Pi()) {
+    if (deltaPhi>0) deltaPhi = deltaPhi - 2*TMath::Pi();
+    else deltaPhi = deltaPhi + 2*TMath::Pi();
+  }
+  float deltaEta = eta1 - eta2;
+  return sqrt( deltaEta*deltaEta + deltaPhi*deltaPhi );
 }
